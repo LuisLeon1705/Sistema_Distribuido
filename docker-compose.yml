@@ -1,7 +1,7 @@
 services:
   db:
     build:
-      context: ./db
+      context: ./backend/db
       dockerfile: Dockerfile.db
     container_name: gestiondb
     ports:
@@ -9,7 +9,7 @@ services:
 
   authservice:
     build:
-      context: ./authservice
+      context: ./backend/authservice
       dockerfile: Dockerfile
     container_name: authservice
     env_file: ./authservice/.env
@@ -21,33 +21,33 @@ services:
     ports:
       - "3000:3000"
 
-    inventoryservice:
-      build:
-        context: ./inventoryservice
-        dockerfile: Dockerfile
-      container_name: inventoryservice
-      env_file: ./inventoryservice/.env
-      environment:
-        # Override DB_HOST from .env so the backend connects to the db service in Docker
-        DB_HOST: db
-      depends_on:
-        - db
-      ports:
-        - "3001:3001"
+  inventoryservice:
+    build:
+      context: ./backend/inventoryservice
+      dockerfile: Dockerfile
+    container_name: inventoryservice
+    env_file: ./inventoryservice/.env
+    environment:
+      # Override DB_HOST from .env so the backend connects to the db service in Docker
+      DB_HOST: db
+    depends_on:
+      - db
+    ports:
+      - "3001:3001"
 
-    productservice:
-      build:
-        context: ./productservice
-        dockerfile: Dockerfile
-      container_name: productservice
-      env_file: ./productservice/.env
-      environment:
-        # Override DB_HOST from .env so the backend connects to the db service in Docker
-        DB_HOST: db
-      depends_on:
-        - db
-      ports:
-        - "3002:3002"
+  productservice:
+    build:
+      context: ./backend/productservice
+      dockerfile: Dockerfile
+    container_name: productservice
+    env_file: ./productservice/.env
+    environment:
+      # Override DB_HOST from .env so the backend connects to the db service in Docker
+      DB_HOST: db
+    depends_on:
+      - db
+    ports:
+      - "3002:3002"
 
 
   frontend:
