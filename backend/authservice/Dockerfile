@@ -1,0 +1,13 @@
+FROM 
+
+WORKDIR /usr/src/app
+
+COPY
+
+RUN
+
+COPY . .
+
+EXPOSE 3000
+
+CMD []
