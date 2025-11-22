@@ -1,9 +1,16 @@
 services:
   db:
-    build:
-      context: ./backend/db
-      dockerfile: Dockerfile.db
+    image: postgres:16-alpine
     container_name: gestiondb
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres # Default database, script will connect to this
+    volumes:
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+      - ./backend/authservice/db/schema.sql:/schemas/auth_schema.sql
+      - ./backend/inventoryservice/db/schema.sql:/schemas/inventory_schema.sql
+      - ./backend/productservice/db/schema.sql:/schemas/products_schema.sql
     ports:
       - "5432:5432"
 
@@ -12,10 +19,9 @@ services:
       context: ./backend/authservice
       dockerfile: Dockerfile
     container_name: authservice
-    env_file: ./authservice/.env
+    env_file: ./backend/authservice/.env
     environment:
-      # Override DB_HOST from .env so the backend connects to the db service in Docker
-      DB_HOST: db
+      DATABASE_URL: "postgres://user:password@db/auth_db"
     depends_on:
       - db
     ports:
@@ -26,29 +32,25 @@ services:
       context: ./backend/inventoryservice
       dockerfile: Dockerfile
     container_name: inventoryservice
-    env_file: ./inventoryservice/.env
+    env_file: ./backend/inventoryservice/.env
     environment:
-      # Override DB_HOST from .env so the backend connects to the db service in Docker
-      DB_HOST: db
+      DATABASE_URL: "postgres://user:password@db/inventory_db"
     depends_on:
       - db
     ports:
       - "3001:3001"
 
-  productservice:
-    build:
-      context: ./backend/productservice
-      dockerfile: Dockerfile
-    container_name: productservice
-    env_file: ./productservice/.env
+      productservice:
+        build:
+          context: ./backend/productservice
+          dockerfile: db/Dockerfile    container_name: productservice
+    env_file: ./backend/productservice/.env
     environment:
-      # Override DB_HOST from .env so the backend connects to the db service in Docker
-      DB_HOST: db
+      DATABASE_URL: "postgres://user:password@db/products_db"
     depends_on:
       - db
     ports:
       - "3002:3002"
-
 
   frontend:
     build:

@@ -1,0 +1,18 @@
+{
+  "id": "e6a0c2f3-9b7a-4c12-8269-9229f63ab97a",
+  "user_id": 123,
+  "order_details": {
+    "items": [
+      {
+        "product_id": 101,
+        "quantity": 1
+      },
+      {
+        "product_id": 102,
+        "quantity": 2
+      }
+    ]
+  },
+  "created_at": "2025-11-22T20:05:10.123456789Z",
+  "last_updated": "2025-11-22T20:05:10.123456789Z"
+}

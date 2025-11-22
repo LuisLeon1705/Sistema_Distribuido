@@ -1,11 +1,12 @@
-WORKDIR /authservice
+FROM 
 
-# Install backend dependencies
-COPY 
-RUN 
+WORKDIR /usr/src/app
 
-# Copy application source
-COPY . ./
+COPY
+
+RUN
+
+COPY . .
 
 EXPOSE 3000
 
