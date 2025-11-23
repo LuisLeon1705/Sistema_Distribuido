@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "0049:80" # Para entrar a la aplicacion, usar 0049
+    volumes:
+      - .:/var/www/html # NO MODIFICAR ES PARA QUE LA SINCRONIZACION EN RT
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: products_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: ultimaCena
+    ports:
+      - "5432:5432"
