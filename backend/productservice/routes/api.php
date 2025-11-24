@@ -2,6 +2,8 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CategoriasController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -12,3 +14,7 @@ Route::get('/prueba', function () {
         'Mensajes' => 'Hola mundo'
     ]);
 });
+
+Route::apiResource('/productos', ProductController::class);
+
+Route::apiResource('/categorias', CategoriasController::class);
