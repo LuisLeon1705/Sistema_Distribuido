@@ -30,27 +30,56 @@ class ProductController extends Controller
         return response()->json($product, 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    // -------------------------------- GET por id  --------------------------------
+    public function show($id)
     {
-        //
+        $product = Product::all()->find($id);
+        if (!$product) {
+            return response()->json(['mensaje' => 'Producto no encontrado'], 404);
+        }
+        return response()->json($product, 200);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+
+    // -------------------------------- PUT --------------------------------
+    public function update(Request $request, $id)
     {
-        //
+        $product = Product::find($id);
+        if (!$product) {
+            return response()->json(['mensaje' => 'Producto no encontrado'], 404);
+        }
+        $request->validate([
+            'nombre' => 'string|max:255',
+            'precio' => 'numeric',
+            'id_categoria' => 'exists:categorias,id',
+            'descripcion' => 'nullable|string',
+            'imagen_url' => 'nullable|url'
+        ]);
+        $product->update($request->all());
+        return response()->json([
+            'mensaje' => 'Producto actualizado',
+            'producto' => $product
+        ], 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    // -------------------------------- DELETE --------------------------------
+    public function destroy($id)
     {
-        //
+        $product = Product::find($id);
+        if (!$product) {
+            return response()->json(['mensaje' => 'Producto no encontrado'], 404);
+        }
+        $product->delete();
+        return response()->json([
+            'mensaje' => 'Producto eliminado correctamente',
+            "producto" => $product
+        ], 200);
+    }
+
+    // -------------------------------- GET por categoria --------------------------------
+    public function getByCategory($id_categoria)
+    {
+        $productos = Product::where('id_categoria', $id_categoria)->get();
+        return response()->json($productos, 200);
     }
 }

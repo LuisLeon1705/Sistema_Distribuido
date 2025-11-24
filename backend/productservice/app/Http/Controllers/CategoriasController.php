@@ -25,27 +25,45 @@ class CategoriasController extends Controller
         return response()->json($category, 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    // -------------------------------- GET por id --------------------------------
+    public function show($id)
     {
-        //
+        $category = Category::all()->find($id);
+        if (!$category) {
+            return response()->json(['mensaje' => 'Categoría no encontrado'], 404);
+        }
+        return response()->json($category, 200);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    // -------------------------------- PUT --------------------------------
+    public function update(Request $request, $id)
     {
-        //
+        $category = Category::find($id);
+        if (!$category) {
+            return response()->json(['mensaje' => 'Categoría no encontrado'], 404);
+        }
+        $request->validate([
+            'nombre' => 'string|max:255',
+            'descripcion' => 'nullable|string',
+        ]);
+        $category->update($request->all());
+        return response()->json([
+            'mensaje' => 'Categoría actualizado',
+            'Categoría' => $category
+        ], 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    // -------------------------------- DELETE --------------------------------
+    public function destroy($id)
     {
-        //
+        $category = Category::find($id);
+        if (!$category) {
+            return response()->json(['mensaje' => 'Categoría no encontrado'], 404);
+        }
+        $category->delete();
+        return response()->json([
+            'mensaje' => 'Categoría eliminada correctamente',
+            "categoría" => $category
+        ], 200);
     }
 }

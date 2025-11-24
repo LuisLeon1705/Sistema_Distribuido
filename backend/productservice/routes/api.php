@@ -15,6 +15,8 @@ Route::get('/prueba', function () {
     ]);
 });
 
-Route::apiResource('/productos', ProductController::class);
 
+Route::get('/productos/categoria/{id}', [ProductController::class, 'getByCategory']);
+
+Route::apiResource('/productos', ProductController::class);
 Route::apiResource('/categorias', CategoriasController::class);
