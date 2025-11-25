@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -22,13 +23,22 @@ class ProductController extends Controller
         $request->validate([
             'nombre' => 'required|string|max:255',
             'precio' => 'required|numeric',
-            'id_categoria' => 'required|exists:categorias,id',
+            'id_categoria' => 'required|exists:categorias,id', 
             'descripcion' => 'nullable|string',
-            'imagen_url' => 'nullable|url',
-            'estado' => 'boolean'
+            'estado' => 'boolean',
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:100000', // 100mb
         ]);
-        $product = Product::create($request->all());
-        return response()->json($product, 201);
+        $data = $request->except('imagen');
+        if ($request->hasFile('imagen')) {
+            $path = $request->file('imagen')->store('productos', 's3');
+            $url = Storage::disk('s3')->url($path);
+            $data['imagen_url'] = $url;
+        }
+        $product = Product::create($data);
+        return response()->json([
+            'mensaje' => 'Producto creado exitosamente',
+            'producto' => $product
+        ], 201);
     }
 
     // -------------------------------- GET por id  --------------------------------

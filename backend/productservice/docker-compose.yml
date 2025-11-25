@@ -7,6 +7,7 @@ services:
       - "0049:80" # Para entrar a la aplicacion, usar 0049
     volumes:
       - .:/var/www/html # NO MODIFICAR ES PARA QUE LA SINCRONIZACION EN RT
+      - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini # Aumentar limite de subida para imagenes pesadas o mayores
     depends_on:
       - db
 
