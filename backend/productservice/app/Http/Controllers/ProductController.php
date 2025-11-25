@@ -24,7 +24,8 @@ class ProductController extends Controller
             'precio' => 'required|numeric',
             'id_categoria' => 'required|exists:categorias,id',
             'descripcion' => 'nullable|string',
-            'imagen_url' => 'nullable|url'
+            'imagen_url' => 'nullable|url',
+            'estado' => 'boolean'
         ]);
         $product = Product::create($request->all());
         return response()->json($product, 201);
@@ -53,7 +54,8 @@ class ProductController extends Controller
             'precio' => 'numeric',
             'id_categoria' => 'exists:categorias,id',
             'descripcion' => 'nullable|string',
-            'imagen_url' => 'nullable|url'
+            'imagen_url' => 'nullable|url',
+            'estado' => 'boolean'
         ]);
         $product->update($request->all());
         return response()->json([
@@ -80,6 +82,13 @@ class ProductController extends Controller
     public function getByCategory($id_categoria)
     {
         $productos = Product::where('id_categoria', $id_categoria)->get();
+        return response()->json($productos, 200);
+    }
+    
+    // -------------------------------- GET para activos (estado = true) --------------------------------
+    public function getActive()
+    {
+        $productos = Product::where('estado', true)->get();
         return response()->json($productos, 200);
     }
 }

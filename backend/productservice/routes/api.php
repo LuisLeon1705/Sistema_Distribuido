@@ -17,6 +17,7 @@ Route::get('/prueba', function () {
 
 
 Route::get('/productos/categoria/{id}', [ProductController::class, 'getByCategory']);
+Route::get('/productos/activos', [ProductController::class, 'getActive']);
 
 Route::apiResource('/productos', ProductController::class);
 Route::apiResource('/categorias', CategoriasController::class);
