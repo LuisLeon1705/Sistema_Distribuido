@@ -1,0 +1,18 @@
+[
+  {
+    "user_id": 1,
+    "total_price": "1250.50",
+    "status": "completed",
+    "items": [
+      { "product_id": 101, "quantity": 1 }
+    ]
+  },
+  {
+    "user_id": 2,
+    "total_price": "45.99",
+    "status": "pending",
+    "items": [
+      { "product_id": 102, "quantity": 1 }
+    ]
+  }
+]

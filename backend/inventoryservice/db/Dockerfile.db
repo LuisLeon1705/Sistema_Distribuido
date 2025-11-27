@@ -1,0 +1,6 @@
+# Utiliza la imagen oficial de PostgreSQL
+FROM postgres:16
+
+# Copia el script de schema.sql al directorio de inicialización de la base de datos
+# Los scripts en este directorio se ejecutan automáticamente cuando se crea la base de datos por primera vez
+COPY schema.sql /docker-entrypoint-initdb.d/
