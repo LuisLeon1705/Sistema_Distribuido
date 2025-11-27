@@ -2,3 +2,12 @@
 */.env
 **/.env
 **/target/
+
+.env.example
+*/.env.example
+**/.env.example
+
+.vscode/
+backend/authservice/app/__pycache__
+backend/authservice/app/routers/__pycache__
+backend/authservice/envauth

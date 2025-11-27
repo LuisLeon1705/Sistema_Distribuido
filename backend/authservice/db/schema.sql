@@ -1,13 +1,32 @@
+-- Roles table
+CREATE TABLE roles (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Users table
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    rol VARCHAR(50) NOT NULL,
-    verified BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    phone_number VARCHAR(20) NOT NULL,
+    role_id INTEGER NOT NULL REFERENCES roles(id),
+    is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    failed_login_attempts INTEGER NOT NULL DEFAULT 0,
+    locked_until TIMESTAMP WITH TIME ZONE,
+    last_login_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_users_phone UNIQUE (phone_number),
+    CONSTRAINT ck_phone_number_format CHECK (phone_number ~ '^[0-9+][0-9]{6,14}$')
 );
 
-INSERT INTO users (id, username, email, password_hash, rol, verified, created_at) VALUES
-(1, 'admin_user', 'admin@sistema.com', '$2b$12$eIxIsYg...', 'admin', TRUE, '2025-11-20T10:00:00Z'),
-(2, 'cliente_juan', 'juan@gmail.com', '$2b$12$rFvMsQz...', 'customer', FALSE, '2025-11-21T14:30:00Z');
+-- Roles data
+INSERT INTO roles (id, name, description) VALUES
+    (1, 'admin', 'Administrador del sistema'),
+    (2, 'customer', 'Cliente final'),
+    (3, 'inventory', 'Responsable de inventario');
