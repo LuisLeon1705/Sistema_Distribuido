@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -23,7 +24,10 @@ class ProductController extends Controller
         $request->validate([
             'nombre' => 'required|string|max:255',
             'precio' => 'required|numeric',
-            'id_categoria' => 'required|exists:categorias,id', 
+            'id_categoria' => [
+                            'required',
+                            \Illuminate\Validation\Rule::exists(Category::class, 'id'),
+                        ],
             'descripcion' => 'nullable|string',
             'estado' => 'boolean',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:100000', // 100mb
@@ -31,6 +35,13 @@ class ProductController extends Controller
         $data = $request->except('imagen');
         if ($request->hasFile('imagen')) {
             $path = $request->file('imagen')->store('productos', 's3');
+            if (!$path) {
+                // Si entra aquí, es que la conexión con AWS falló
+                return response()->json([
+                    'error' => 'No se pudo subir la imagen a S3.',
+                    'debug_hint' => 'Revisa tus credenciales en .env o el nombre del bucket.'
+                ], 500);
+            }
             $url = Storage::disk('s3')->url($path);
             $data['imagen_url'] = $url;
         }

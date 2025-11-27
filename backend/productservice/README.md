@@ -1,59 +1,127 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Microservicio de Productos (Backend)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+##### (El puerto por defecto es :49)
 
-## About Laravel
+Este es el servicio encargado de la gestión del catálogo de productos e inventario lógico. Está construido con **PHP 8.2 (Laravel)**, utiliza **PostgreSQL** como base de datos y **AWS S3** para el almacenamiento de imágenes en la nube.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Tecnologías
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+* **Framework:** Laravel 12
+* **Lenguaje:** PHP 8.2
+* **Base de Datos:** PostgreSQL 15
+* **Contenedores:** Docker & Docker Compose
+* **Almacenamiento:** AWS S3 (Flysystem)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## Configuración del Entorno (Variables)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+Para que el proyecto funcione, debes crear un archivo `.env` en la raíz (basado en `.env.example`) y configurar las siguientes variables críticas:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 1. Base de Datos
+Asegúrate de que coincidan con lo definido en `docker-compose.yml`.
+```ini
+DB_CONNECTION=pgsql
+DB_HOST=db
+DB_PORT=5432
+DB_DATABASE=products_db
+DB_USERNAME=user
+DB_PASSWORD=ultimaCena
+```
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Categorías
 
-### Premium Partners
+Gestión de las categorías para clasificar los productos.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+| Método | Endpoint | Descripción |
+| :--- | :--- | :--- |
+| `GET` | `/categorias` | Obtiene la lista completa de categorías. |
+| `GET` | `/categorias/{id}` | Obtiene los detalles de una categoría específica. |
+| `POST` | `/categorias` | Crea una nueva categoría. |
+| `PUT` | `/categorias/{id}` | Actualiza el nombre o descripción de una categoría. |
+| `DELETE` | `/categorias/{id}` | Elimina una categoría. |
 
-## Contributing
+#### Crear / Editar Categoría (POST/PUT)
+**Headers:**
+* `Accept: application/json`
+* `Content-Type: application/json`
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+**Body (JSON):**
+```json
+{
+  "nombre": "Electrónica",
+  "descripcion": "Dispositivos, gadgets y accesorios"
+}
+```
 
-## Code of Conduct
+#### Respuesta correcta (200 - 201)
+```json
+{
+    "id": 1,
+    "nombre": "Electrónica",
+    "descripcion": "Dispositivos, gadgets y accesorios",
+    "created_at": "2023-10-27T10:00:00.000000Z",
+    "updated_at": "2023-10-27T10:00:00.000000Z"
+}
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+### Productos
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Gestión de productos, incluyendo carga de imágenes a AWS S3.
 
-## License
+| Método | Endpoint | Descripción |
+| :--- | :--- | :--- |
+| `GET` | `/productos` | Lista todos los productos registrados. |
+| `GET` | `/productos/{id}` | Obtiene los detalles de un producto específico por su ID. |
+| `GET` | `/productos/categoria/{id}` | Filtra y lista los productos asociados a una categoría específica. |
+| `GET` | `/productos/activos` | Lista únicamente los productos visibles (`estado = true`). |
+| `POST` | `/productos` | Crea un nuevo producto con imagen. |
+| `PUT` | `/productos/{id}` | Actualiza los datos de un producto existente. |
+| `DELETE` | `/productos/{id}` | Elimina un producto de la base de datos. |
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+#### Detalles del Endpoint: Crear Producto (POST)
+
+Este endpoint es especial porque requiere subir un archivo (imagen). Por lo tanto, no se debe enviar como un JSON crudo (`application/json`), sino como un formulario multipart (`multipart/form-data`).
+
+**Configuración de la Petición:**
+
+* **URL:** `http://localhost:49/api/productos`
+* **Método:** `POST`
+* **Header Obligatorio:** `Accept: application/json`
+* **Header de Contenido:** `Content-Type: multipart/form-data` (Generalmente Postman/Axios lo añaden automáticamente al detectar archivos).
+
+**Parámetros del Cuerpo (Body - Form Data):**
+
+A continuación se describen los campos que se deben enviar dentro del formulario:
+
+| Campo | Tipo | Requerido | Descripción |
+| :--- | :--- | :--- | :--- |
+| `nombre` | Texto | Sí | Nombre comercial del producto. Máximo 255 caracteres. |
+| `precio` | Numérico | Sí | Precio del producto. Debe ser un número válido (ej. 10.50). |
+| `id_categoria` | Entero | Sí | ID válido de una categoría existente en la base de datos. |
+| `descripcion` | Texto | No | Descripción detallada del producto. |
+| `estado` | Booleano | No | `1` para Activo (visible), `0` para Inactivo (oculto). Por defecto es true si no se envía. |
+| `imagen` | **Archivo** | No | Archivo de imagen (jpeg, png, jpg, webp). Tamaño máximo: 100MB. Se subirá automáticamente a AWS S3. |
+
+**Ejemplo de Respuesta Exitosa (201 Created):**
+
+```json
+{
+    "mensaje": "Producto creado exitosamente",
+    "producto": {
+        "nombre": "Laptop Gamer",
+        "precio": 1500,
+        "id_categoria": "1",
+        "descripcion": "Potente laptop para juegos",
+        "estado": "1",
+        "imagen_url": "[https://bucket.s3.amazonaws.com/productos/a1b2c3d4.jpg](https://bucket.s3.amazonaws.com/productos/a1b2c3d4.jpg)",
+        "updated_at": "2023-11-27T16:00:00.000000Z",
+        "created_at": "2023-11-27T16:00:00.000000Z",
+        "id": 15
+    }
+}
+```
