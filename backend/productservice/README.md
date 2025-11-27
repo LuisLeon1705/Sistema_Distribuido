@@ -25,8 +25,8 @@ DB_CONNECTION=pgsql
 DB_HOST=db
 DB_PORT=5432
 DB_DATABASE=products_db
-DB_USERNAME=user
-DB_PASSWORD=ultimaCena
+DB_USERNAME=
+DB_PASSWORD=
 ```
 
 ---
