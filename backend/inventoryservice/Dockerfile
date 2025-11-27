@@ -17,8 +17,8 @@ RUN cargo build --release
 COPY src ./src
 
 # Build the application
-# Remove the dummy file and rebuild
-RUN rm -f src/main.rs
+# The dummy main.rs is overwritten by the COPY command above.
+# Now, build the actual application.
 RUN cargo build --release
 
 # ---- Final Stage ----

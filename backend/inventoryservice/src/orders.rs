@@ -61,12 +61,12 @@ pub async fn confirm_order(
 
     for item in &payload.items {
         // 1. Get product details from inventoryservice
-        let product_url = format!("http://inventoryservice:3001/products/{}", item.product_id);
+        let product_url = format!("http://productservice:3002/products/{}", item.product_id);
         let product_res = client.get(&product_url)
             .bearer_auth(token)
             .send()
             .await
-            .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "Failed to connect to inventory service"))?;
+            .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "Failed to connect to product service"))?;
         
         if !product_res.status().is_success() {
             return Err(ApiError::new(StatusCode::NOT_FOUND, format!("Product with id {} not found in inventory service", item.product_id)));

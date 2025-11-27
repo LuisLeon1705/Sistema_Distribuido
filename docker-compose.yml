@@ -43,7 +43,8 @@ services:
   productservice:
     build:
       context: ./backend/productservice
-      dockerfile: db/Dockerfile    container_name: productservice
+      dockerfile: db/Dockerfile
+    container_name: productservice
     env_file: ./backend/productservice/.env
     environment:
       DATABASE_URL: "postgres://user:password@db/products_db"
