@@ -1,1 +1,8 @@
-temporal_order_example.json
+# Ignore compiled artifacts
+target/
+
+# Ignore version control directories
+.git/
+
+# Ignore local environment files
+.env

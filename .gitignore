@@ -1,6 +1,7 @@
 .env
 */.env
 **/.env
+**/target/
 
 .env.example
 */.env.example
@@ -10,4 +11,3 @@
 backend/authservice/app/__pycache__
 backend/authservice/app/routers/__pycache__
 backend/authservice/envauth
-backend/inventoryservice/target
