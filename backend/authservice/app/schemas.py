@@ -85,5 +85,12 @@ class Token(BaseModel):
     token_type: str = "bearer"
 
 class TokenData(BaseModel):
-    user_id: int
+    user_id: str
     role: str
+
+class EmailVerificationRequest(BaseModel):
+    email: EmailStr
+
+class EmailVerificationConfirm(BaseModel):
+    email: EmailStr
+    code: str
