@@ -191,11 +191,13 @@ export default {
       
       try {
         await authStore.register(userData)
-        successMessage.value = 'Cuenta creada exitosamente. Ahora puedes iniciar sesión.'
+        successMessage.value = 'Cuenta creada exitosamente. Hemos enviado un código de verificación a tu correo.'
         
-        // Redirect to login after 2 seconds
         setTimeout(() => {
-          router.push('/login')
+          router.push({
+            name: 'EmailVerification',
+            query: { email: userData.email }
+          })
         }, 2000)
       } catch (error) {
         console.error('Registration error:', error)
