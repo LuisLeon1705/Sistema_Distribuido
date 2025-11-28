@@ -7,3 +7,4 @@
 backend/authservice/app/__pycache__
 backend/authservice/app/routers/__pycache__
 backend/authservice/envauth
+frontend/node_modules
