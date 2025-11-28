@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+import uuid
 
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
@@ -31,11 +32,11 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 def decode_access_token(token: str) -> schemas.TokenData:
     try:
         payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
-        user_id: int = payload.get("sub")
+        user_id = payload.get("sub")
         role: str = payload.get("role")
         if user_id is None or role is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
-        return schemas.TokenData(user_id=user_id, role=role)
+        return schemas.TokenData(user_id=str(user_id), role=role)
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate token")
 
@@ -52,7 +53,11 @@ def get_current_user(
     db: Session = Depends(get_db),
 ) -> models.User:
     token_data = decode_access_token(token)
-    user = db.query(models.User).filter(models.User.id == token_data.user_id).first()
+    try:
+        user_uuid = uuid.UUID(token_data.user_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
+    user = db.query(models.User).filter(models.User.id == user_uuid).first()
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Inactive or not found user")
     return user
