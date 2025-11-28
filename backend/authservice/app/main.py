@@ -27,7 +27,7 @@ def create_default_admin_user():
             username="admin",
             email="admin@admin.com",
             phone_number="+10000000000",
-            password_hash=get_password_hash("admin"),
+            password_hash=get_password_hash("-Admin123-"),
             role_id=admin_role.id,
             is_verified=True,
             is_active=True,
