@@ -1,4 +1,8 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+import secrets
+import string
+from email.message import EmailMessage
+import smtplib
 
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.exc import IntegrityError
@@ -10,6 +14,46 @@ from ..security import get_password_hash, verify_password, create_access_token, 
 from ..config import settings
 
 router = APIRouter()
+
+VERIFICATION_CODE_LENGTH = 6
+
+
+def _generate_verification_code() -> str:
+    return "".join(secrets.choice(string.digits) for _ in range(VERIFICATION_CODE_LENGTH))
+
+
+def _send_verification_email(to_email: str, code: str) -> None:
+    msg = EmailMessage()
+    msg["Subject"] = "Código de verificación de correo"
+    msg["From"] = settings.email_from
+    msg["To"] = to_email
+    msg.set_content(
+        f"Tu código de verificación es: {code}.\n"
+        f"Es válido por {settings.email_verification_code_minutes} minutos."
+    )
+
+    with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
+        if settings.smtp_use_tls:
+            server.starttls()
+        if settings.smtp_user and settings.smtp_password:
+            server.login(settings.smtp_user, settings.smtp_password)
+        server.send_message(msg)
+
+
+def _create_and_send_verification_code(user: models.User, db: Session) -> None:
+    code = _generate_verification_code()
+    expires_at = datetime.now(timezone.utc) + timedelta(
+        minutes=settings.email_verification_code_minutes
+    )
+
+    user.verification_code = code
+    user.verification_expires_at = expires_at
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    _send_verification_email(user.email, code)
 
 @router.post("/register", response_model=schemas.UserRead, status_code=status.HTTP_201_CREATED)
 def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
@@ -40,6 +84,15 @@ def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Could not create user")
 
     db.refresh(user)
+
+    try:
+        _create_and_send_verification_code(user, db)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No se pudo enviar el correo de verificación. Inténtalo nuevamente más tarde.",
+        )
+
     return user
 
 
@@ -48,6 +101,9 @@ def login(response: Response, credentials: schemas.UserLogin, db: Session = Depe
     user = db.query(models.User).filter(models.User.email == credentials.email).first()
     if not user or not verify_password(credentials.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
+
+    if not user.is_verified:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Email not verified")
 
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is inactive")
@@ -76,6 +132,77 @@ def login(response: Response, credentials: schemas.UserLogin, db: Session = Depe
     )
 
     return schemas.Token(access_token=access_token)
+
+
+@router.post("/send-verification-code")
+def send_verification_code(
+    payload: schemas.EmailVerificationRequest,
+    db: Session = Depends(get_db),
+):
+    user = db.query(models.User).filter(models.User.email == payload.email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is inactive")
+
+    if user.is_verified:
+        return {"detail": "Email already verified"}
+
+    try:
+        _create_and_send_verification_code(user, db)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No se pudo enviar el correo de verificación. Inténtalo nuevamente más tarde.",
+        )
+
+    return {"detail": "Verification code sent"}
+
+
+@router.post("/verify-email")
+def verify_email(
+    payload: schemas.EmailVerificationConfirm,
+    db: Session = Depends(get_db),
+):
+    user = db.query(models.User).filter(models.User.email == payload.email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is inactive")
+
+    if user.is_verified:
+        return {"detail": "Email already verified"}
+
+    if not user.verification_code or not user.verification_expires_at:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No verification code has been requested",
+        )
+
+    now = datetime.now(timezone.utc)
+    if now > user.verification_expires_at:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Verification code has expired",
+        )
+
+    if payload.code != user.verification_code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification code",
+        )
+
+    user.is_verified = True
+    user.verification_code = None
+    user.verification_expires_at = None
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    return {"detail": "Email verified successfully"}
 
 
 @router.post("/logout")

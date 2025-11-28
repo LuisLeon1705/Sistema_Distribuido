@@ -1,4 +1,5 @@
 from typing import List, Optional
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.exc import IntegrityError
@@ -77,7 +78,7 @@ def list_users(
 
 @router.get("/{user_id}", response_model=schemas.UserRead)
 def get_user_by_id(
-    user_id: int,
+    user_id: UUID,
     db: Session = Depends(get_db),
     _: models.User = Depends(require_role("admin")),
 ):
@@ -122,7 +123,7 @@ def update_me(
 
 @router.patch("/{user_id}", response_model=schemas.UserRead)
 def update_user_admin(
-    user_id: int,
+    user_id: UUID,
     user_update: schemas.UserUpdate,
     db: Session = Depends(get_db),
     _: models.User = Depends(require_role("admin")),
@@ -169,7 +170,7 @@ def update_user_admin(
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(
-    user_id: int,
+    user_id: UUID,
     db: Session = Depends(get_db),
     _: models.User = Depends(require_role("admin")),
 ):

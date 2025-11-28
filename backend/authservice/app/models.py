@@ -1,6 +1,8 @@
 from sqlalchemy import Boolean, Column, Integer, String, Text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from datetime import datetime
+import uuid
 
 from .database import Base
 
@@ -17,7 +19,7 @@ class Role(Base):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     username = Column(String(50), unique=True, nullable=False, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
@@ -28,6 +30,8 @@ class User(Base):
     failed_login_attempts = Column(Integer, nullable=False, default=0)
     locked_until = Column(DateTime(timezone=True), nullable=True)
     last_login_at = Column(DateTime(timezone=True), nullable=True)
+    verification_code = Column(String(6), nullable=True)
+    verification_expires_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 

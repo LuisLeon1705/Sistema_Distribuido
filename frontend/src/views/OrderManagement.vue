@@ -252,37 +252,39 @@
               <div class="col-md-6">
                 <h6>Información General</h6>
                 <table class="table table-sm">
-                  <tr>
-                    <td><strong>ID:</strong></td>
-                    <td>#{{ selectedOrder.id }}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Usuario ID:</strong></td>
-                    <td>{{ selectedOrder.user_id }}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Estado:</strong></td>
-                    <td>
-                      <span 
-                        class="badge"
-                        :class="{
-                          'bg-warning': selectedOrder.status === 'pending',
-                          'bg-success': selectedOrder.status === 'completed',
-                          'bg-danger': selectedOrder.status === 'cancelled'
-                        }"
-                      >
-                        {{ getStatusText(selectedOrder.status) }}
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><strong>Fecha:</strong></td>
-                    <td>{{ formatDate(selectedOrder.created_at) }}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Total:</strong></td>
-                    <td class="fw-bold text-primary">${{ parseFloat(selectedOrder.total_price).toFixed(2) }}</td>
-                  </tr>
+                  <tbody>
+                    <tr>
+                      <td><strong>ID:</strong></td>
+                      <td>#{{ selectedOrder.id }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Usuario ID:</strong></td>
+                      <td>{{ selectedOrder.user_id }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Estado:</strong></td>
+                      <td>
+                        <span 
+                          class="badge"
+                          :class="{
+                            'bg-warning': selectedOrder.status === 'pending',
+                            'bg-success': selectedOrder.status === 'completed',
+                            'bg-danger': selectedOrder.status === 'cancelled'
+                          }"
+                        >
+                          {{ getStatusText(selectedOrder.status) }}
+                        </span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Fecha:</strong></td>
+                      <td>{{ formatDate(selectedOrder.created_at) }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Total:</strong></td>
+                      <td class="fw-bold text-primary">${{ parseFloat(selectedOrder.total_price).toFixed(2) }}</td>
+                    </tr>
+                  </tbody>
                 </table>
               </div>
             </div>
