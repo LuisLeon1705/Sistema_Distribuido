@@ -17,14 +17,14 @@ El proyecto también incluye una aplicación frontend simple.
 
 ### 1. Servicio de Autenticación (`/backend/authservice`)
 
-*   **Estado**: Incompleto
+*   **Estado**: Funcional
 *   **Descripción**: Este servicio es responsable del registro de usuarios, inicio de sesión y gestión de sesiones. Emitirá tokens JWT para ser consumidos por otros servicios. El esquema de la base de datos incluye una tabla de `users` con roles (`admin`, `customer`).
 
 ---
 
 ### 2. Servicio de Productos (`/backend/productservice`)
 
-*   **Estado**: Incompleto
+*   **Estado**: Funcional
 *   **Descripción**: Este servicio gestionará el catálogo de productos. Está destinado a proporcionar operaciones CRUD para los productos, incluyendo detalles como nombre, descripción, precio y categoría. El esquema de la base de datos define una tabla de `products`.
 
 ---
