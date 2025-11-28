@@ -2,7 +2,7 @@ from datetime import datetime, timezone, timedelta
 import secrets
 import string
 from email.message import EmailMessage
-import smtplib
+import smtplib, ssl
 
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.exc import IntegrityError
@@ -31,12 +31,9 @@ def _send_verification_email(to_email: str, code: str) -> None:
         f"Tu código de verificación es: {code}.\n"
         f"Es válido por {settings.email_verification_code_minutes} minutos."
     )
-
-    with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
-        if settings.smtp_use_tls:
-            server.starttls()
-        if settings.smtp_user and settings.smtp_password:
-            server.login(settings.smtp_user, settings.smtp_password)
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL(settings.smtp_host, settings.smtp_port, context=context) as server:
+        server.login(settings.smtp_user, settings.smtp_password)
         server.send_message(msg)
 
 
@@ -87,10 +84,11 @@ def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
 
     try:
         _create_and_send_verification_code(user, db)
-    except Exception:
+    except Exception as e:
+        print(f"ERROR SMTP: {e}")  # <--- Agrega esto para ver el error en la consola
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="No se pudo enviar el correo de verificación. Inténtalo nuevamente más tarde.",
+            detail=f"Error enviando correo: {str(e)}", # Temporalmente devuelve el error al front
         )
 
     return user
@@ -114,20 +112,20 @@ def login(response: Response, credentials: schemas.UserLogin, db: Session = Depe
 
     role_name = user.role.name if user.role else "customer"
 
-    access_token = create_access_token(data={"sub": user.id, "role": role_name})
+    access_token = create_access_token(data={"sub": str(user.id), "role": role_name})
 
     response.set_cookie(
         key=settings.access_token_cookie_name,
         value=access_token,
         httponly=True,
-        secure=settings.cookie_secure,
+        secure=False,
         samesite="lax",
     )
     response.set_cookie(
         key=settings.role_cookie_name,
         value=role_name,
         httponly=False,
-        secure=settings.cookie_secure,
+        secure=False,
         samesite="lax",
     )
 
@@ -151,10 +149,11 @@ def send_verification_code(
 
     try:
         _create_and_send_verification_code(user, db)
-    except Exception:
+    except Exception as e:
+        print(f"ERROR SMTP: {e}")  # <--- Agrega esto para ver el error en la consola
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="No se pudo enviar el correo de verificación. Inténtalo nuevamente más tarde.",
+            detail=f"Error enviando correo: {str(e)}", # Temporalmente devuelve el error al front
         )
 
     return {"detail": "Verification code sent"}

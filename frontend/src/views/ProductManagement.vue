@@ -7,6 +7,10 @@
           <i class="fas fa-plus me-2"></i>
           Nuevo Producto
         </button>
+        <button v-if="isAdmin" class="btn btn-outline-secondary ms-2" @click="showCategoriesModal">
+          <i class="fas fa-folder-plus me-2"></i>
+          Gestión de Categorías
+        </button>
       </div>
       
       <!-- Filters -->
@@ -211,6 +215,18 @@
                   placeholder="https://ejemplo.com/imagen.jpg"
                 >
               </div>
+              <div class="mb-3">
+                <label class="form-label">Subir imagen</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  @change="onImageFileChange"
+                  class="form-control"
+                >
+                <div v-if="imagePreviewUrl || productForm.imagen" class="mt-2">
+                  <img :src="imagePreviewUrl || productForm.imagen" alt="Preview" style="max-width:200px; object-fit:cover; border-radius:4px;">
+                </div>
+              </div>
               
               <div v-if="formError" class="alert alert-danger">
                 {{ formError }}
@@ -234,7 +250,9 @@
 
 <script>
 import { ref, reactive, computed, onMounted } from 'vue'
+import * as bootstrap from 'bootstrap'
 import { productService } from '../services/api'
+import { useAuthStore } from '../stores/auth'
 
 export default {
   name: 'ProductManagement',
@@ -246,6 +264,7 @@ export default {
     const error = ref(null)
     const formError = ref(null)
     const isEditing = ref(false)
+    const authStore = useAuthStore()
     
     const filters = reactive({
       category: '',
@@ -260,8 +279,11 @@ export default {
       precio: 0,
       categoria_id: '',
       imagen: '',
+      imagenFile: null,
       estado: 'activo'
     })
+    // Categories admin form
+    const imagePreviewUrl = ref('')
     
     const filteredProducts = computed(() => {
       let filtered = products.value
@@ -331,10 +353,26 @@ export default {
       productForm.precio = parseFloat(product.precio)
       productForm.categoria_id = product.categoria_id
       productForm.imagen = product.imagen || ''
+      productForm.imagenFile = null
       productForm.estado = product.estado
       
       const modal = new bootstrap.Modal(document.getElementById('productModal'))
       modal.show()
+    }
+
+    const onImageFileChange = (event) => {
+      const file = event.target.files?.[0] || null
+      if (file) {
+        // Revoke old preview URL if present
+        if (imagePreviewUrl.value) {
+          try { URL.revokeObjectURL(imagePreviewUrl.value) } catch (e) {}
+        }
+        productForm.imagenFile = file
+        imagePreviewUrl.value = URL.createObjectURL(file)
+      } else {
+        productForm.imagenFile = null
+        imagePreviewUrl.value = ''
+      }
     }
     
     const saveProduct = async () => {
@@ -342,13 +380,24 @@ export default {
       formError.value = null
       
       try {
-        const data = {
-          nombre: productForm.nombre,
-          descripcion: productForm.descripcion,
-          precio: productForm.precio,
-          categoria_id: productForm.categoria_id,
-          imagen: productForm.imagen,
-          estado: productForm.estado
+        let data
+        if (productForm.imagenFile) {
+          data = new FormData()
+          data.append('nombre', productForm.nombre)
+          data.append('descripcion', productForm.descripcion)
+          data.append('precio', productForm.precio)
+          data.append('categoria_id', productForm.categoria_id)
+          data.append('imagen', productForm.imagenFile)
+          data.append('estado', productForm.estado)
+        } else {
+          data = {
+            nombre: productForm.nombre,
+            descripcion: productForm.descripcion,
+            precio: productForm.precio,
+            categoria_id: productForm.categoria_id,
+            imagen: productForm.imagen,
+            estado: productForm.estado
+          }
         }
         
         if (isEditing.value) {
@@ -388,6 +437,11 @@ export default {
       productForm.precio = 0
       productForm.categoria_id = ''
       productForm.imagen = ''
+      if (imagePreviewUrl.value) {
+        try { URL.revokeObjectURL(imagePreviewUrl.value) } catch (e) {}
+      }
+      productForm.imagenFile = null
+      imagePreviewUrl.value = ''
       productForm.estado = 'activo'
       formError.value = null
     }
@@ -420,11 +474,13 @@ export default {
       isEditing,
       filters,
       productForm,
+      imagePreviewUrl,
       getCategoryName,
       truncateText,
       showCreateModal,
       editProduct,
       saveProduct,
+      onImageFileChange,
       deleteProduct,
       applyFilters,
       clearFilters

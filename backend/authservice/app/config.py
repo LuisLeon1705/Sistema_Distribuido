@@ -10,7 +10,7 @@ class Settings(BaseModel):
     jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "auth-token-secret-key-123")
     jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
     access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "120"))
-    cookie_secure: bool = os.getenv("COOKIE_SECURE", "False").lower() == "true"
+    cookie_secure: bool = False
     access_token_cookie_name: str = "access_token"
     role_cookie_name: str = "user_role"
     

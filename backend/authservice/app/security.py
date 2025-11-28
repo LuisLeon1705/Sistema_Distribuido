@@ -58,6 +58,21 @@ def get_current_user(
     except ValueError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
     user = db.query(models.User).filter(models.User.id == user_uuid).first()
+    # --- AGREGA ESTOS PRINTS ---
+    if not user:
+        print(f"❌ DEBUG: Usuario {user_uuid} no encontrado en DB")
+        raise HTTPException(status_code=401, detail="User not found")
+        
+    if not user.is_active:
+        print(f"❌ DEBUG: Usuario {user.email} está INACTIVO")
+        raise HTTPException(status_code=403, detail="Inactive user") # Ojo si esto es 403
+        
+    if not user.is_verified:
+         print(f"❌ DEBUG: Usuario {user.email} NO VERIFICADO")
+         # Si tienes una linea aquí que lanza 403, esa es la culpable
+    
+    print(f"✅ DEBUG: Usuario {user.email} autenticado correctamente. Rol: {user.role.name if user.role else 'Sin Rol'}")
+    # ---------------------------
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Inactive or not found user")
     return user

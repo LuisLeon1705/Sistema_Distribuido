@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/auth'
 import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
+import EmailVerification from '../views/EmailVerification.vue'
 import Products from '../views/Products.vue'
 import ProductManagement from '../views/ProductManagement.vue'
 import Orders from '../views/Orders.vue'
@@ -29,6 +30,12 @@ const routes = [
         path: '/register',
         name: 'Register',
         component: Register,
+        meta: { requiresGuest: true }
+    },
+    {
+        path: '/verify-email',
+        name: 'EmailVerification',
+        component: EmailVerification,
         meta: { requiresGuest: true }
     },
     {

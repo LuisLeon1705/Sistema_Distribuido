@@ -125,3 +125,47 @@ A continuación se describen los campos que se deben enviar dentro del formulari
     }
 }
 ```
+
+## Seguridad
+
+Este microservicio utiliza **JWT (JSON Web Tokens)** generados por el Auth Service.
+
+* **Rutas Públicas:** Accesibles por cualquier usuario sin necesidad de token.
+* **Rutas Protegidas:** Requieren un token válido.
+
+**Para acceder a rutas protegidas:**
+Debes enviar el token en el encabezado de la petición:
+`Authorization: Bearer <tu_token_aqui>`
+
+### JWT (JSON Web Tokens)
+Para validar correctamente los tokens emitidos por el servicio de autenticación debes configurar las mismas variables utilizadas por `authservice`:
+
+```
+JWT_SECRET_KEY=auth-token-secret-key-123
+JWT_ALGORITHM=HS256
+```
+Estas variables pueden establecerse en `docker-compose.yml` o en el `.env` local del servicio de productos.
+
+---
+
+## Rutas y su seguridad
+
+El sistema valida el rol del usuario a través del token JWT. Las rutas de modificación requieren permisos de **Administrador**.
+
+| Modo | Endpoint | Acceso |
+| :--- | :--- | :--- |
+| **GET** | `/api/productos` | Público |
+| **GET** | `/api/productos/{id}` | Público |
+| **GET** | `/api/productos/activos` | Público |
+| **GET** | `/api/productos/categoria/{id}` | Público |
+| **GET** | `/api/categorias` | Público |
+| **GET** | `/api/categorias/{id}` | Público |
+| **POST** | `/api/productos` | **Admin** |
+| **PUT** | `/api/productos/{id}` | **Admin** |
+| **DELETE** | `/api/productos/{id}` | **Admin** |
+| **POST** | `/api/categorias` | **Admin** |
+| **PUT** | `/api/categorias/{id}` | **Admin** |
+| **DELETE** | `/api/categorias/{id}` | **Admin** |
+
+> **Nota:** Para las rutas marcadas como **Admin**, se debe enviar el header:
+> `Authorization: Bearer <token_admin>`

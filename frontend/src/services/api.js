@@ -11,6 +11,11 @@ const inventoryAPI = axios.create({
     withCredentials: true
 })
 
+const usersAPI = axios.create({
+    baseURL: '/api/users',
+    withCredentials: true
+})
+
 const productsAPI = axios.create({
     baseURL: '/api/products',
     withCredentials: true
@@ -46,7 +51,7 @@ const addResponseInterceptor = (apiInstance) => {
 }
 
 // Add interceptors to all instances
-[authAPI, inventoryAPI, productsAPI].forEach(api => {
+[authAPI, usersAPI, inventoryAPI, productsAPI].forEach(api => {
     addAuthInterceptor(api)
     addResponseInterceptor(api)
 })
@@ -66,6 +71,16 @@ export const authService = {
         return response.data
     },
 
+    async sendVerificationCode(email) {
+        const response = await authAPI.post('/send-verification-code', { email })
+        return response.data
+    },
+
+    async verifyEmail(email, code) {
+        const response = await authAPI.post('/verify-email', { email, code })
+        return response.data
+    },
+
     async logout() {
         try {
             await authAPI.post('/logout')
@@ -76,12 +91,12 @@ export const authService = {
     },
 
     async getCurrentUser() {
-        const response = await authAPI.get('/me')
+        const response = await usersAPI.get('/me')
         return response.data
     },
 
     async updateProfile(userData) {
-        const response = await authAPI.patch('/users/me', userData)
+        const response = await usersAPI.patch('/users/me', userData)
         return response.data
     }
 }
@@ -90,27 +105,27 @@ export const authService = {
 export const userService = {
     async getUsers(filters = {}) {
         const params = new URLSearchParams(filters)
-        const response = await authAPI.get(`/users?${params}`)
+        const response = await usersAPI.get(`/users?${params}`)
         return response.data
     },
 
     async getUserById(userId) {
-        const response = await authAPI.get(`/users/${userId}`)
+        const response = await usersAPI.get(`/users/${userId}`)
         return response.data
     },
 
     async createUser(userData) {
-        const response = await authAPI.post('/users', userData)
+        const response = await usersAPI.post('/users', userData)
         return response.data
     },
 
     async updateUser(userId, userData) {
-        const response = await authAPI.patch(`/users/${userId}`, userData)
+        const response = await usersAPI.patch(`/users/${userId}`, userData)
         return response.data
     },
 
     async deleteUser(userId) {
-        await authAPI.delete(`/users/${userId}`)
+        await usersAPI.delete(`/users/${userId}`)
     }
 }
 
@@ -137,12 +152,24 @@ export const productService = {
     },
 
     async createProduct(productData) {
-        const response = await productsAPI.post('/productos', productData)
+        let response
+        if (productData instanceof FormData) {
+            response = await productsAPI.post('/productos', productData)
+        } else {
+            response = await productsAPI.post('/productos', productData)
+        }
         return response.data
     },
 
     async updateProduct(id, productData) {
-        const response = await productsAPI.put(`/productos/${id}`, productData)
+        let response
+        if (productData instanceof FormData) {
+            // Laravel may not handle multipart PUT properly in all setups; use POST + _method override
+            productData.append('_method', 'PUT')
+            response = await productsAPI.post(`/productos/${id}`, productData)
+        } else {
+            response = await productsAPI.put(`/productos/${id}`, productData)
+        }
         return response.data
     },
 
@@ -158,6 +185,15 @@ export const productService = {
     async createCategory(categoryData) {
         const response = await productsAPI.post('/categorias', categoryData)
         return response.data
+    }
+    ,
+    async updateCategory(id, categoryData) {
+        const response = await productsAPI.put(`/categorias/${id}`, categoryData)
+        return response.data
+    },
+
+    async deleteCategory(id) {
+        await productsAPI.delete(`/categorias/${id}`)
     }
 }
 

@@ -4,7 +4,9 @@ import router from './router'
 import App from './App.vue'
 
 import 'bootstrap/dist/css/bootstrap.min.css'
-import 'bootstrap/dist/js/bootstrap.bundle.min.js'
+import * as bootstrap from 'bootstrap'
+// expose bootstrap as a global so components using `new bootstrap.Modal(...)` work
+window.bootstrap = bootstrap
 
 const app = createApp(App)
 const pinia = createPinia()

@@ -48,6 +48,34 @@ export const useAuthStore = defineStore('auth', {
             }
         },
 
+        async sendVerificationCode(email) {
+            this.isLoading = true
+            this.error = null
+            try {
+                const response = await authService.sendVerificationCode(email)
+                return response
+            } catch (error) {
+                this.error = error.response?.data?.detail || 'No se pudo enviar el código'
+                throw error
+            } finally {
+                this.isLoading = false
+            }
+        },
+
+        async verifyEmail(email, code) {
+            this.isLoading = true
+            this.error = null
+            try {
+                const response = await authService.verifyEmail(email, code)
+                return response
+            } catch (error) {
+                this.error = error.response?.data?.detail || 'Verificación fallida'
+                throw error
+            } finally {
+                this.isLoading = false
+            }
+        },
+
         async logout() {
             try {
                 await authService.logout()
@@ -69,7 +97,7 @@ export const useAuthStore = defineStore('auth', {
                 localStorage.setItem('user_role', this.user.role?.name || 'customer')
             } catch (error) {
                 console.error('Error fetching current user:', error)
-                this.logout()
+                // this.logout()
             }
         },
 

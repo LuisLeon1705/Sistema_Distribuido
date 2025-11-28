@@ -21,7 +21,14 @@ class ValidateJwtToken
 
         try {
             // Esto lanzará una excepción si el token es falso, expirado o la firma no coincide.
-            $credentials = JWT::decode($token, new Key(env('JWT_SECRET'), env('JWT_ALGORITHM', 'HS256')));
+            // Support both JWT_SECRET (common) and JWT_SECRET_KEY (used in authservice)
+            $jwtSecret = env('JWT_SECRET', env('JWT_SECRET_KEY'));
+            $jwtAlg = env('JWT_ALGORITHM', env('JWT_ALGORITHM', 'HS256'));
+
+            if (empty($jwtSecret)) {
+                return response()->json(['message' => 'JWT secret not configured on server'], 500);
+            }
+            $credentials = JWT::decode($token, new Key($jwtSecret, $jwtAlg));
             
             if (isset($credentials->role) && $credentials->role !== 'admin') {
                  // solo los admins pueden modificar producto

@@ -11,6 +11,48 @@ from ..security import get_current_user, require_role, get_password_hash
 
 router = APIRouter()
 
+# --- RUTAS ESTÁTICAS (Deben ir primero) ---
+
+@router.get("/me", response_model=schemas.UserRead)
+def read_user_me(current_user: models.User = Depends(get_current_user)):
+    """Obtiene el perfil del usuario actual"""
+    return current_user
+
+@router.patch("/me", response_model=schemas.UserRead)
+def update_me(
+    user_update: schemas.UserSelfUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    if user_update.username is not None:
+        current_user.username = user_update.username
+    if user_update.email is not None:
+        current_user.email = user_update.email
+    if user_update.phone_number is not None:
+        current_user.phone_number = user_update.phone_number
+    if user_update.password is not None:
+        current_user.password_hash = get_password_hash(user_update.password)
+
+    db.add(current_user)
+    try:
+        db.commit()
+    except IntegrityError as e:
+        db.rollback()
+        msg = str(e.orig).lower()
+        if "users_email_key" in msg or "email" in msg:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        if "users_phone_number_key" in msg or "phone" in msg:
+            raise HTTPException(status_code=400, detail="Phone number already registered")
+        if "users_username_key" in msg or "username" in msg:
+            raise HTTPException(status_code=400, detail="Username already registered")
+        raise HTTPException(status_code=400, detail="Could not update user")
+
+    db.refresh(current_user)
+    return current_user
+
+
+# --- RUTAS DE ADMINISTRACIÓN ---
+
 @router.post("/", response_model=schemas.UserRead, status_code=status.HTTP_201_CREATED)
 def create_user_admin(
     user_in: schemas.AdminUserCreate,
@@ -76,7 +118,9 @@ def list_users(
     return users
 
 
-@router.get("/{user_id}", response_model=schemas.UserRead)
+# --- RUTAS DINÁMICAS (Con :uuid para evitar conflictos) ---
+
+@router.get("/{user_id:uuid}", response_model=schemas.UserRead)
 def get_user_by_id(
     user_id: UUID,
     db: Session = Depends(get_db),
@@ -88,40 +132,7 @@ def get_user_by_id(
     return user
 
 
-@router.patch("/me", response_model=schemas.UserRead)
-def update_me(
-    user_update: schemas.UserSelfUpdate,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    if user_update.username is not None:
-        current_user.username = user_update.username
-    if user_update.email is not None:
-        current_user.email = user_update.email
-    if user_update.phone_number is not None:
-        current_user.phone_number = user_update.phone_number
-    if user_update.password is not None:
-        current_user.password_hash = get_password_hash(user_update.password)
-
-    db.add(current_user)
-    try:
-        db.commit()
-    except IntegrityError as e:
-        db.rollback()
-        msg = str(e.orig).lower()
-        if "users_email_key" in msg or "email" in msg:
-            raise HTTPException(status_code=400, detail="Email already registered")
-        if "users_phone_number_key" in msg or "phone" in msg:
-            raise HTTPException(status_code=400, detail="Phone number already registered")
-        if "users_username_key" in msg or "username" in msg:
-            raise HTTPException(status_code=400, detail="Username already registered")
-        raise HTTPException(status_code=400, detail="Could not update user")
-
-    db.refresh(current_user)
-    return current_user
-
-
-@router.patch("/{user_id}", response_model=schemas.UserRead)
+@router.patch("/{user_id:uuid}", response_model=schemas.UserRead)
 def update_user_admin(
     user_id: UUID,
     user_update: schemas.UserUpdate,
@@ -168,7 +179,7 @@ def update_user_admin(
     return user
 
 
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{user_id:uuid}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(
     user_id: UUID,
     db: Session = Depends(get_db),

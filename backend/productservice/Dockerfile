@@ -16,6 +16,8 @@ RUN a2enmod rewrite
 
 COPY . /var/www/html
 
+RUN composer install --no-interaction --optimize-autoloader --no-dev
+
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 EXPOSE 80

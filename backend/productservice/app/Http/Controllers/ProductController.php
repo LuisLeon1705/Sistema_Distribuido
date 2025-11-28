@@ -24,13 +24,15 @@ class ProductController extends Controller
         $request->validate([
             'nombre' => 'required|string|max:255',
             'precio' => 'required|numeric',
-            'id_categoria' => [
-                            'required',
-                            \Illuminate\Validation\Rule::exists(Category::class, 'id'),
-                        ],
+            // Accept either `id_categoria` or `categoria_id` to be compatible with frontend
+            'id_categoria' => ['sometimes', \Illuminate\Validation\Rule::exists(Category::class, 'id')],
+            'categoria_id' => ['sometimes', \Illuminate\Validation\Rule::exists(Category::class, 'id')],
             'descripcion' => 'nullable|string',
-            'estado' => 'boolean',
+            // Accept image file OR url
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:100000', // 100mb
+            'imagen_url' => 'nullable|url',
+            // Accept estado string or boolean; we'll normalize it below
+            'estado' => 'nullable',
         ]);
         $data = $request->except('imagen');
         if ($request->hasFile('imagen')) {
@@ -45,6 +47,27 @@ class ProductController extends Controller
             $url = Storage::disk('s3')->url($path);
             $data['imagen_url'] = $url;
         }
+        // If frontend sent a plain url for the image under 'imagen_url' or 'imagen', support it
+        if ($request->filled('imagen_url') && !isset($data['imagen_url'])) {
+            $data['imagen_url'] = $request->input('imagen_url');
+        }
+        if ($request->filled('imagen') && !isset($data['imagen_url']) && ! $request->hasFile('imagen')) {
+            // If frontend sent 'imagen' as a url string, map it
+            $data['imagen_url'] = $request->input('imagen');
+        }
+        // Support both naming conventions for category id
+        if ($request->filled('categoria_id') && !isset($data['id_categoria'])) {
+            $data['id_categoria'] = $request->input('categoria_id');
+        }
+        // Normalize estado: accept 'activo'/'inactivo', booleans or strings
+        if (isset($data['estado'])) {
+            $estadoValue = $data['estado'];
+            if (is_string($estadoValue)) {
+                $data['estado'] = strtolower($estadoValue) === 'activo' || strtolower($estadoValue) === 'true';
+            } else {
+                $data['estado'] = (bool)$estadoValue;
+            }
+        }
         $product = Product::create($data);
         return response()->json([
             'mensaje' => 'Producto creado exitosamente',
@@ -55,7 +78,7 @@ class ProductController extends Controller
     // -------------------------------- GET por id  --------------------------------
     public function show($id)
     {
-        $product = Product::all()->find($id);
+        $product = Product::find($id);
         if (!$product) {
             return response()->json(['mensaje' => 'Producto no encontrado'], 404);
         }
@@ -73,12 +96,41 @@ class ProductController extends Controller
         $request->validate([
             'nombre' => 'string|max:255',
             'precio' => 'numeric',
-            'id_categoria' => 'exists:categorias,id',
+            'id_categoria' => 'sometimes|exists:categorias,id',
+            'categoria_id' => 'sometimes|exists:categorias,id',
             'descripcion' => 'nullable|string',
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:100000',
             'imagen_url' => 'nullable|url',
-            'estado' => 'boolean'
+            'estado' => 'nullable'
         ]);
-        $product->update($request->all());
+        $data = $request->except('imagen');
+        // If new file provided, upload it
+        if ($request->hasFile('imagen')) {
+            $path = $request->file('imagen')->store('productos', 's3');
+            $url = Storage::disk('s3')->url($path);
+            $data['imagen_url'] = $url;
+        }
+        // Support plain image URLs in 'imagen_url' or 'imagen' string
+        if ($request->filled('imagen_url') && !isset($data['imagen_url'])) {
+            $data['imagen_url'] = $request->input('imagen_url');
+        }
+        if ($request->filled('imagen') && !isset($data['imagen_url']) && ! $request->hasFile('imagen')) {
+            $data['imagen_url'] = $request->input('imagen');
+        }
+        // Support both naming conventions for category id
+        if ($request->filled('categoria_id')) {
+            $data['id_categoria'] = $request->input('categoria_id');
+        }
+        // Normalize estado
+        if (isset($data['estado'])) {
+            $estadoValue = $data['estado'];
+            if (is_string($estadoValue)) {
+                $data['estado'] = strtolower($estadoValue) === 'activo' || strtolower($estadoValue) === 'true';
+            } else {
+                $data['estado'] = (bool)$estadoValue;
+            }
+        }
+        $product->update($data);
         return response()->json([
             'mensaje' => 'Producto actualizado',
             'producto' => $product
