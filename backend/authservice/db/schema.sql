@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- Roles table
 CREATE TABLE roles (
     id SERIAL PRIMARY KEY,
@@ -8,7 +10,7 @@ CREATE TABLE roles (
 
 -- Users table
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -19,13 +21,15 @@ CREATE TABLE users (
     failed_login_attempts INTEGER NOT NULL DEFAULT 0,
     locked_until TIMESTAMP WITH TIME ZONE,
     last_login_at TIMESTAMP WITH TIME ZONE,
+    verification_code VARCHAR(6),
+    verification_expires_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_users_phone UNIQUE (phone_number),
     CONSTRAINT ck_phone_number_format CHECK (phone_number ~ '^[0-9+][0-9]{6,14}$')
 );
 
--- Roles data
+-- Roles default data
 INSERT INTO roles (id, name, description) VALUES
     (1, 'admin', 'Administrador del sistema'),
     (2, 'customer', 'Cliente final'),
