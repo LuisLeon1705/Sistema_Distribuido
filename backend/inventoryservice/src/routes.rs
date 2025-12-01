@@ -1,9 +1,9 @@
 use crate::{
     db::Db,
-    handlers::{create_order, get_orders, add_stock_handler, update_stock_handler, delete_stock_handler, get_stock_handler, get_order_by_id_handler, get_orders_by_user_id_handler},
+    handlers::{create_order, get_orders},
 };
 use axum::{
-    routing::{get, post, put, delete},
+    routing::{get, post},
     Router,
 };
 

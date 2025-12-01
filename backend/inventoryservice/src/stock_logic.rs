@@ -1,15 +1,14 @@
 use crate::models::{Stock, CreateStock, UpdateStock};
 use sqlx::{PgPool, Error, QueryBuilder, Postgres};
 use async_trait::async_trait;
-
-
+use uuid::Uuid;
 
 #[async_trait]
 pub trait StockManagement {
     async fn add_stock(pool: &PgPool, new_stock: CreateStock) -> Result<Stock, Error>;
-    async fn update_stock(pool: &PgPool, product_id: i32, updated_stock: UpdateStock) -> Result<Option<Stock>, Error>;
-    async fn delete_stock(pool: &PgPool, product_id: i32) -> Result<bool, Error>;
-    async fn get_stock(pool: &PgPool, product_id: Option<i32>) -> Result<Vec<Stock>, Error>;
+    async fn update_stock(pool: &PgPool, product_id: Uuid, updated_stock: UpdateStock) -> Result<Option<Stock>, Error>;
+    async fn delete_stock(pool: &PgPool, product_id: Uuid) -> Result<bool, Error>;
+    async fn get_stock(pool: &PgPool, product_id: Option<Uuid>) -> Result<Vec<Stock>, Error>;
 }
 
 pub struct StockManager;
@@ -34,7 +33,7 @@ impl StockManagement for StockManager {
         Ok(stock)
     }
 
-    async fn update_stock(pool: &PgPool, product_id: i32, updated_stock: UpdateStock) -> Result<Option<Stock>, Error> {
+    async fn update_stock(pool: &PgPool, product_id: Uuid, updated_stock: UpdateStock) -> Result<Option<Stock>, Error> {
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new("UPDATE stock SET ");
         let mut updates_made = false;
 
@@ -66,7 +65,7 @@ impl StockManagement for StockManager {
         Ok(stock)
     }
 
-    async fn delete_stock(pool: &PgPool, product_id: i32) -> Result<bool, Error> {
+    async fn delete_stock(pool: &PgPool, product_id: Uuid) -> Result<bool, Error> {
         let rows_affected = sqlx::query!(
             r#"
             DELETE FROM stock
@@ -81,7 +80,7 @@ impl StockManagement for StockManager {
         Ok(rows_affected > 0)
     }
 
-    async fn get_stock(pool: &PgPool, product_id: Option<i32>) -> Result<Vec<Stock>, Error> {
+    async fn get_stock(pool: &PgPool, product_id: Option<Uuid>) -> Result<Vec<Stock>, Error> {
         let stocks = match product_id {
             Some(id) => {
                 sqlx::query_as!(

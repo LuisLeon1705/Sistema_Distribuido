@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug, Clone, sqlx::Type)]
 #[sqlx(type_name = "order_status", rename_all = "lowercase")]
@@ -14,7 +15,7 @@ pub enum OrderStatus {
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct Order {
     pub id: i32,
-    pub user_id: i32,
+    pub user_id: Uuid,
     pub total_price: Decimal,
     pub status: OrderStatus,
     pub created_at: DateTime<Utc>,
@@ -24,7 +25,7 @@ pub struct Order {
 pub struct OrderItem {
     pub id: i32,
     pub order_id: i32,
-    pub product_id: i32,
+    pub product_id: Uuid,
     pub quantity: i32,
     pub price_at_time_of_purchase: Decimal,
 }
@@ -32,7 +33,7 @@ pub struct OrderItem {
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 pub struct Stock {
     pub id: i32,
-    pub product_id: i32,
+    pub product_id: Uuid,
     pub quantity: i32,
     pub last_updated: Option<DateTime<Utc>>,
     pub warehouse_location: Option<String>,
@@ -40,20 +41,20 @@ pub struct Stock {
 
 #[derive(Deserialize, Debug)]
 pub struct CreateOrderItem {
-    pub product_id: i32,
+    pub product_id: Uuid,
     pub quantity: i32,
     pub price: Decimal,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct CreateOrder {
-    pub user_id: i32,
+    pub user_id: Uuid,
     pub items: Vec<CreateOrderItem>,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct CreateStock {
-    pub product_id: i32,
+    pub product_id: Uuid,
     pub quantity: i32,
     pub warehouse_location: String,
 }

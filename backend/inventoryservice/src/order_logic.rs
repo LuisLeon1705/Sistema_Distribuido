@@ -3,6 +3,7 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use sqlx::{Transaction, Postgres};
 use sqlx::PgPool;
+use uuid::Uuid;
 // Importar async_trait si OrderManager implementara un trait, 
 // pero en este caso, se usa como estructura estática, no es necesario.
 // use async_trait::async_trait; 
@@ -16,7 +17,7 @@ impl OrderManager {
     pub async fn create_order_in_db(
         // Usamos &mut Transaction<'_, Postgres> para ser más explícitos
         tx: &mut Transaction<'_, Postgres>, 
-        user_id: i32,
+        user_id: Uuid,
         items: &[CreateOrderItem],
     ) -> Result<Order, sqlx::Error> {
         // Cálculo del precio total
@@ -92,7 +93,7 @@ impl OrderManager {
         Ok(order)
     }
 
-    pub async fn get_orders_by_user_id(pool: &PgPool, user_id: i32) -> Result<Vec<Order>, sqlx::Error> {
+    pub async fn get_orders_by_user_id(pool: &PgPool, user_id: Uuid) -> Result<Vec<Order>, sqlx::Error> {
         let orders = sqlx::query_as!(
             Order,
             r#"

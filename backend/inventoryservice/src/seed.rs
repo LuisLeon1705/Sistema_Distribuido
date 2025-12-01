@@ -8,6 +8,7 @@ use std::fs::File;
 use std::io::Read;
 use rust_decimal_macros::dec;
 use rust_decimal::Decimal; // Corrected import
+use uuid::Uuid;
 
 #[derive(Deserialize, Debug)]
 struct SeedOrderItem {
@@ -63,6 +64,13 @@ pub async fn seed_db(db: &Db) {
             return;
         }
     };
+    
+    // Namespace for generating UUIDs from integer IDs
+    const NAMESPACE: Uuid = Uuid::from_bytes([
+        0x6e, 0x62, 0x72, 0x69, 0x73, 0x74, 0x6f, 0x77, // "enma" in hex
+        0x2d, 0x73, 0x65, 0x65, 0x64, 0x2d, 0x6e, 0x73, // "-seed-ns"
+    ]);
+
 
     for seed_order in seed_orders {
         let mut tx = db.begin().await.expect("Failed to begin transaction for seed order");
@@ -71,13 +79,14 @@ pub async fn seed_db(db: &Db) {
             .items
             .into_iter()
             .map(|item| CreateOrderItem {
-                product_id: item.product_id,
+                product_id: Uuid::new_v5(&NAMESPACE, item.product_id.to_string().as_bytes()),
                 quantity: item.quantity,
                 price: dec!(100.0),
             })
             .collect();
+        let user_id_uuid = Uuid::new_v5(&NAMESPACE, seed_order.user_id.to_string().as_bytes());
 
-        match OrderManager::create_order_in_db(&mut tx, seed_order.user_id, &create_order_items).await {
+        match OrderManager::create_order_in_db(&mut tx, user_id_uuid, &create_order_items).await {
             Ok(_) => {
                 tx.commit().await.expect("Failed to commit seed order transaction");
                 println!("Seeded order for user_id: {}", seed_order.user_id);

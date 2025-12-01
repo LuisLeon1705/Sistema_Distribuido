@@ -11,7 +11,7 @@
       {
         "ordinal": 1,
         "name": "product_id",
-        "type_info": "Int4"
+        "type_info": "Uuid"
       },
       {
         "ordinal": 2,
@@ -31,7 +31,7 @@
     ],
     "parameters": {
       "Left": [
-        "Int4"
+        "Uuid"
       ]
     },
     "nullable": [
