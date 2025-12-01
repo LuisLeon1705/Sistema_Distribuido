@@ -33,6 +33,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends tini && rm -rf 
 
 # Copiar el binario compilado desde la etapa de builder
 COPY --from=builder /app/target/release/inventory_service .
+COPY --from=builder /app/orders.json .
 
 
 

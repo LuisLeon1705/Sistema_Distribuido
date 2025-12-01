@@ -4,18 +4,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Product extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuids;   
 
     protected $table = 'productos';
+    public $incrementing = false;
+    protected $keyType = 'string';
     
     protected $fillable = [
-        'id_categoria',
+        'codigo',
         'nombre',
-        'descripcion',
         'precio',
+        'id_categoria',
+        'descripcion',
         'imagen_url',
         'estado'
     ];

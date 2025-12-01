@@ -4,8 +4,9 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
-#[derive(Serialize, Deserialize, Debug, Clone, sqlx::Type)]
+#[derive(Serialize, Deserialize, Debug, Clone, sqlx::Type, PartialEq)]
 #[sqlx(type_name = "order_status", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
 pub enum OrderStatus {
     Pending,
     Completed,
@@ -59,9 +60,29 @@ pub struct CreateStock {
     pub warehouse_location: String,
 }
 
-#[derive(Deserialize, Debug, Clone, Default)]
+#[derive(Deserialize, Debug)]
 pub struct UpdateStock {
     pub quantity: Option<i32>,
     pub warehouse_location: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct TempOrderItem {
+    pub product_id: Uuid,
+    pub quantity: i32,
+    pub price: Decimal,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct TempOrder {
+    pub user_id: Uuid,
+    pub items: Vec<TempOrderItem>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct UpdateOrderStatusPayload {
+    pub order_id: i32,
+    pub new_status: OrderStatus,
 }
 

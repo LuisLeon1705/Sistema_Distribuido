@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::{
     // ✅ Se unifica la importación de tipos a `models`. Esto resuelve E0308.
-    models::{CreateOrder, Order, CreateStock, UpdateStock, Stock}, 
+    models::{CreateOrder, Order, CreateStock, UpdateStock, Stock, TempOrder, UpdateOrderStatusPayload, OrderItem}, 
     // ✅ Se importa OrderManager. Esto resuelve E0433/E0432.
     order_logic::{OrderManager}, 
     // Se mantiene la importación necesaria para la gestión de stock
@@ -50,15 +50,15 @@ pub async fn create_order(
 ) -> Result<impl IntoResponse, StatusCode> {
     let mut tx = db.begin().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    // ✅ La llamada ahora usa order_logic::OrderManager, que acabamos de definir.
-    let result = OrderManager::create_order_in_db(&mut tx, payload.user_id, &payload.items).await;
+    let result = OrderManager::create_order_in_db(&mut tx, payload.user_id).await;
 
     match result {
         Ok(order) => {
             tx.commit().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             Ok((StatusCode::CREATED, Json(order)))
         }
-        Err(_e) => {
+        Err(e) => { 
+            eprintln!("Failed to create order: {}", e);
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
@@ -86,6 +86,39 @@ pub async fn get_orders_by_user_id_handler(
         Ok(orders) => Ok(Json(orders)),
         Err(_e) => {
             eprintln!("Error getting orders by user ID: {:?}", _e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+pub async fn update_order_status_handler(
+    State(db): State<Db>,
+    Json(payload): Json<UpdateOrderStatusPayload>,
+) -> Result<Json<Order>, StatusCode> {
+    match OrderManager::update_order_status(&db, payload.order_id, payload.new_status).await {
+        Ok(order) => Ok(Json(order)),
+        Err(e) => {
+            eprintln!("Failed to update order status: {}", e);
+            // Map specific errors to appropriate HTTP status codes
+            if e.to_string().contains("not found") {
+                Err(StatusCode::NOT_FOUND)
+            } else if e.to_string().contains("Cannot change status") {
+                Err(StatusCode::BAD_REQUEST)
+            } else {
+                Err(StatusCode::INTERNAL_SERVER_ERROR)
+            }
+        }
+    }
+}
+
+pub async fn get_order_items_handler(
+    State(pool): State<Db>,
+    Path(order_id): Path<i32>,
+) -> Result<Json<Vec<OrderItem>>, StatusCode> {
+    match OrderManager::get_order_items_by_order_id(&pool, order_id).await {
+        Ok(items) => Ok(Json(items)),
+        Err(e) => {
+            eprintln!("Error getting order items: {:?}", e);
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
@@ -148,6 +181,37 @@ pub async fn get_stock_handler(
         Ok(stocks) => Ok(Json(stocks)),
         Err(_e) => {
             eprintln!("Error getting stock: {:?}", _e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+// ----------------------------------------------------------------------
+// Temp Order Handlers
+// ----------------------------------------------------------------------
+
+use crate::temp_order_logic;
+
+pub async fn add_temp_order_handler(
+    State(db): State<Db>,
+    Json(payload): Json<CreateOrder>,
+) -> Result<impl IntoResponse, StatusCode> {
+    match temp_order_logic::add_temp_order(&db, payload).await {
+        Ok(temp_order) => Ok((StatusCode::CREATED, Json(temp_order))),
+        Err(e) => {
+            eprintln!("Failed to add temporary order: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+pub async fn get_temp_orders_by_user_id_handler(
+    Path(user_id): Path<Uuid>,
+) -> Result<Json<Vec<TempOrder>>, StatusCode> {
+    match temp_order_logic::get_temp_orders_by_user_id(user_id).await {
+        Ok(orders) => Ok(Json(orders)),
+        Err(e) => {
+            eprintln!("Failed to retrieve temporary orders: {}", e);
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }

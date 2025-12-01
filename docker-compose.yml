@@ -22,6 +22,11 @@ services:
       - "5432:5432"
     networks:
       - sistema-distribuido
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   authservice:
     build:
@@ -32,7 +37,8 @@ services:
     environment:
       DATABASE_URL: "postgresql://user:password@db/auth_db"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "8001:8000"
     networks:
@@ -47,7 +53,8 @@ services:
     environment:
       DATABASE_URL: "postgres://user:password@db/inventory_db"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "8002:3001"
     networks:
@@ -64,7 +71,8 @@ services:
       JWT_SECRET_KEY: auth-token-secret-key-123
       JWT_ALGORITHM: HS256
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "8003:80"
     networks:
