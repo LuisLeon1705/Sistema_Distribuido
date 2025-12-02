@@ -1,34 +1,3 @@
---
--- PostgreSQL database dump
---
-
-\restrict ajVAHdBWsOObQROG4chfnSN3jbhMCMhlo92IV2WSrusT9BrMnsfADbGNYLld8mo
-
--- Dumped from database version 15.15
--- Dumped by pg_dump version 18.1
-
--- Started on 2025-12-02 11:10:45
-
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
-
-SET default_tablespace = '';
-
-SET default_table_access_method = heap;
-
---
--- TOC entry 218 (class 1259 OID 25180)
--- Name: cache; Type: TABLE; Schema: public; Owner: user
---
 
 CREATE TABLE public.cache (
     key character varying(255) NOT NULL,
@@ -252,12 +221,4 @@ CREATE INDEX sessions_user_id_index ON public.sessions USING btree (user_id);
 ALTER TABLE ONLY public.productos
     ADD CONSTRAINT productos_id_categoria_foreign FOREIGN KEY (id_categoria) REFERENCES public.categorias(id) ON DELETE CASCADE;
 
-
--- Completed on 2025-12-02 11:10:46
-
---
--- PostgreSQL database dump complete
---
-
-\unrestrict ajVAHdBWsOObQROG4chfnSN3jbhMCMhlo92IV2WSrusT9BrMnsfADbGNYLld8mo
 
