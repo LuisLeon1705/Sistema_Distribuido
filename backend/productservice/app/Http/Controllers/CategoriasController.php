@@ -20,8 +20,23 @@ class CategoriasController extends Controller
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
         ]);
-
-        $category = Category::create($request->all());
+        $prefijo = strtoupper(substr($request->nombre, 0, 3));
+        if (strlen($prefijo) < 3) {
+            $prefijo = str_pad($prefijo, 3, 'X');
+        }
+        while (Category::where('codigo', $prefijo)->exists()) {
+            $ultimaLetra = substr($prefijo, -1);
+            $parteInicial = substr($prefijo, 0, 2);
+            if ($ultimaLetra === 'Z') {
+                $ultimaLetra = 'A';
+            } else {
+                $ultimaLetra++;
+            }
+            $prefijo = $parteInicial . $ultimaLetra;
+        }
+        $data = $request->all();
+        $data['codigo'] = $prefijo;
+        $category = Category::create($data);
         return response()->json($category, 201);
     }
 

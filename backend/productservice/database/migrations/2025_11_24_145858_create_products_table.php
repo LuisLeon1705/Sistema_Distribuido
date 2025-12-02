@@ -15,6 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('codigo')->unique();
             $table->string('nombre');
+            $table->string('detalles')->nullable();
             $table->decimal('precio', 10, 2); // dos decimales
             $table->foreignId('id_categoria')->constrained('categorias')->onDelete('cascade');
             $table->text('descripcion');
