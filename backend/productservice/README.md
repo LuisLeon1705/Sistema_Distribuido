@@ -59,7 +59,7 @@ Gestión de las categorías para clasificar los productos.
 #### Respuesta correcta (200 - 201)
 ```json
 {
-    "id": 1,
+    "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
     "nombre": "Electrónica",
     "codigo" : "ELE",
     "descripcion": "Dispositivos, gadgets y accesorios",
@@ -118,7 +118,7 @@ A continuación se describen los campos que se deben enviar dentro del formulari
 {
     "mensaje": "Producto creado exitosamente",
     "producto": {
-        "id": uuid
+        "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
         "codigo" : "ELE-000001",
         "nombre": "Laptop Gamer",
         "detalles": "RGB",

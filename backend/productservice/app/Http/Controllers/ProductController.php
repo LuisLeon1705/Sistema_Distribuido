@@ -184,7 +184,7 @@ class ProductController extends Controller
         ], 200);
     }
 
-    // -------------------------------- GET por categoria --------------------------------
+    // -------------------------------- GET por id --------------------------------
     public function getByCategory($id_categoria)
     {
         $productos = Product::where('id_categoria', $id_categoria)->get();
