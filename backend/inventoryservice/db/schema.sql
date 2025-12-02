@@ -1,5 +1,6 @@
 CREATE TABLE stock (
-    product_id UUID NOT NULL UNIQUE,
+    id SERIAL PRIMARY KEY,
+    product_id UUID NOT NULL,
     quantity INT NOT NULL,
     last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     warehouse_location VARCHAR(100)
