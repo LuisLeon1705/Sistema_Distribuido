@@ -61,6 +61,7 @@ Gestión de las categorías para clasificar los productos.
 {
     "id": 1,
     "nombre": "Electrónica",
+    "codigo" : "ELE",
     "descripcion": "Dispositivos, gadgets y accesorios",
     "created_at": "2023-10-27T10:00:00.000000Z",
     "updated_at": "2023-10-27T10:00:00.000000Z"
@@ -76,9 +77,10 @@ Gestión de productos, incluyendo carga de imágenes a AWS S3.
 | Método | Endpoint | Descripción |
 | :--- | :--- | :--- |
 | `GET` | `/productos` | Lista todos los productos registrados. |
-| `GET` | `/productos/{id}` | Obtiene los detalles de un producto específico por su ID. |
-| `GET` | `/productos/categoria/{id}` | Filtra y lista los productos asociados a una categoría específica. |
 | `GET` | `/productos/activos` | Lista únicamente los productos visibles (`estado = true`). |
+| `GET` | `/productos/{id}` | Obtiene los detalles de un producto específico por su ID. |
+| `GET` | `/productos/codigo/{codigo}` | Obtiene el producto asociados a un codigo específico. |
+| `GET` | `/productos/categoria/{id}` | Filtra y lista los productos asociados a una categoría específica. |
 | `POST` | `/productos` | Crea un nuevo producto con imagen. |
 | `PUT` | `/productos/{id}` | Actualiza los datos de un producto existente. |
 | `DELETE` | `/productos/{id}` | Elimina un producto de la base de datos. |
@@ -101,11 +103,14 @@ A continuación se describen los campos que se deben enviar dentro del formulari
 | Campo | Tipo | Requerido | Descripción |
 | :--- | :--- | :--- | :--- |
 | `nombre` | Texto | Sí | Nombre comercial del producto. Máximo 255 caracteres. |
+| `detalles` | Texto | No | Características del producto. |
 | `precio` | Numérico | Sí | Precio del producto. Debe ser un número válido (ej. 10.50). |
-| `id_categoria` | Entero | Sí | ID válido de una categoría existente en la base de datos. |
+| `id_categoria` | Entero | Sí (Si no existe categoria_id) | ID válido de una categoría existente en la base de datos. |
+| `categoria_id` | Entero | Sí (Si no existe id_categoria)| ID válido de una categoría existente en la base de datos. |
 | `descripcion` | Texto | No | Descripción detallada del producto. |
-| `estado` | Booleano | No | `1` para Activo (visible), `0` para Inactivo (oculto). Por defecto es true si no se envía. |
 | `imagen` | **Archivo** | No | Archivo de imagen (jpeg, png, jpg, webp). Tamaño máximo: 100MB. Se subirá automáticamente a AWS S3. |
+| `imagen_url` | URL | No | URL de una imagen representativa del producto |
+| `estado` | Booleano | No | `1` para Activo (visible), `0` para Inactivo (oculto). Por defecto es true si no se envía. |
 
 **Ejemplo de Respuesta Exitosa (201 Created):**
 
@@ -113,15 +118,17 @@ A continuación se describen los campos que se deben enviar dentro del formulari
 {
     "mensaje": "Producto creado exitosamente",
     "producto": {
+        "id": uuid
+        "codigo" : "ELE-000001",
         "nombre": "Laptop Gamer",
+        "detalles": "RGB",
         "precio": 1500,
         "id_categoria": "1",
         "descripcion": "Potente laptop para juegos",
-        "estado": "1",
         "imagen_url": "[https://bucket.s3.amazonaws.com/productos/a1b2c3d4.jpg](https://bucket.s3.amazonaws.com/productos/a1b2c3d4.jpg)",
+        "estado": "1",
         "updated_at": "2023-11-27T16:00:00.000000Z",
         "created_at": "2023-11-27T16:00:00.000000Z",
-        "id": 15
     }
 }
 ```
@@ -135,7 +142,7 @@ Este microservicio utiliza **JWT (JSON Web Tokens)** generados por el Auth Servi
 
 **Para acceder a rutas protegidas:**
 Debes enviar el token en el encabezado de la petición:
-`Authorization: Bearer <tu_token_aqui>`
+`Authorization: Bearer <token>`
 
 ### JWT (JSON Web Tokens)
 Para validar correctamente los tokens emitidos por el servicio de autenticación debes configurar las mismas variables utilizadas por `authservice`:
@@ -155,8 +162,9 @@ El sistema valida el rol del usuario a través del token JWT. Las rutas de modif
 | Modo | Endpoint | Acceso |
 | :--- | :--- | :--- |
 | **GET** | `/api/productos` | Público |
-| **GET** | `/api/productos/{id}` | Público |
 | **GET** | `/api/productos/activos` | Público |
+| **GET** | `/api/productos/{id}` | Público |
+| **GET** | `/api/productos/codigo/{codigo}` | Público |
 | **GET** | `/api/productos/categoria/{id}` | Público |
 | **GET** | `/api/categorias` | Público |
 | **GET** | `/api/categorias/{id}` | Público |

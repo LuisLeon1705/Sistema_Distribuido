@@ -22,15 +22,15 @@ Route::get('/productos/codigo/{codigo}', [ProductController::class, 'getByCode']
 Route::get('/productos/categoria/{id}', [ProductController::class, 'getByCategory']);
 Route::get('/categorias', [CategoriasController::class, 'index']);
 Route::get('/categorias/{id}', [CategoriasController::class, 'show']);
-/*---------------------------*/
-Route::post('/productos', [ProductController::class, 'store']);
-Route::put('/productos/{id}', [ProductController::class, 'update']);
-Route::delete('/productos/{id}', [ProductController::class, 'destroy']);
 
-// Categorías
-Route::post('/categorias', [CategoriasController::class, 'store']);
-Route::put('/categorias/{id}', [CategoriasController::class, 'update']);
-Route::delete('/categorias/{id}', [CategoriasController::class, 'destroy']);
 Route::middleware(['jwt.verify'])->group(function () {
     // Productos
+    Route::post('/productos', [ProductController::class, 'store']);
+    Route::put('/productos/{id}', [ProductController::class, 'update']);
+    Route::delete('/productos/{id}', [ProductController::class, 'destroy']);
+    
+    // Categorías
+    Route::post('/categorias', [CategoriasController::class, 'store']);
+    Route::put('/categorias/{id}', [CategoriasController::class, 'update']);
+    Route::delete('/categorias/{id}', [CategoriasController::class, 'destroy']);
 });
