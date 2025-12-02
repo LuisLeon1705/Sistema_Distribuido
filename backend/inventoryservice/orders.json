@@ -1,0 +1,18 @@
+[
+  {
+    "user_id": "a28d8efd-ef70-4f9b-89f7-ebcf86a07b1e",
+    "total_price": "1250.50",
+    "status": "completed",
+    "items": [
+      { "product_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479", "quantity": 1 }
+    ]
+  },
+  {
+    "user_id": "13983a0b-52ef-49e4-a62a-6c0e510bf5b1",
+    "total_price": "45.99",
+    "status": "pending",
+    "items": [
+      { "product_id": "a47ac10b-58cc-4372-a567-0e02b2c3d479", "quantity": 1 }
+    ]
+  }
+]

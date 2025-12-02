@@ -1,0 +1,96 @@
+version: '3.8'
+
+networks:
+  sistema-distribuido:
+    driver: bridge
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: gestiondb
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres # Default database, script will connect to this
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+      - ./backend/authservice/db/schema.sql:/schemas/auth_schema.sql
+      - ./backend/inventoryservice/db/schema.sql:/schemas/inventory_schema.sql
+      - ./backend/productservice/db/schema.sql:/schemas/products_schema.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - sistema-distribuido
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  authservice:
+    build:
+      context: ./backend/authservice
+      dockerfile: Dockerfile
+    container_name: authservice
+    env_file: ./backend/authservice/.env
+    environment:
+      DATABASE_URL: "postgresql://user:password@db/auth_db"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8001:8000"
+    networks:
+      - sistema-distribuido
+
+  inventoryservice:
+    build:
+      context: ./backend/inventoryservice
+      dockerfile: Dockerfile
+    container_name: inventoryservice
+    env_file: ./backend/inventoryservice/.env
+    environment:
+      DATABASE_URL: "postgres://user:password@db/inventory_db"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8002:3001"
+    networks:
+      - sistema-distribuido
+
+  productservice:
+    build:
+      context: ./backend/productservice
+      dockerfile: Dockerfile
+    container_name: productservice
+    env_file: ./backend/productservice/.env
+    environment:
+      DATABASE_URL: "postgres://user:password@db/products_db"
+      JWT_SECRET_KEY: auth-token-secret-key-123
+      JWT_ALGORITHM: HS256
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8003:80"
+    networks:
+      - sistema-distribuido
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - authservice
+      - inventoryservice
+      - productservice
+    networks:
+      - sistema-distribuido
+
+volumes:
+  postgres_data:
