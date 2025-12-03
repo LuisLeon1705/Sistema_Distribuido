@@ -177,3 +177,33 @@ El sistema valida el rol del usuario a través del token JWT. Las rutas de modif
 
 > **Nota:** Para las rutas marcadas como **Admin**, se debe enviar el header:
 > `Authorization: Bearer <token_admin>`
+
+---
+
+## Configuración de la Base de Datos
+
+Este proyecto utiliza Migraciones y Seeders de Laravel. No es necesario importar archivos `.sql` manualmente.
+
+### Pre-requisitos
+1. Asegúrate de tener el archivo `.env` configurado con las credenciales correctas de la base de datos (copia el `.env.example` si no lo tienes).
+2. Los contenedores deben estar corriendo (`docker compose up -d`).
+
+### Comandos de Instalación
+
+Desde la terminal, ubícate en la carpeta del servicio (`backend/productservice`) y ejecuta:
+
+```bash
+# 1. Instalar dependencias (si es la primera vez)
+docker compose exec app composer install
+
+# 2. Generar llave de aplicación (si no la tienes en el .env)
+docker compose exec app php artisan key:generate
+
+# 3. CREAR TABLAS Y DATOS (El comando mágico)
+docker compose exec app php artisan migrate:fresh --seed
+```
+
+<br>
+
+> [!IMPORTANT]
+> El comando migrate:fresh --seed borrará cualquier tabla existente, las creará desde cero y llenará la base de datos con la información de prueba (seeders)
