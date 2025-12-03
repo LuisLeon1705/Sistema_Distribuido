@@ -1,3 +1,29 @@
+--
+-- PostgreSQL database dump
+--
+
+\restrict 033qmQQGTAoE93OBzNMwRpd20eYvTie9vwi8vNIAiBc3xCIcD2cgVn1PCgaFLME
+
+-- Dumped from database version 15.15
+-- Dumped by pg_dump version 18.1
+
+-- Started on 2025-12-02 18:25:36
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 218 (class 1259 OID 25180)
+-- Name: cache; Type: TABLE; Schema: public; Owner: -
+--
 
 CREATE TABLE public.cache (
     key character varying(255) NOT NULL,
@@ -6,11 +32,9 @@ CREATE TABLE public.cache (
 );
 
 
-ALTER TABLE public.cache OWNER TO "user";
-
 --
 -- TOC entry 219 (class 1259 OID 25187)
--- Name: cache_locks; Type: TABLE; Schema: public; Owner: user
+-- Name: cache_locks; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.cache_locks (
@@ -20,11 +44,9 @@ CREATE TABLE public.cache_locks (
 );
 
 
-ALTER TABLE public.cache_locks OWNER TO "user";
-
 --
 -- TOC entry 216 (class 1259 OID 25156)
--- Name: categorias; Type: TABLE; Schema: public; Owner: user
+-- Name: categorias; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.categorias (
@@ -37,11 +59,9 @@ CREATE TABLE public.categorias (
 );
 
 
-ALTER TABLE public.categorias OWNER TO "user";
-
 --
 -- TOC entry 215 (class 1259 OID 25150)
--- Name: migrations; Type: TABLE; Schema: public; Owner: user
+-- Name: migrations; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.migrations (
@@ -51,11 +71,9 @@ CREATE TABLE public.migrations (
 );
 
 
-ALTER TABLE public.migrations OWNER TO "user";
-
 --
 -- TOC entry 214 (class 1259 OID 25149)
--- Name: migrations_id_seq; Type: SEQUENCE; Schema: public; Owner: user
+-- Name: migrations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.migrations_id_seq
@@ -67,12 +85,10 @@ CREATE SEQUENCE public.migrations_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.migrations_id_seq OWNER TO "user";
-
 --
 -- TOC entry 3448 (class 0 OID 0)
 -- Dependencies: 214
--- Name: migrations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: user
+-- Name: migrations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.migrations_id_seq OWNED BY public.migrations.id;
@@ -80,7 +96,7 @@ ALTER SEQUENCE public.migrations_id_seq OWNED BY public.migrations.id;
 
 --
 -- TOC entry 217 (class 1259 OID 25165)
--- Name: productos; Type: TABLE; Schema: public; Owner: user
+-- Name: productos; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.productos (
@@ -98,11 +114,9 @@ CREATE TABLE public.productos (
 );
 
 
-ALTER TABLE public.productos OWNER TO "user";
-
 --
 -- TOC entry 220 (class 1259 OID 25194)
--- Name: sessions; Type: TABLE; Schema: public; Owner: user
+-- Name: sessions; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.sessions (
@@ -115,11 +129,9 @@ CREATE TABLE public.sessions (
 );
 
 
-ALTER TABLE public.sessions OWNER TO "user";
-
 --
 -- TOC entry 3280 (class 2604 OID 25153)
--- Name: migrations id; Type: DEFAULT; Schema: public; Owner: user
+-- Name: migrations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.migrations ALTER COLUMN id SET DEFAULT nextval('public.migrations_id_seq'::regclass);
@@ -127,7 +139,7 @@ ALTER TABLE ONLY public.migrations ALTER COLUMN id SET DEFAULT nextval('public.m
 
 --
 -- TOC entry 3295 (class 2606 OID 25193)
--- Name: cache_locks cache_locks_pkey; Type: CONSTRAINT; Schema: public; Owner: user
+-- Name: cache_locks cache_locks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.cache_locks
@@ -136,7 +148,7 @@ ALTER TABLE ONLY public.cache_locks
 
 --
 -- TOC entry 3293 (class 2606 OID 25186)
--- Name: cache cache_pkey; Type: CONSTRAINT; Schema: public; Owner: user
+-- Name: cache cache_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.cache
@@ -145,7 +157,7 @@ ALTER TABLE ONLY public.cache
 
 --
 -- TOC entry 3285 (class 2606 OID 25164)
--- Name: categorias categorias_codigo_unique; Type: CONSTRAINT; Schema: public; Owner: user
+-- Name: categorias categorias_codigo_unique; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.categorias
@@ -154,7 +166,7 @@ ALTER TABLE ONLY public.categorias
 
 --
 -- TOC entry 3287 (class 2606 OID 25162)
--- Name: categorias categorias_pkey; Type: CONSTRAINT; Schema: public; Owner: user
+-- Name: categorias categorias_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.categorias
@@ -163,7 +175,7 @@ ALTER TABLE ONLY public.categorias
 
 --
 -- TOC entry 3283 (class 2606 OID 25155)
--- Name: migrations migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: user
+-- Name: migrations migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.migrations
@@ -172,7 +184,7 @@ ALTER TABLE ONLY public.migrations
 
 --
 -- TOC entry 3289 (class 2606 OID 25179)
--- Name: productos productos_codigo_unique; Type: CONSTRAINT; Schema: public; Owner: user
+-- Name: productos productos_codigo_unique; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.productos
@@ -181,7 +193,7 @@ ALTER TABLE ONLY public.productos
 
 --
 -- TOC entry 3291 (class 2606 OID 25177)
--- Name: productos productos_pkey; Type: CONSTRAINT; Schema: public; Owner: user
+-- Name: productos productos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.productos
@@ -190,7 +202,7 @@ ALTER TABLE ONLY public.productos
 
 --
 -- TOC entry 3298 (class 2606 OID 25200)
--- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: user
+-- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.sessions
@@ -199,7 +211,7 @@ ALTER TABLE ONLY public.sessions
 
 --
 -- TOC entry 3296 (class 1259 OID 25202)
--- Name: sessions_last_activity_index; Type: INDEX; Schema: public; Owner: user
+-- Name: sessions_last_activity_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX sessions_last_activity_index ON public.sessions USING btree (last_activity);
@@ -207,7 +219,7 @@ CREATE INDEX sessions_last_activity_index ON public.sessions USING btree (last_a
 
 --
 -- TOC entry 3299 (class 1259 OID 25201)
--- Name: sessions_user_id_index; Type: INDEX; Schema: public; Owner: user
+-- Name: sessions_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX sessions_user_id_index ON public.sessions USING btree (user_id);
@@ -215,10 +227,18 @@ CREATE INDEX sessions_user_id_index ON public.sessions USING btree (user_id);
 
 --
 -- TOC entry 3300 (class 2606 OID 25171)
--- Name: productos productos_id_categoria_foreign; Type: FK CONSTRAINT; Schema: public; Owner: user
+-- Name: productos productos_id_categoria_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.productos
     ADD CONSTRAINT productos_id_categoria_foreign FOREIGN KEY (id_categoria) REFERENCES public.categorias(id) ON DELETE CASCADE;
 
+
+-- Completed on 2025-12-02 18:25:37
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict 033qmQQGTAoE93OBzNMwRpd20eYvTie9vwi8vNIAiBc3xCIcD2cgVn1PCgaFLME
 
