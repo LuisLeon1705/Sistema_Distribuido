@@ -111,36 +111,40 @@ class ProductController extends Controller
         if (!$product) {
             return response()->json(['mensaje' => 'Producto no encontrado'], 404);
         }
-        $request->validate([
+        $rules = [
             'nombre' => 'string|max:255',
             'detalles' => 'nullable|string|max:255',
             'precio' => 'numeric',
             'id_categoria' => 'sometimes|exists:categorias,id',
             'categoria_id' => 'sometimes|exists:categorias,id',
             'descripcion' => 'nullable|string',
-            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:100000',
             'imagen_url' => 'nullable|url',
             'estado' => 'nullable'
-        ]);
-        $data = $request->except('imagen');
+        ];
+        if ($request->hasFile('imagen')) {
+            $rules['imagen'] = 'image|mimes:jpeg,png,jpg,webp|max:100000';
+        }
+        $request->validate($rules);
+        $data = $request->except(['imagen']);
+        
         // If new file provided, upload it
         if ($request->hasFile('imagen')) {
             $path = $request->file('imagen')->store('productos', 's3');
             $url = Storage::disk('s3')->url($path);
             $data['imagen_url'] = $url;
         }
-        // Support plain image URLs in 'imagen_url' or 'imagen' string
-        if ($request->filled('imagen_url') && !isset($data['imagen_url'])) {
-            $data['imagen_url'] = $request->input('imagen_url');
-        }
-        if ($request->filled('imagen') && !isset($data['imagen_url']) && ! $request->hasFile('imagen')) {
+        elseif ($request->filled('imagen') && is_string($request->input('imagen'))) {
             $data['imagen_url'] = $request->input('imagen');
+        }
+        if (empty($data['imagen_url'])) {
+            unset($data['imagen_url']);
         }
         // Support both naming conventions for category id
         if ($request->filled('categoria_id')) {
             $data['id_categoria'] = $request->input('categoria_id');
         }
-        if ($request->filled('id_categoria') || $request->filled('categoria_id')) {
+        $nuevaCategoriaId = $request->input('id_categoria') ?? $request->input('categoria_id');
+        if ($nuevaCategoriaId && $nuevaCategoriaId != $product->id_categoria) {
             $categoria = Category::find($data['id_categoria']);
             if (!$categoria) {
                 return response()->json(['error' => 'Categoría no encontrada.'], 404);

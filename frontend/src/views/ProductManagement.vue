@@ -228,6 +228,7 @@
                   accept="image/*"
                   @change="onImageFileChange"
                   class="form-control"
+                  ref="fileInput"
                 >
                 <div v-if="imagePreviewUrl || productForm.imagen" class="mt-2">
                   <img :src="imagePreviewUrl || productForm.imagen" alt="Preview" style="max-width:200px; object-fit:cover; border-radius:4px;">
@@ -313,6 +314,7 @@ export default {
     const isLoading = ref(false)
     const isSaving = ref(false)
     const error = ref(null)
+    const fileInput = ref(null)
     const formError = ref(null)
     const isEditing = ref(false)
     const authStore = useAuthStore()
@@ -437,6 +439,14 @@ export default {
     }
     
     const editProduct = (product) => {
+      if (imagePreviewUrl.value) {
+        try { URL.revokeObjectURL(imagePreviewUrl.value) } catch (e) {}
+        imagePreviewUrl.value = ''
+      }
+      productForm.imagenFile = null
+      if (fileInput.value) {
+        fileInput.value.value = ''
+      }
       isEditing.value = true
       productForm.id = product.id
       productForm.nombre = product.nombre
@@ -444,7 +454,7 @@ export default {
       productForm.precio = parseFloat(product.precio)
       productForm.categoria_id = product.categoria_id
       productForm.imagen = product.imagen || ''
-      productForm.imagenFile = null
+      productForm.imagenFile = product.imagenFile || null
       productForm.estado = product.estado
       
       const modal = new bootstrap.Modal(document.getElementById('productModal'))
@@ -472,14 +482,21 @@ export default {
       
       try {
         let data
-        if (productForm.imagenFile) {
+        if (productForm.imagenFile || isEditing.value) {
           data = new FormData()
           data.append('nombre', productForm.nombre)
           data.append('descripcion', productForm.descripcion)
           data.append('precio', productForm.precio)
           data.append('categoria_id', productForm.categoria_id)
-          data.append('imagen', productForm.imagenFile)
           data.append('estado', productForm.estado)
+          if (productForm.imagenFile) {
+            data.append('imagen', productForm.imagenFile)
+          } else {
+            data.append('imagen', productForm.imagen || '') 
+          }
+          if (isEditing.value) {
+            data.append('_method', 'PUT')
+          }
         } else {
           data = {
             nombre: productForm.nombre,
@@ -498,7 +515,7 @@ export default {
         }
         
         await fetchProducts()
-        
+        resetForm()
         const modal = bootstrap.Modal.getInstance(document.getElementById('productModal'))
         modal.hide()
       } catch (err) {
@@ -528,11 +545,15 @@ export default {
       productForm.precio = 0
       productForm.categoria_id = ''
       productForm.imagen = ''
+
       if (imagePreviewUrl.value) {
         try { URL.revokeObjectURL(imagePreviewUrl.value) } catch (e) {}
       }
       productForm.imagenFile = null
       imagePreviewUrl.value = ''
+      if (fileInput.value) {
+        fileInput.value.value = '' 
+      }
       productForm.estado = 'activo'
       formError.value = null
     }
@@ -579,7 +600,8 @@ export default {
       isSavingCategory,
       categoryFormError,
       showCreateModalCategory,
-      saveCategory
+      saveCategory,
+      fileInput
     }
   }
 }
