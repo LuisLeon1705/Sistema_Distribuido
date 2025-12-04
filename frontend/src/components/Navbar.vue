@@ -113,7 +113,7 @@ export default {
     const authStore = useAuthStore()
     const cartStore = useCartStore()
 
-    const isAuthenticated = computed(() => authStore.isAuthenticated)
+    const isAuthenticated = computed(() => authStore.isAuthenticated) 
     const isAdmin = computed(() => authStore.isAdmin)
     const user = computed(() => authStore.user)
     const userRole = computed(() => authStore.userRole)

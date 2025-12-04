@@ -62,65 +62,67 @@
       </div>
 
       <!-- Recent Products Section -->
-      <div class="row" v-if="recentProducts.length > 0">
-        <div class="col-12 text-center mb-4">
-          <h2>Productos Destacados</h2>
-        </div>
-        
-        <div class="col-md-4 mb-4" v-for="product in recentProducts" :key="product.id">
-          <div class="card h-100 shadow-sm">
-            <div class="card-img-container">
-              <img 
-                :src="product.imagen || '/placeholder-product.jpg'" 
-                class="card-img-top" 
-                :alt="product.nombre"
-                style="height: 200px; object-fit: cover;"
-              >
-            </div>
-            <div class="card-body d-flex flex-column">
-              <h5 class="card-title">{{ product.nombre }}</h5>
-              <p class="card-text flex-grow-1">{{ product.descripcion }}</p>
-              <div class="d-flex justify-content-between align-items-center mt-auto">
-                <span class="h5 text-primary mb-0">${{ parseFloat(product.precio).toFixed(2) }}</span>
-                <button 
-                  v-if="isAuthenticated" 
-                  class="btn btn-primary btn-sm"
-                  @click="addToCart(product)"
+      <template v-if="!isAdmin">
+        <div class="row" v-if="recentProducts.length > 0">
+          <div class="col-12 text-center mb-4">
+            <h2>Productos Destacados</h2>
+          </div>
+          
+          <div class="col-md-4 mb-4" v-for="product in recentProducts" :key="product.id">
+            <div class="card h-100 shadow-sm">
+              <div class="card-img-container">
+                <img 
+                  :src="product.imagen || '/placeholder-product.jpg'" 
+                  class="card-img-top" 
+                  :alt="product.nombre"
+                  style="height: 200px; object-fit: cover;"
                 >
-                  Agregar
-                </button>
+              </div>
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title">{{ product.nombre }}</h5>
+                <p class="card-text flex-grow-1">{{ product.descripcion }}</p>
+                <div class="d-flex justify-content-between align-items-center mt-auto">
+                  <span class="h5 text-primary mb-0">${{ parseFloat(product.precio).toFixed(2) }}</span>
+                  <button 
+                    v-if="isAuthenticated" 
+                    class="btn btn-primary btn-sm"
+                    @click="addToCart(product)"
+                  >
+                    Agregar
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+          
+          <div class="col-12 text-center mt-3">
+            <router-link to="/products" class="btn btn-outline-primary">
+              Ver Todos los Productos
+            </router-link>
+          </div>
         </div>
-        
-        <div class="col-12 text-center mt-3">
-          <router-link to="/products" class="btn btn-outline-primary">
-            Ver Todos los Productos
-          </router-link>
-        </div>
-      </div>
 
-      <!-- Stats Section (for authenticated users) -->
-      <div v-if="isAuthenticated" class="row mt-5 mb-4">
-        <div class="col-12 text-center mb-4">
-          <h3>Mi Dashboard</h3>
-        </div>
-        
-        <div class="col-md-6 text-center mb-3">
-          <div class="dashboard-card p-4 bg-light rounded">
-            <h4 class="text-primary">{{ cartItemsCount }}</h4>
-            <p class="mb-0">Artículos en Carrito</p>
+        <!-- Stats Section (for authenticated users) -->
+        <div v-if="isAuthenticated" class="row mt-5 mb-4">
+          <div class="col-12 text-center mb-4">
+            <h3>Mi Dashboard</h3>
+          </div>
+          
+          <div class="col-md-6 text-center mb-3">
+            <div class="dashboard-card p-4 bg-light rounded">
+              <h4 class="text-primary">{{ cartItemsCount }}</h4>
+              <p class="mb-0">Artículos en Carrito</p>
+            </div>
+          </div>
+          
+          <div class="col-md-6 text-center mb-3">
+            <div class="dashboard-card p-4 bg-light rounded">
+              <h4 class="text-success">{{ userOrdersCount }}</h4>
+              <p class="mb-0">Órdenes Realizadas</p>
+            </div>
           </div>
         </div>
-        
-        <div class="col-md-6 text-center mb-3">
-          <div class="dashboard-card p-4 bg-light rounded">
-            <h4 class="text-success">{{ userOrdersCount }}</h4>
-            <p class="mb-0">Órdenes Realizadas</p>
-          </div>
-        </div>
-      </div>
+      </template>
     </div>
   </div>
 </template>
@@ -141,6 +143,7 @@ export default {
     const userOrdersCount = ref(0)
     
     const isAuthenticated = computed(() => authStore.isAuthenticated)
+    const isAdmin = computed(() => authStore.isAdmin)
     const cartItemsCount = computed(() => cartStore.totalItems)
     
     const fetchRecentProducts = async () => {

@@ -105,7 +105,7 @@ export const authService = {
 export const userService = {
     async getUsers(filters = {}) {
         const params = new URLSearchParams(filters)
-        const response = await usersAPI.get(`/users?${params}`)
+        const response = await usersAPI.get(`/${params}`)
         return response.data
     },
 
