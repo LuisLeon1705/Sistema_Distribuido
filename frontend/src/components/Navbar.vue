@@ -12,25 +12,31 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto">
           <li class="nav-item">
-            <router-link class="nav-link" to="/">Inicio</router-link>
+            <template v-if="!isAdmin">
+              <router-link class="nav-link" to="/">Inicio</router-link>
+            </template>
           </li>
           <li class="nav-item">
-            <router-link class="nav-link" to="/products">Productos</router-link>
+            <template v-if="!isAdmin">
+              <router-link class="nav-link" to="/products">Productos</router-link>
+            </template>
           </li>
           
           <!-- Authenticated user links -->
           <template v-if="isAuthenticated">
-            <li class="nav-item">
-              <router-link class="nav-link" to="/cart">
-                Carrito
-                <span v-if="cartItemsCount > 0" class="badge bg-danger ms-1">
-                  {{ cartItemsCount }}
-                </span>
-              </router-link>
-            </li>
-            <li class="nav-item">
-              <router-link class="nav-link" to="/orders">Mis Órdenes</router-link>
-            </li>
+            <template v-if="!isAdmin">
+              <li class="nav-item">
+                <router-link class="nav-link" to="/cart">
+                  Carrito
+                  <span v-if="cartItemsCount > 0" class="badge bg-danger ms-1">
+                    {{ cartItemsCount }}
+                  </span>
+                </router-link>
+              </li>
+              <li class="nav-item">
+                <router-link class="nav-link" to="/orders">Mis Órdenes</router-link>
+              </li>
+            </template>
           </template>
           
           <!-- Admin links -->
