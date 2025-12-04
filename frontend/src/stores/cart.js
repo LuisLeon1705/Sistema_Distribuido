@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useAuthStore } from './auth'
 import { orderService } from '../services/api'
 
 export const useCartStore = defineStore('cart', {
@@ -55,12 +56,20 @@ export const useCartStore = defineStore('cart', {
 
             this.isLoading = true
             this.error = null
+            const authStore = useAuthStore();
+            if (!authStore.user) {
+                this.isLoading = false;
+                this.error = "Debes iniciar sesión para comprar.";
+                return;
+            }
 
             try {
                 const orderData = {
+                    user_id: authStore.user.id,
                     items: this.items.map(item => ({
                         product_id: item.product_id,
-                        quantity: item.quantity
+                        quantity: item.quantity,
+                        price: item.price
                     }))
                 }
 
