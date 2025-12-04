@@ -32,6 +32,7 @@
                       @keydown="bloquearSignos"
                       placeholder="Min" 
                       min="0"
+                      max="99999999"
                       class="form-control form-control-sm"
                     >
                   </div>
@@ -42,6 +43,7 @@
                       @input="applyFilters"
                       @keydown="bloquearSignos"
                       placeholder="Max" 
+                      min="0"
                       max="99999999"
                       class="form-control form-control-sm"
                     >
@@ -157,13 +159,6 @@
 </template>
 
 <script>
-
-const bloquearSignos = (e) => {
-  if (['-', '+', 'e', 'E'].includes(e.key)) {
-    e.preventDefault();
-  }
-};
-
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useCartStore } from '../stores/cart'
@@ -188,6 +183,11 @@ export default {
     
     const isAuthenticated = computed(() => authStore.isAuthenticated)
     
+    const bloquearSignos = (e) => {
+      if (['-', '+', 'e', 'E'].includes(e.key)) {
+        e.preventDefault();
+      }
+    };
     const filteredProducts = computed(() => {
       let filtered = products.value
       
@@ -313,7 +313,8 @@ export default {
       addToCart,
       applyFilters,
       applySorting,
-      clearFilters
+      clearFilters,
+      bloquearSignos
     }
   }
 }

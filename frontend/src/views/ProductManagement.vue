@@ -195,7 +195,9 @@
                     <input 
                       type="number" 
                       step="0.01"
+                      min="0"
                       v-model.number="productForm.precio"
+                      @keydown="bloquearSignos"
                       class="form-control"
                       required
                     >
@@ -567,6 +569,12 @@ export default {
       filters.status = ''
       filters.search = ''
     }
+
+    const bloquearSignos = (e) => {
+      if (['-', '+', 'e', 'E'].includes(e.key)) {
+        e.preventDefault();
+      }
+    };
     
     onMounted(async () => {
       await Promise.all([
@@ -601,7 +609,8 @@ export default {
       categoryFormError,
       showCreateModalCategory,
       saveCategory,
-      fileInput
+      fileInput,
+      bloquearSignos
     }
   }
 }
