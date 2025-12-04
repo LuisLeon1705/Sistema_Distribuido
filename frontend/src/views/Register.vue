@@ -96,7 +96,7 @@
               </div>
               
               <div v-if="authStore.error" class="alert alert-danger">
-                {{ authStore.error }}
+                {{ authStore.error[0]["msg"] }}
               </div>
               
               <div v-if="successMessage" class="alert alert-success">
