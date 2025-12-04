@@ -67,7 +67,13 @@ services:
     container_name: productservice
     env_file: ./backend/productservice/.env
     environment:
-      DATABASE_URL: "postgres://user:password@db/products_db"
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: products_db
+      DB_USERNAME: user
+      DB_PASSWORD: password
+      JWT_SECRET: auth-token-secret-key-123
       JWT_SECRET_KEY: auth-token-secret-key-123
       JWT_ALGORITHM: HS256
     depends_on:

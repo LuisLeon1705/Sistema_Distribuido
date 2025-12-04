@@ -22,14 +22,16 @@
               
               <!-- Price Range -->
               <div class="mb-3">
-                <label class="form-label">Rango de Precio</label>
+                <label class="form-label">Rango de Precios</label>
                 <div class="row">
                   <div class="col-6">
                     <input 
                       type="number" 
                       v-model.number="priceRange.min" 
                       @input="applyFilters"
+                      @keydown="bloquearSignos"
                       placeholder="Min" 
+                      min="0"
                       class="form-control form-control-sm"
                     >
                   </div>
@@ -38,7 +40,9 @@
                       type="number" 
                       v-model.number="priceRange.max" 
                       @input="applyFilters"
+                      @keydown="bloquearSignos"
                       placeholder="Max" 
+                      max="99999999"
                       class="form-control form-control-sm"
                     >
                   </div>
@@ -153,6 +157,13 @@
 </template>
 
 <script>
+
+const bloquearSignos = (e) => {
+  if (['-', '+', 'e', 'E'].includes(e.key)) {
+    e.preventDefault();
+  }
+};
+
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useCartStore } from '../stores/cart'
@@ -192,7 +203,16 @@ export default {
       if (priceRange.value.max !== null) {
         filtered = filtered.filter(product => parseFloat(product.precio) <= priceRange.value.max)
       }
-      
+
+      if (priceRange.value.max !== null && (priceRange.value.min === null || priceRange.value.min == "")) {
+        filtered = filtered.filter(product => parseFloat(product.precio) <= priceRange.value.max)
+      }
+      if (priceRange.value.min !== null && (priceRange.value.max === null || priceRange.value.max == "")) {
+        filtered = filtered.filter(product => parseFloat(product.precio) >= priceRange.value.min)
+      }
+      if (priceRange.value.min == "" && priceRange.value.max == "") {
+        filtered = products.value
+      }
       // Filter by search term
       if (searchTerm.value) {
         const term = searchTerm.value.toLowerCase()

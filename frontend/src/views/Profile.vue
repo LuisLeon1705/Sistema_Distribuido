@@ -169,13 +169,14 @@
                     <div>{{ formatDate(user?.created_at) }}</div>
                   </div>
                 </div>
-                
+                <!--
                 <div class="col-md-6">
                   <div class="info-item">
                     <label class="text-muted small">Último acceso:</label>
                     <div>{{ user?.last_login_at ? formatDate(user.last_login_at) : 'Nunca' }}</div>
                   </div>
                 </div>
+                -->
               </div>
             </div>
           </div>

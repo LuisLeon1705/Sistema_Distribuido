@@ -3,10 +3,16 @@
     <div class="container-fluid">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Gestión de Productos</h2>
-        <button class="btn btn-primary" @click="showCreateModal">
-          <i class="fas fa-plus me-2"></i>
-          Nuevo Producto
-        </button>
+        <div class="flex flex-row justify-content-end align-items-center gap-4">
+          <button class="btn btn-primary mx-4" @click="showCreateModalCategory">
+            <i class="fas fa-plus me-2"></i>
+            Nueva Categoría
+          </button>
+          <button class="btn btn-primary mx-4" @click="showCreateModal">
+            <i class="fas fa-plus me-2"></i>
+            Nuevo Producto
+          </button>
+        </div>
         <button v-if="isAdmin" class="btn btn-outline-secondary ms-2" @click="showCategoriesModal">
           <i class="fas fa-folder-plus me-2"></i>
           Gestión de Categorías
@@ -70,7 +76,7 @@
             <table class="table table-hover">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th>Código</th>
                   <th>Imagen</th>
                   <th>Nombre</th>
                   <th>Categoría</th>
@@ -81,7 +87,7 @@
               </thead>
               <tbody>
                 <tr v-for="product in filteredProducts" :key="product.id">
-                  <td>{{ product.id }}</td>
+                  <td>{{ product.codigo }}</td>
                   <td>
                     <img 
                       :src="product.imagen || '/placeholder-product.jpg'" 
@@ -245,6 +251,51 @@
         </div>
       </div>
     </div>
+    <div class="modal fade" id="categoryModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Nueva Categoría</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <form @submit.prevent="saveCategory">
+            <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label">Nombre *</label>
+                <input 
+                  type="text" 
+                  v-model="categoryForm.nombre"
+                  class="form-control"
+                  required
+                >
+              </div>
+              
+              <div class="mb-3">
+                <label class="form-label">Descripción</label>
+                <textarea 
+                  v-model="categoryForm.descripcion"
+                  class="form-control"
+                  rows="3"
+                ></textarea>
+              </div>
+              
+              <div v-if="categoryFormError" class="alert alert-danger">
+                {{ categoryFormError }}
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn-primary" :disabled="isSavingCategory">
+                <span v-if="isSavingCategory" class="spinner-border spinner-border-sm me-2"></span>
+                {{ isSavingCategory ? 'Guardando...' : 'Guardar' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -282,6 +333,13 @@ export default {
       imagenFile: null,
       estado: 'activo'
     })
+    const categoryForm = reactive({
+      nombre: '',
+      descripcion: ''
+    })
+    const isSavingCategory = ref(false)
+    const categoryFormError = ref(null)
+
     // Categories admin form
     const imagePreviewUrl = ref('')
     
@@ -300,7 +358,8 @@ export default {
         const term = filters.search.toLowerCase()
         filtered = filtered.filter(p =>
           p.nombre.toLowerCase().includes(term) ||
-          p.descripcion.toLowerCase().includes(term)
+          p.descripcion.toLowerCase().includes(term) ||
+          p.codigo.toLowerCase().includes(term.toLowerCase())
         )
       }
       
@@ -343,6 +402,38 @@ export default {
       resetForm()
       const modal = new bootstrap.Modal(document.getElementById('productModal'))
       modal.show()
+    }
+    const resetCategoryForm = () => {
+      categoryForm.nombre = ''
+      categoryForm.descripcion = ''
+      categoryFormError.value = null
+    }
+
+    const showCreateModalCategory = () => {
+      resetCategoryForm()
+      const modal = new bootstrap.Modal(document.getElementById('categoryModal'))
+      modal.show()
+    }
+
+    const saveCategory = async () => {
+      isSavingCategory.value = true
+      categoryFormError.value = null
+      
+      try {
+        const data = {
+          nombre: categoryForm.nombre,
+          descripcion: categoryForm.descripcion
+        }
+        await productService.createCategory(data)
+        await fetchCategories()
+        const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModal'))
+        modal.hide()
+      } catch (err) {
+        categoryFormError.value = err.response?.data?.message || 'Error al crear categoría'
+        console.error('Error saving category:', err)
+      } finally {
+        isSavingCategory.value = false
+      }
     }
     
     const editProduct = (product) => {
@@ -483,7 +574,12 @@ export default {
       onImageFileChange,
       deleteProduct,
       applyFilters,
-      clearFilters
+      clearFilters,
+      categoryForm,
+      isSavingCategory,
+      categoryFormError,
+      showCreateModalCategory,
+      saveCategory
     }
   }
 }

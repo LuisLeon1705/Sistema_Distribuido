@@ -13,6 +13,16 @@ RUN npm install
 # Copiar código fuente
 COPY . .
 
+#------------------------------
+
+# Exponemos el puerto de Vite
+#EXPOSE 3000
+
+# Comando por defecto (aunque el docker-compose lo sobrescribe, es bueno tenerlo)
+#CMD ["npm", "run", "dev", "--", "--host"]
+
+#------------------------------
+
 # Construir la aplicación para producción
 RUN npm run build
 
