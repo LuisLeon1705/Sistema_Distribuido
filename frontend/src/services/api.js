@@ -215,7 +215,7 @@ export const orderService = {
     },
 
     async getAllOrders() {
-        const response = await inventoryAPI.get('/admin/orders')
+        const response = await inventoryAPI.get('/orders')
         return response.data
     }
 }

@@ -384,7 +384,7 @@ export default {
       try {
         orders.value = await orderService.getAllOrders()
       } catch (err) {
-        error.value = 'Error al cargar las órdenes'
+        error.value = err
         console.error('Error fetching orders:', err)
       } finally {
         isLoading.value = false
