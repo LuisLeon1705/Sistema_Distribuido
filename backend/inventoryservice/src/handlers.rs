@@ -15,8 +15,23 @@ use crate::{
     order_logic::{OrderManager}, 
     // Se mantiene la importación necesaria para la gestión de stock
     stock_logic::{StockManager, StockManagement}, 
-    db::Db // Alias del Pool de la DB
+    db::Db, // Alias del Pool de la DB
+    seed, // Import the seed module
 };
+
+// ----------------------------------------------------------------------
+// Seeding Handler
+// ----------------------------------------------------------------------
+
+pub async fn seed_stock_handler(State(db): State<Db>) -> Result<StatusCode, impl IntoResponse> {
+    match seed::seed_stock(&db).await {
+        Ok(_) => Ok(StatusCode::OK),
+        Err(e) => {
+            eprintln!("Failed to seed database: {}", e);
+            Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to seed database: {}", e)))
+        }
+    }
+}
 
 // ----------------------------------------------------------------------
 // Order Handlers

@@ -11,7 +11,6 @@
             </router-link>
           </div>
           
-          <!-- Loading State -->
           <div v-if="isLoading" class="text-center py-5">
             <div class="spinner-border" role="status">
               <span class="visually-hidden">Cargando...</span>
@@ -19,12 +18,10 @@
             <p class="mt-2">Cargando órdenes...</p>
           </div>
           
-          <!-- Error State -->
           <div v-else-if="error" class="alert alert-danger">
             {{ error }}
           </div>
           
-          <!-- Empty State -->
           <div v-else-if="orders.length === 0" class="text-center py-5">
             <i class="fas fa-receipt fa-5x text-muted mb-4"></i>
             <h3>No tienes órdenes aún</h3>
@@ -34,7 +31,6 @@
             </router-link>
           </div>
           
-          <!-- Orders List -->
           <div v-else class="orders-list">
             <div v-for="order in orders" :key="order.id" class="card mb-4 order-card">
               <div class="card-header d-flex justify-content-between align-items-center">
@@ -64,54 +60,15 @@
               </div>
               
               <div class="card-body">
-                <div class="row">
-                  <div class="col-md-8">
-                    <!-- Order Items (if available) -->
-                    <div v-if="order.items && order.items.length > 0">
-                      <h6 class="mb-3">Productos:</h6>
-                      <div class="order-items">
-                        <div 
-                          v-for="item in order.items" 
-                          :key="item.id" 
-                          class="d-flex align-items-center border-bottom pb-2 mb-2"
-                        >
-                          <div class="flex-grow-1">
-                            <div class="fw-medium">Producto ID: {{ item.product_id }}</div>
-                            <small class="text-muted">
-                              Cantidad: {{ item.quantity }} x ${{ parseFloat(item.price_at_time_of_purchase).toFixed(2) }}
-                            </small>
-                          </div>
-                          <div class="text-end">
-                            <div class="fw-bold">
-                              ${{ (item.quantity * parseFloat(item.price_at_time_of_purchase)).toFixed(2) }}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div class="col-md-4">
-                    <div class="d-grid gap-2">
-                      <button 
-                        class="btn btn-outline-primary btn-sm"
-                        @click="viewOrderDetails(order.id)"
-                      >
-                        <i class="fas fa-eye me-1"></i>
-                        Ver Detalles
-                      </button>
-                      
-                      <button 
-                        v-if="order.status === 'pending'"
-                        class="btn btn-outline-danger btn-sm"
-                        @click="cancelOrder(order.id)"
-                      >
-                        <i class="fas fa-times me-1"></i>
-                        Cancelar Orden
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                 <div class="d-flex justify-content-end">
+                    <button 
+                      class="btn btn-outline-primary btn-sm"
+                      @click="viewOrderDetails(order.id)"
+                    >
+                      <i class="fas fa-eye me-1"></i>
+                      Ver Detalles
+                    </button>
+                 </div>
               </div>
             </div>
           </div>
@@ -139,29 +96,27 @@
               </div>
             </div>
             
-            <div v-if="selectedOrder.items && selectedOrder.items.length > 0">
-              <h6>Productos:</h6>
-              <div class="table-responsive">
-                <table class="table table-sm">
-                  <thead>
-                    <tr>
-                      <th>Producto ID</th>
-                      <th>Cantidad</th>
-                      <th>Precio Unitario</th>
-                      <th>Subtotal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="item in selectedOrder.items" :key="item.id">
-                      <td>{{ item.product_id }}</td>
-                      <td>{{ item.quantity }}</td>
-                      <td>${{ parseFloat(item.price_at_time_of_purchase).toFixed(2) }}</td>
-                      <td>${{ (item.quantity * parseFloat(item.price_at_time_of_purchase)).toFixed(2) }}</td>
-                    </tr>
-                  </tbody>
-                </table>
+            <div v-if="isFetchingDetails" class="text-center">
+              <div class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Cargando productos...</span>
               </div>
             </div>
+            <div v-else-if="selectedOrderItemsWithDetails.length > 0">
+              <h6 class="mb-3">Productos en esta orden</h6>
+              <ul class="list-group list-group-flush">
+                <li v-for="item in selectedOrderItemsWithDetails" :key="item.id" class="list-group-item d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center">
+                    <img :src="item.productImage || '/placeholder-product.jpg'" :alt="item.productName" class="me-3" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                    <div>
+                      <div class="fw-bold">{{ item.productName }}</div>
+                      <small class="text-muted">{{ item.quantity }} x ${{ parseFloat(item.price_at_time_of_purchase).toFixed(2) }}</small>
+                    </div>
+                  </div>
+                  <span class="fw-bold">${{ (item.quantity * parseFloat(item.price_at_time_of_purchase)).toFixed(2) }}</span>
+                </li>
+              </ul>
+            </div>
+
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -176,47 +131,85 @@
 
 <script>
 import { ref, onMounted } from 'vue'
-import { orderService } from '../services/api'
+import { useAuthStore } from '../stores/auth'
+import api from '../services/api'
+import * as bootstrap from 'bootstrap'
 
 export default {
   name: 'Orders',
   setup() {
     const orders = ref([])
     const selectedOrder = ref(null)
+    const selectedOrderItemsWithDetails = ref([])
     const isLoading = ref(false)
+    const isFetchingDetails = ref(false)
     const error = ref(null)
+    const authStore = useAuthStore()
     
+    let orderDetailsModalInstance = null;
+
     const fetchOrders = async () => {
-      isLoading.value = true
-      error.value = null
+      if (!authStore.user?.id) {
+        error.value = 'No se pudo obtener el ID del usuario para cargar las órdenes.'
+        return
+      }
+      isLoading.value = true;
+      error.value = null;
       try {
-        orders.value = await orderService.getOrders()
+        orders.value = await api.getOrdersByUserId(authStore.user.id);
       } catch (err) {
-        error.value = 'Error al cargar las órdenes'
-        console.error('Error fetching orders:', err)
+        orders.value = [];
+        error.value = 'Error al cargar las órdenes';
+        console.error('Error fetching orders:', err);
       } finally {
-        isLoading.value = false
+        isLoading.value = false;
       }
     }
     
     const viewOrderDetails = async (orderId) => {
+      selectedOrder.value = orders.value.find(o => o.id === orderId) || null;
+      if (!selectedOrder.value) return;
+
+      if (orderDetailsModalInstance) {
+        orderDetailsModalInstance.show();
+      }
+      
+      isFetchingDetails.value = true;
+      selectedOrderItemsWithDetails.value = [];
       try {
-        selectedOrder.value = await orderService.getOrderById(orderId)
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'))
-        modal.show()
-      } catch (err) {
-        console.error('Error fetching order details:', err)
+        const items = await api.getOrderItems(orderId);
+        
+        const detailedItems = await Promise.all(
+          items.map(async (item) => {
+            try {
+              const product = await api.getProductById(item.product_id);
+              return {
+                ...item,
+                productName: product.nombre,
+                productImage: product.imagen
+              };
+            } catch (e) {
+              console.error(`Error fetching product ${item.product_id}:`, e);
+              return {
+                ...item,
+                productName: `Producto ID: ${item.product_id}`,
+                productImage: '/placeholder-product.jpg'
+              };
+            }
+          })
+        );
+        selectedOrderItemsWithDetails.value = detailedItems;
+      } catch(err) {
+        console.error('Error fetching order items:', err)
+      } finally {
+        isFetchingDetails.value = false;
       }
     }
     
     const cancelOrder = async (orderId) => {
       if (confirm('¿Estás seguro de que deseas cancelar esta orden?')) {
         try {
-          // Note: This would require implementing a cancel order endpoint in the inventory service
           console.log('Cancel order:', orderId)
-          // await orderService.cancelOrder(orderId)
-          // await fetchOrders() // Refresh orders
         } catch (err) {
           console.error('Error cancelling order:', err)
         }
@@ -224,33 +217,37 @@ export default {
     }
     
     const getStatusText = (status) => {
-      const statusMap = {
-        pending: 'Pendiente',
-        completed: 'Completada',
-        cancelled: 'Cancelada'
-      }
+      const statusMap = { pending: 'Pendiente', completed: 'Completada', cancelled: 'Cancelada' }
       return statusMap[status] || status
     }
     
     const formatDate = (dateString) => {
       const date = new Date(dateString)
       return date.toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+        year: 'numeric', month: 'long', day: 'numeric',
+        hour: '2-digit', minute: '2-digit'
       })
     }
     
     onMounted(() => {
       fetchOrders()
+      const modalElement = document.getElementById('orderDetailsModal');
+      if (modalElement) {
+        orderDetailsModalInstance = new bootstrap.Modal(modalElement);
+        modalElement.addEventListener('hidden.bs.modal', () => {
+          selectedOrder.value = null;
+          selectedOrderItemsWithDetails.value = [];
+          document.body.focus();
+        });
+      }
     })
     
     return {
       orders,
       selectedOrder,
+      selectedOrderItemsWithDetails,
       isLoading,
+      isFetchingDetails,
       error,
       viewOrderDetails,
       cancelOrder,
@@ -267,30 +264,11 @@ export default {
   border: none;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
-
 .order-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
-
-.order-items {
-  max-height: 200px;
-  overflow-y: auto;
-}
-
 .badge {
   font-size: 0.75em;
-}
-
-@media (max-width: 768px) {
-  .card-header {
-    flex-direction: column;
-    align-items: flex-start !important;
-  }
-  
-  .card-header .text-end {
-    margin-top: 10px;
-    align-self: flex-end;
-  }
 }
 </style>

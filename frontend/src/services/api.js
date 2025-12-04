@@ -57,7 +57,7 @@ const addResponseInterceptor = (apiInstance) => {
 })
 
 // Auth Service
-export const authService = {
+const authService = {
     async register(userData) {
         const response = await authAPI.post('/register', userData)
         return response.data
@@ -102,7 +102,7 @@ export const authService = {
 }
 
 // User Management Service (Admin only)
-export const userService = {
+const userService = {
     async getUsers(filters = {}) {
         const params = new URLSearchParams(filters)
         const response = await usersAPI.get(`/${params}`)
@@ -130,7 +130,7 @@ export const userService = {
 }
 
 // Product Service
-export const productService = {
+const productService = {
     async getProducts() {
         const response = await productsAPI.get('/productos')
         return response.data
@@ -198,14 +198,14 @@ export const productService = {
 }
 
 // Inventory/Orders Service
-export const orderService = {
+const orderService = {
     async createOrder(orderData) {
         const response = await inventoryAPI.post('/orders', orderData)
         return response.data
     },
 
-    async getOrders() {
-        const response = await inventoryAPI.get('/orders')
+    async getOrdersByUserId(userId) {
+        const response = await inventoryAPI.get(`/orders/user/${userId}`)
         return response.data
     },
 
@@ -214,10 +214,66 @@ export const orderService = {
         return response.data
     },
 
+    async getOrderItems(orderId) {
+        const response = await inventoryAPI.get(`/orders/${orderId}/items`);
+        return response.data;
+    },
+
+    async updateOrderStatus(orderId, newStatus) {
+        const payload = { order_id: orderId, new_status: newStatus };
+        const response = await inventoryAPI.post('/orders/status', payload);
+        return response.data;
+    },
+
     async getAllOrders() {
-        const response = await inventoryAPI.get('/admin/orders')
+        // This should be for admins and gets all orders
+        const response = await inventoryAPI.get('/orders')
         return response.data
+    },
+
+    async addTempOrder(orderData) {
+        const response = await inventoryAPI.post('/temp_orders', orderData);
+        return response.data;
+    },
+
+    async getTempOrdersByUserId(userId) {
+        const response = await inventoryAPI.get(`/temp_orders/user/${userId}`);
+        return response.data;
     }
 }
 
-export { authAPI, inventoryAPI, productsAPI }
+// Stock Service
+const stockService = {
+    async getStock(productId) {
+        const url = productId ? `/stock/${productId}` : '/stock';
+        return await inventoryAPI.get(url);
+    },
+
+    async addStock(stockData) {
+        return await inventoryAPI.post('/stock', stockData);
+    },
+
+    async updateStock(productId, stockData) {
+        return await inventoryAPI.put(`/stock/${productId}`, stockData);
+    },
+
+    async deleteStock(productId) {
+        return await inventoryAPI.delete(`/stock/${productId}`);
+    },
+
+    async seedStock() {
+        return await inventoryAPI.post('/seed');
+    }
+};
+
+
+const api = {
+    ...authService,
+    ...userService,
+    ...productService,
+    ...orderService,
+    ...stockService,
+}
+
+export default api;
+

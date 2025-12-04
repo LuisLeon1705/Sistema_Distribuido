@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { authService } from '../services/api'
+import api from '../services/api'
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
@@ -21,7 +21,7 @@ export const useAuthStore = defineStore('auth', {
             this.isLoading = true
             this.error = null
             try {
-                const response = await authService.login(credentials)
+                const response = await api.login(credentials)
                 this.token = response.access_token
                 localStorage.setItem('access_token', response.access_token)
                 await this.fetchCurrentUser()
@@ -38,7 +38,7 @@ export const useAuthStore = defineStore('auth', {
             this.isLoading = true
             this.error = null
             try {
-                const response = await authService.register(userData)
+                const response = await api.register(userData)
                 return response
             } catch (error) {
                 this.error = error.response?.data?.detail || 'Registration failed'
@@ -52,7 +52,7 @@ export const useAuthStore = defineStore('auth', {
             this.isLoading = true
             this.error = null
             try {
-                const response = await authService.sendVerificationCode(email)
+                const response = await api.sendVerificationCode(email)
                 return response
             } catch (error) {
                 this.error = error.response?.data?.detail || 'No se pudo enviar el código'
@@ -66,7 +66,7 @@ export const useAuthStore = defineStore('auth', {
             this.isLoading = true
             this.error = null
             try {
-                const response = await authService.verifyEmail(email, code)
+                const response = await api.verifyEmail(email, code)
                 return response
             } catch (error) {
                 this.error = error.response?.data?.detail || 'Verificación fallida'
@@ -78,7 +78,7 @@ export const useAuthStore = defineStore('auth', {
 
         async logout() {
             try {
-                await authService.logout()
+                await api.logout()
             } catch (error) {
                 console.error('Logout error:', error)
             } finally {
@@ -93,7 +93,7 @@ export const useAuthStore = defineStore('auth', {
             if (!this.token) return
 
             try {
-                this.user = await authService.getCurrentUser()
+                this.user = await api.getCurrentUser()
                 localStorage.setItem('user_role', this.user.role?.name || 'customer')
             } catch (error) {
                 console.error('Error fetching current user:', error)
@@ -105,7 +105,7 @@ export const useAuthStore = defineStore('auth', {
             this.isLoading = true
             this.error = null
             try {
-                const updatedUser = await authService.updateProfile(userData)
+                const updatedUser = await api.updateProfile(userData)
                 this.user = updatedUser
                 return updatedUser
             } catch (error) {

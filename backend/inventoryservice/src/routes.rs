@@ -18,5 +18,6 @@ pub fn create_router(db: Db) -> Router {
         .route("/stock/:product_id", get(crate::handlers::get_stock_handler).put(crate::handlers::update_stock_handler).delete(crate::handlers::delete_stock_handler))
         .route("/temp_orders", post(crate::handlers::add_temp_order_handler))
         .route("/temp_orders/user/:user_id", get(crate::handlers::get_temp_orders_by_user_id_handler))
+        .route("/seed", post(crate::handlers::seed_stock_handler)) // Add this route
         .with_state(db)
 }

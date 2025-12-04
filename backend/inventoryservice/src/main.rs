@@ -39,10 +39,10 @@ async fn main() {
         }
     });
 
-    // Call the seeding function
-    if let Err(e) = seed::seed_stock(&db).await {
-        eprintln!("Failed to seed database: {}", e);
-    }
+    // The seeding function is now called via an API endpoint
+    // if let Err(e) = seed::seed_stock(&db).await {
+    //     eprintln!("Failed to seed database: {}", e);
+    // }
 
     let app = create_router(db);
 

@@ -274,7 +274,7 @@
 <script>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
-import { userService } from '../services/api'
+import api from '../services/api'
 
 export default {
   name: 'UserManagement',
@@ -318,7 +318,7 @@ export default {
           // Note: The API might not support searching by email, but we can try
         }
         
-        users.value = await userService.getUsers(filterParams)
+        users.value = await api.getUsers(filterParams)
       } catch (err) {
         error.value = 'Error al cargar usuarios'
         console.error('Error fetching users:', err)
@@ -379,7 +379,7 @@ export default {
         }
         
         if (isEditing.value) {
-          await userService.updateUser(userForm.id, data)
+          await api.updateUser(userForm.id, data)
         } else {
           // Password is required for new users
           if (!userForm.password) {
@@ -387,7 +387,7 @@ export default {
             return
           }
           data.password = userForm.password
-          await userService.createUser(data)
+          await api.createUser(data)
         }
         
         await fetchUsers()
@@ -410,7 +410,7 @@ export default {
       
       if (confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
         try {
-          await userService.deleteUser(userId)
+          await api.deleteUser(userId)
           await fetchUsers()
         } catch (err) {
           error.value = 'Error al eliminar usuario'

@@ -1,75 +1,52 @@
 <template>
   <div class="order-management">
-    <div class="container-fluid">
+    <div class="container">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Gestión de Órdenes</h2>
         <div class="d-flex gap-2">
+          <button class="btn btn-info" @click="handleSeedStock" :disabled="isSeeding">
+            <span v-if="isSeeding" class="spinner-border spinner-border-sm me-2"></span>
+            <i v-else class="fas fa-seedling me-2"></i>
+            Generar Stock de Productos
+          </button>
           <button class="btn btn-outline-secondary" @click="refreshOrders">
             <i class="fas fa-sync me-2"></i>
             Actualizar
           </button>
         </div>
       </div>
-      
+
       <!-- Stats Cards -->
       <div class="row mb-4">
         <div class="col-md-3">
           <div class="card bg-primary text-white">
             <div class="card-body">
-              <div class="d-flex justify-content-between">
-                <div>
-                  <h6>Total Órdenes</h6>
-                  <h3>{{ orders.length }}</h3>
-                </div>
-                <div class="align-self-center">
-                  <i class="fas fa-receipt fa-2x"></i>
-                </div>
-              </div>
+              <h6 class="card-title">Total Órdenes</h6>
+              <h3>{{ orders.length }}</h3>
             </div>
           </div>
         </div>
         <div class="col-md-3">
           <div class="card bg-warning text-white">
             <div class="card-body">
-              <div class="d-flex justify-content-between">
-                <div>
-                  <h6>Pendientes</h6>
-                  <h3>{{ getOrdersByStatus('pending').length }}</h3>
-                </div>
-                <div class="align-self-center">
-                  <i class="fas fa-clock fa-2x"></i>
-                </div>
-              </div>
+              <h6 class="card-title">Pendientes</h6>
+              <h3>{{ getOrdersByStatus('pending').length }}</h3>
             </div>
           </div>
         </div>
         <div class="col-md-3">
           <div class="card bg-success text-white">
             <div class="card-body">
-              <div class="d-flex justify-content-between">
-                <div>
-                  <h6>Completadas</h6>
-                  <h3>{{ getOrdersByStatus('completed').length }}</h3>
-                </div>
-                <div class="align-self-center">
-                  <i class="fas fa-check fa-2x"></i>
-                </div>
-              </div>
+              <h6 class="card-title">Completadas</h6>
+              <h3>{{ getOrdersByStatus('completed').length }}</h3>
             </div>
           </div>
         </div>
         <div class="col-md-3">
           <div class="card bg-danger text-white">
             <div class="card-body">
-              <div class="d-flex justify-content-between">
-                <div>
-                  <h6>Canceladas</h6>
-                  <h3>{{ getOrdersByStatus('cancelled').length }}</h3>
-                </div>
-                <div class="align-self-center">
-                  <i class="fas fa-times fa-2x"></i>
-                </div>
-              </div>
+              <h6 class="card-title">Canceladas</h6>
+              <h3>{{ getOrdersByStatus('cancelled').length }}</h3>
             </div>
           </div>
         </div>
@@ -78,7 +55,7 @@
       <!-- Filters -->
       <div class="card mb-4">
         <div class="card-body">
-          <div class="row">
+          <div class="row g-2">
             <div class="col-md-3">
               <select v-model="filters.status" @change="applyFilters" class="form-select">
                 <option value="">Todos los estados</option>
@@ -88,26 +65,13 @@
               </select>
             </div>
             <div class="col-md-3">
-              <input 
-                type="date" 
-                v-model="filters.date" 
-                @change="applyFilters"
-                class="form-control"
-              >
+              <input type="date" v-model="filters.date" @change="applyFilters" class="form-control">
             </div>
             <div class="col-md-4">
-              <input 
-                type="text" 
-                v-model="filters.search" 
-                @input="applyFilters"
-                placeholder="Buscar por ID de orden o usuario..." 
-                class="form-control"
-              >
+              <input type="text" v-model="filters.search" @input="applyFilters" placeholder="Buscar por ID de orden o usuario..." class="form-control">
             </div>
             <div class="col-md-2">
-              <button @click="clearFilters" class="btn btn-outline-secondary w-100">
-                Limpiar
-              </button>
+              <button @click="clearFilters" class="btn btn-outline-secondary w-100">Limpiar</button>
             </div>
           </div>
         </div>
@@ -116,21 +80,12 @@
       <!-- Orders Table -->
       <div class="card">
         <div class="card-body">
-          <!-- Loading State -->
           <div v-if="isLoading" class="text-center py-4">
-            <div class="spinner-border" role="status">
-              <span class="visually-hidden">Cargando...</span>
-            </div>
+            <div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div>
           </div>
-          
-          <!-- Error State -->
-          <div v-else-if="error" class="alert alert-danger">
-            {{ error }}
-          </div>
-          
-          <!-- Orders Table -->
+          <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
           <div v-else class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover align-middle">
               <thead>
                 <tr>
                   <th>ID</th>
@@ -143,90 +98,21 @@
               </thead>
               <tbody>
                 <tr v-for="order in filteredOrders" :key="order.id">
+                  <td><span class="fw-bold">#{{ order.id }}</span></td>
+                  <td>{{ getUsername(order.user_id) }}</td>
+                  <td>{{ formatDate(order.created_at) }}</td>
+                  <td><span class="fw-bold text-primary">${{ parseFloat(order.total_price).toFixed(2) }}</span></td>
                   <td>
-                    <span class="fw-bold">#{{ order.id }}</span>
+                    <span class="badge" :class="statusBadgeClass(order.status)">{{ getStatusText(order.status) }}</span>
                   </td>
-                  <td>
-                    <div>Usuario ID: {{ order.user_id }}</div>
-                  </td>
-                  <td>
-                    <div>{{ formatDate(order.created_at) }}</div>
-                  </td>
-                  <td>
-                    <span class="fw-bold text-primary">
-                      ${{ parseFloat(order.total_price).toFixed(2) }}
-                    </span>
-                  </td>
-                  <td>
-                    <span 
-                      class="badge"
-                      :class="{
-                        'bg-warning': order.status === 'pending',
-                        'bg-success': order.status === 'completed',
-                        'bg-danger': order.status === 'cancelled'
-                      }"
-                    >
-                      {{ getStatusText(order.status) }}
-                    </span>
-                  </td>
-                  <td>
-                    <div class="btn-group btn-group-sm">
-                      <button 
-                        class="btn btn-outline-primary"
-                        @click="viewOrderDetails(order)"
-                        title="Ver detalles"
-                      >
-                        <i class="fas fa-eye"></i>
-                      </button>
-                      <div class="btn-group btn-group-sm" role="group">
-                        <button 
-                          type="button" 
-                          class="btn btn-outline-secondary dropdown-toggle" 
-                          data-bs-toggle="dropdown"
-                          title="Cambiar estado"
-                        >
-                          <i class="fas fa-edit"></i>
-                        </button>
-                        <ul class="dropdown-menu">
-                          <li>
-                            <a 
-                              class="dropdown-item" 
-                              href="#" 
-                              @click.prevent="updateOrderStatus(order.id, 'pending')"
-                              :class="{ active: order.status === 'pending' }"
-                            >
-                              Pendiente
-                            </a>
-                          </li>
-                          <li>
-                            <a 
-                              class="dropdown-item" 
-                              href="#" 
-                              @click.prevent="updateOrderStatus(order.id, 'completed')"
-                              :class="{ active: order.status === 'completed' }"
-                            >
-                              Completada
-                            </a>
-                          </li>
-                          <li>
-                            <a 
-                              class="dropdown-item" 
-                              href="#" 
-                              @click.prevent="updateOrderStatus(order.id, 'cancelled')"
-                              :class="{ active: order.status === 'cancelled' }"
-                            >
-                              Cancelada
-                            </a>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
+                  <td class="actions-cell">
+                    <button class="btn btn-outline-primary btn-sm" @click="viewOrderDetails(order)" title="Ver detalles">
+                      <i class="fas fa-eye me-1"></i> Ver / Editar
+                    </button>
                   </td>
                 </tr>
               </tbody>
             </table>
-            
-            <!-- Empty State -->
             <div v-if="filteredOrders.length === 0" class="text-center py-4">
               <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
               <h5>No se encontraron órdenes</h5>
@@ -242,90 +128,61 @@
       <div class="modal-dialog modal-lg">
         <div class="modal-content" v-if="selectedOrder">
           <div class="modal-header">
-            <h5 class="modal-title">
-              Detalles de la Orden #{{ selectedOrder.id }}
-            </h5>
+            <h5 class="modal-title">Detalles de la Orden #{{ selectedOrder.id }}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
+            <!-- Order Info -->
             <div class="row mb-4">
               <div class="col-md-6">
                 <h6>Información General</h6>
-                <table class="table table-sm">
-                  <tbody>
-                    <tr>
-                      <td><strong>ID:</strong></td>
-                      <td>#{{ selectedOrder.id }}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Usuario ID:</strong></td>
-                      <td>{{ selectedOrder.user_id }}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Estado:</strong></td>
-                      <td>
-                        <span 
-                          class="badge"
-                          :class="{
-                            'bg-warning': selectedOrder.status === 'pending',
-                            'bg-success': selectedOrder.status === 'completed',
-                            'bg-danger': selectedOrder.status === 'cancelled'
-                          }"
-                        >
-                          {{ getStatusText(selectedOrder.status) }}
-                        </span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td><strong>Fecha:</strong></td>
-                      <td>{{ formatDate(selectedOrder.created_at) }}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Total:</strong></td>
-                      <td class="fw-bold text-primary">${{ parseFloat(selectedOrder.total_price).toFixed(2) }}</td>
-                    </tr>
-                  </tbody>
-                </table>
+                <p class="mb-1"><strong>Usuario:</strong> {{ getUsername(selectedOrder.user_id) }}</p>
+                <p class="mb-1"><strong>Fecha:</strong> {{ formatDate(selectedOrder.created_at) }}</p>
+                <p class="mb-1"><strong>Total:</strong> <span class="fw-bold text-primary">${{ parseFloat(selectedOrder.total_price).toFixed(2) }}</span></p>
+              </div>
+              <div class="col-md-6">
+                <h6>Cambiar Estado</h6>
+                <div v-if="selectedOrder.status === 'pending'">
+                  <select v-model="selectedOrderForm.status" class="form-select">
+                    <option value="pending">Pendiente</option>
+                    <option value="completed">Completada</option>
+                    <option value="cancelled">Cancelada</option>
+                  </select>
+                </div>
+                <p v-else class="mb-1">
+                  <strong>Estado:</strong> <span class="badge" :class="statusBadgeClass(selectedOrder.status)">{{ getStatusText(selectedOrder.status) }}</span>
+                </p>
               </div>
             </div>
             
-            <div v-if="selectedOrder.items && selectedOrder.items.length > 0">
-              <h6>Productos Ordenados:</h6>
-              <div class="table-responsive">
-                <table class="table table-sm">
-                  <thead>
-                    <tr>
-                      <th>Producto ID</th>
-                      <th>Cantidad</th>
-                      <th>Precio Unitario</th>
-                      <th>Subtotal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="item in selectedOrder.items" :key="item.id">
-                      <td>{{ item.product_id }}</td>
-                      <td>{{ item.quantity }}</td>
-                      <td>${{ parseFloat(item.price_at_time_of_purchase).toFixed(2) }}</td>
-                      <td class="fw-bold">
-                        ${{ (item.quantity * parseFloat(item.price_at_time_of_purchase)).toFixed(2) }}
-                      </td>
-                    </tr>
-                  </tbody>
-                  <tfoot>
-                    <tr class="table-active">
-                      <td colspan="3" class="fw-bold text-end">Total:</td>
-                      <td class="fw-bold text-primary">
-                        ${{ parseFloat(selectedOrder.total_price).toFixed(2) }}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
+            <!-- Order Items -->
+            <hr>
+            <h6 class="mb-3">Productos</h6>
+            <div v-if="isFetchingDetails" class="text-center"><div class="spinner-border spinner-border-sm"></div></div>
+            <div v-else-if="selectedOrderItems.length > 0">
+              <ul class="list-group list-group-flush">
+                <li v-for="item in selectedOrderItems" :key="item.id" class="list-group-item d-flex justify-content-between align-items-center px-0">
+                  <div>
+                    <div class="fw-bold">{{ item.productName }}</div>
+                    <small class="text-muted">{{ item.quantity }} x ${{ parseFloat(item.price_at_time_of_purchase).toFixed(2) }}</small>
+                  </div>
+                  <span class="fw-bold">${{ (item.quantity * parseFloat(item.price_at_time_of_purchase)).toFixed(2) }}</span>
+                </li>
+              </ul>
             </div>
+
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-              Cerrar
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <button 
+              type="button" 
+              class="btn btn-primary" 
+              @click="saveOrderChanges" 
+              v-if="selectedOrder.status === 'pending'"
+              :disabled="isSaving"
+            >
+              <span v-if="isSaving" class="spinner-border spinner-border-sm me-2"></span>
+              Guardar Cambios
             </button>
           </div>
         </div>
@@ -336,143 +193,195 @@
 
 <script>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { orderService } from '../services/api'
+import api from '../services/api'
+import * as bootstrap from 'bootstrap'
 
 export default {
   name: 'OrderManagement',
   setup() {
     const orders = ref([])
+    const usersCache = ref({})
     const selectedOrder = ref(null)
+    const selectedOrderItems = ref([])
     const isLoading = ref(false)
+    const isFetchingDetails = ref(false)
+    const isSaving = ref(false)
+    const isSeeding = ref(false)
     const error = ref(null)
     
-    const filters = reactive({
-      status: '',
-      date: '',
-      search: ''
-    })
+    let modalInstance = null;
+
+    const filters = reactive({ status: '', date: '', search: '' });
+    const selectedOrderForm = reactive({ status: '' });
     
     const filteredOrders = computed(() => {
-      let filtered = orders.value
-      
-      if (filters.status) {
-        filtered = filtered.filter(order => order.status === filters.status)
-      }
-      
-      if (filters.date) {
-        filtered = filtered.filter(order => {
-          const orderDate = new Date(order.created_at).toDateString()
-          const filterDate = new Date(filters.date).toDateString()
-          return orderDate === filterDate
+      return orders.value
+        .filter(order => {
+          const statusMatch = !filters.status || order.status === filters.status;
+          const dateMatch = !filters.date || new Date(order.created_at).toDateString() === new Date(filters.date).toDateString();
+          const searchMatch = !filters.search || 
+            order.id.toString().includes(filters.search) || 
+            getUsername(order.user_id).toLowerCase().includes(filters.search.toLowerCase());
+          return statusMatch && dateMatch && searchMatch;
         })
-      }
-      
-      if (filters.search) {
-        const term = filters.search.toLowerCase()
-        filtered = filtered.filter(order =>
-          order.id.toString().includes(term) ||
-          order.user_id.toString().includes(term)
-        )
-      }
-      
-      return filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    })
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    });
     
     const fetchOrders = async () => {
       isLoading.value = true
       error.value = null
       try {
-        orders.value = await orderService.getAllOrders()
+        const ordersData = await api.getAllOrders();
+        orders.value = ordersData;
+
+        const userIds = [...new Set(ordersData.map(o => o.user_id))].filter(id => !usersCache.value[id]);
+        if (userIds.length > 0) {
+          const userPromises = userIds.map(id => api.getUserById(id));
+          const usersData = await Promise.all(userPromises);
+          usersData.forEach(user => {
+            if (user) usersCache.value[user.id] = user.username;
+          });
+        }
       } catch (err) {
         error.value = 'Error al cargar las órdenes'
         console.error('Error fetching orders:', err)
       } finally {
         isLoading.value = false
       }
-    }
+    };
     
-    const refreshOrders = () => {
-      fetchOrders()
-    }
-    
-    const getOrdersByStatus = (status) => {
-      return orders.value.filter(order => order.status === status)
-    }
-    
-    const getStatusText = (status) => {
-      const statusMap = {
-        pending: 'Pendiente',
-        completed: 'Completada',
-        cancelled: 'Cancelada'
+    const getUsername = (userId) => {
+      return usersCache.value[userId] || `ID: ${userId}`;
+    };
+
+    const handleSeedStock = async () => {
+      if (!confirm('¿Estás seguro de que deseas generar el stock inicial? Esto puede sobrescribir los datos de stock existentes.')) {
+        return;
       }
-      return statusMap[status] || status
-    }
+      isSeeding.value = true;
+      error.value = null;
+      try {
+        await api.seedStock();
+        alert('El stock de productos se ha generado exitosamente.');
+      } catch (err) {
+        error.value = 'Error al generar el stock.';
+        console.error('Error seeding stock:', err);
+        alert('Hubo un error al generar el stock. Revisa la consola para más detalles.');
+      } finally {
+        isSeeding.value = false;
+      }
+    };
+
+    const refreshOrders = () => fetchOrders();
     
-    const formatDate = (dateString) => {
-      const date = new Date(dateString)
-      return date.toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    }
+    const getOrdersByStatus = (status) => orders.value.filter(order => order.status === status);
+    
+    const statusMap = { pending: 'Pendiente', completed: 'Completada', cancelled: 'Cancelada' };
+    const getStatusText = (status) => statusMap[status] || status;
+
+    const statusBadgeClass = (status) => ({
+      'bg-warning': status === 'pending',
+      'bg-success': status === 'completed',
+      'bg-danger': status === 'cancelled',
+    });
+    
+    const formatDate = (dateString) => new Date(dateString).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
     
     const viewOrderDetails = async (order) => {
+      selectedOrder.value = order;
+      selectedOrderForm.status = order.status;
+      modalInstance?.show();
+      
+      isFetchingDetails.value = true;
+      selectedOrderItems.value = [];
       try {
-        selectedOrder.value = await orderService.getOrderById(order.id)
-        const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'))
-        modal.show()
+        const items = await api.getOrderItems(order.id);
+        selectedOrderItems.value = await Promise.all(
+          items.map(async item => {
+            try {
+              const product = await api.getProductById(item.product_id);
+              return { ...item, productName: product.nombre };
+            } catch {
+              return { ...item, productName: `ID: ${item.product_id}` };
+            }
+          })
+        );
       } catch (err) {
-        console.error('Error fetching order details:', err)
-        error.value = 'Error al cargar los detalles de la orden'
+        console.error('Error fetching order items:', err)
+      } finally {
+        isFetchingDetails.value = false;
       }
-    }
+    };
     
-    const updateOrderStatus = async (orderId, newStatus) => {
-      try {
-        // Note: This would require implementing an update order status endpoint
-        console.log(`Update order ${orderId} to status ${newStatus}`)
-        // await orderService.updateOrderStatus(orderId, newStatus)
-        // await fetchOrders()
-        alert('Funcionalidad no implementada en el microservicio de inventario')
-      } catch (err) {
-        console.error('Error updating order status:', err)
-        error.value = 'Error al actualizar el estado de la orden'
+    const saveOrderChanges = async () => {
+      if (!selectedOrder.value) return;
+      
+      if (selectedOrder.value.status === selectedOrderForm.status) {
+        modalInstance?.hide();
+        return;
       }
-    }
+
+      const statusText = getStatusText(selectedOrderForm.status).toLowerCase();
+      if (confirm(`¿Estás seguro de que deseas marcar esta orden como "${statusText}"?`)) {
+        isSaving.value = true;
+        try {
+          await api.updateOrderStatus(selectedOrder.value.id, selectedOrderForm.status)
+          await fetchOrders();
+          modalInstance?.hide();
+        } catch (err) {
+          console.error('Error updating order status:', err)
+          error.value = 'Error al actualizar el estado de la orden'
+        } finally {
+          isSaving.value = false;
+        }
+      }
+    };
     
-    const applyFilters = () => {
-      // Filters are applied automatically via computed property
-    }
+    const applyFilters = () => {};
     
     const clearFilters = () => {
       filters.status = ''
       filters.date = ''
       filters.search = ''
-    }
+    };
     
     onMounted(() => {
-      fetchOrders()
-    })
+      fetchOrders();
+      const modalElement = document.getElementById('orderDetailsModal');
+      if (modalElement) {
+        modalInstance = new bootstrap.Modal(modalElement);
+        modalElement.addEventListener('hidden.bs.modal', () => {
+          document.body.focus();
+          selectedOrder.value = null;
+          selectedOrderItems.value = [];
+          selectedOrderForm.status = '';
+        });
+      }
+    });
     
     return {
       orders,
       selectedOrder,
+      selectedOrderForm,
+      selectedOrderItems,
       filteredOrders,
       isLoading,
+      isFetchingDetails,
+      isSaving,
+      isSeeding,
       error,
       filters,
-      fetchOrders,
       refreshOrders,
       getOrdersByStatus,
       getStatusText,
+      statusBadgeClass,
       formatDate,
+      getUsername,
       viewOrderDetails,
-      updateOrderStatus,
+      saveOrderChanges,
       applyFilters,
-      clearFilters
+      clearFilters,
+      handleSeedStock,
     }
   }
 }
@@ -480,25 +389,20 @@ export default {
 
 <style scoped>
 .table th {
-  border-top: none;
   font-weight: 600;
 }
-
-.btn-group-sm > .btn {
-  padding: 0.25rem 0.5rem;
+.table td {
+  vertical-align: middle;
 }
-
 .card {
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   border: none;
 }
-
 .badge {
   font-size: 0.8em;
+  padding: .4em .6em;
 }
-
-.dropdown-item.active {
-  background-color: #e9ecef;
-  color: #495057;
+.actions-cell {
+  min-width: 120px;
 }
 </style>

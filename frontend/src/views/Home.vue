@@ -131,7 +131,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useCartStore } from '../stores/cart'
-import { productService, orderService } from '../services/api'
+import api from '../services/api'
 
 export default {
   name: 'Home',
@@ -148,7 +148,7 @@ export default {
     
     const fetchRecentProducts = async () => {
       try {
-        const products = await productService.getActiveProducts()
+        const products = await api.getActiveProducts()
         recentProducts.value = products.slice(0, 3) // Show only first 3 products
       } catch (error) {
         console.error('Error fetching products:', error)
@@ -159,7 +159,7 @@ export default {
       if (!isAuthenticated.value) return
       
       try {
-        const orders = await orderService.getOrders()
+        const orders = await api.getOrders()
         userOrdersCount.value = orders.length
       } catch (error) {
         console.error('Error fetching user stats:', error)

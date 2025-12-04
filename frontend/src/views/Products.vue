@@ -162,7 +162,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useCartStore } from '../stores/cart'
-import { productService } from '../services/api'
+import api from '../services/api'
 
 export default {
   name: 'Products',
@@ -248,7 +248,7 @@ export default {
       isLoading.value = true
       error.value = null
       try {
-        products.value = await productService.getProducts()
+        products.value = await api.getProducts()
       } catch (err) {
         error.value = 'Error al cargar los productos'
         console.error('Error fetching products:', err)
@@ -259,7 +259,7 @@ export default {
     
     const fetchCategories = async () => {
       try {
-        categories.value = await productService.getCategories()
+        categories.value = await api.getCategories()
       } catch (err) {
         console.error('Error fetching categories:', err)
       }

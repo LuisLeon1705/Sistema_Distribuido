@@ -29,7 +29,7 @@ FROM debian:bookworm-slim AS runtime
 WORKDIR /app
 
 # Instalar dependencias mínimas
-RUN apt-get update && apt-get install -y --no-install-recommends tini && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends tini libssl3 && rm -rf /var/lib/apt/lists/*
 
 # Copiar el binario compilado desde la etapa de builder
 COPY --from=builder /app/target/release/inventory_service .

@@ -75,7 +75,7 @@ pub async fn get_temp_orders_by_user_id(user_id: Uuid) -> Result<Vec<TempOrder>,
     let filtered_orders = orders.into_iter()
         .filter(|order| order.user_id == user_id)
         .collect();
-
+    eprintln!("Filtered Orders: {:?}", filtered_orders);
     Ok(filtered_orders)
 }
 
