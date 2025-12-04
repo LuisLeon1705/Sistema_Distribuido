@@ -226,8 +226,7 @@ const orderService = {
     },
 
     async getAllOrders() {
-        // This should be for admins and gets all orders
-        const response = await inventoryAPI.get('/orders')
+        const response = await inventoryAPI.get('/admin/orders')
         return response.data
     },
 
