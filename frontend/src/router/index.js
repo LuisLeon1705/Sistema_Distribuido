@@ -41,13 +41,20 @@ const routes = [
     {
         path: '/products',
         name: 'Products',
-        component: Products
+        component: Products,
+        meta: { 
+        requiresAuth: true,
+        hideForAdmin: true
+        }
     },
     {
         path: '/cart',
         name: 'Cart',
         component: Cart,
-        meta: { requiresAuth: true }
+        meta: { 
+            requiresAuth: true, 
+            hideForAdmin: true
+        }
     },
     {
         path: '/orders',
@@ -111,6 +118,10 @@ router.beforeEach(async (to, from, next) => {
 
     // If route requires admin and user is not admin
     if (requiresAdmin && !authStore.isAdmin) {
+        return next('/')
+    }
+
+    if (to.meta.hideForAdmin && authStore.isAdmin) {
         return next('/')
     }
 
