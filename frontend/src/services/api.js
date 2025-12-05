@@ -57,7 +57,7 @@ const addResponseInterceptor = (apiInstance) => {
 })
 
 // Auth Service
-const authService = {
+export const authService = {
     async register(userData) {
         const response = await authAPI.post('/register', userData)
         return response.data
@@ -102,7 +102,7 @@ const authService = {
 }
 
 // User Management Service (Admin only)
-const userService = {
+export const userService = {
     async getUsers(filters = {}) {
         const params = new URLSearchParams(filters)
         const response = await usersAPI.get(`/${params}`)
@@ -130,7 +130,7 @@ const userService = {
 }
 
 // Product Service
-const productService = {
+export const productService = {
     async getProducts() {
         const response = await productsAPI.get('/productos')
         return response.data
@@ -198,7 +198,7 @@ const productService = {
 }
 
 // Inventory/Orders Service
-const orderService = {
+export const orderService = {
     async createOrder(orderData) {
         const response = await inventoryAPI.post('/orders', orderData)
         return response.data
@@ -226,7 +226,7 @@ const orderService = {
     },
 
     async getAllOrders() {
-        const response = await inventoryAPI.get('/admin/orders')
+        const response = await inventoryAPI.get('/orders')
         return response.data
     },
 
@@ -242,7 +242,7 @@ const orderService = {
 }
 
 // Stock Service
-const stockService = {
+export const stockService = {
     async getStock(productId) {
         const url = productId ? `/stock/${productId}` : '/stock';
         return await inventoryAPI.get(url);
