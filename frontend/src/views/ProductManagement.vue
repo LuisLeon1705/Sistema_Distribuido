@@ -183,13 +183,13 @@
                   </div>
                 </div>
               </div>
-
+              
               <div class="mb-3">
                 <label class="form-label">Descripción</label>
                 <textarea 
-                  v-model="productForm.descripcion"
-                  class="form-control"
-                  rows="3"
+                v-model="productForm.descripcion"
+                class="form-control"
+                rows="3"
                 ></textarea>
               </div>
 
@@ -218,6 +218,30 @@
                   </div>
                 </div>
               </div>
+              <h6 class="mb-3">Detalles del Stock</h6>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Cantidad en Stock *</label>
+                  <input 
+                    type="number" 
+                    min="0" 
+                    v-model.number="productForm.quantity" 
+                    @keydown="bloquearSignos" 
+                    class="form-control" 
+                    required
+                  >
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Ubicación en Almacén *</label>
+                  <input 
+                    type="text" 
+                    v-model="productForm.warehouse_location"
+                    class="form-control" 
+                    required
+                  >
+                </div>
+              </div>
+              <br></br>
 
               <div class="mb-3">
                 <label class="form-label">URL de Imagen</label>
@@ -339,6 +363,8 @@ export default {
       nombre: '',
       descripcion: '',
       precio: 0,
+      quantity: 0,
+      warehouse_location: '',
       categoria_id: '',
       imagen: '',
       imagenFile: null,
@@ -447,7 +473,7 @@ export default {
       }
     }
     
-    const editProduct = (product) => {
+    const editProduct = async (product) => {
       if (imagePreviewUrl.value) {
         try { URL.revokeObjectURL(imagePreviewUrl.value) } catch (e) {}
         imagePreviewUrl.value = ''
@@ -465,7 +491,16 @@ export default {
       productForm.imagen = product.imagen || ''
       productForm.imagenFile = product.imagenFile || null
       productForm.estado = product.estado
-      
+      try {
+        const stockResponse = await stockService.getStock(product.id);
+        if (stockResponse.data && stockResponse.data.length > 0) {
+          const { quantity, warehouse_location } = stockResponse.data[0];
+          productForm.quantity = quantity;
+          productForm.warehouse_location = warehouse_location;
+        }
+      } catch (err) {
+        console.error("Error fetching stock info:", err);
+      }
       const modal = new bootstrap.Modal(document.getElementById('productModal'))
       modal.show()
     }
@@ -516,11 +551,23 @@ export default {
             estado: productForm.estado
           }
         }
-        
         if (isEditing.value) {
+          const stockPayload = {
+            product_id: productForm.id,
+            quantity: productForm.quantity,
+            warehouse_location: productForm.warehouse_location,
+          };
           await productService.updateProduct(productForm.id, data)
+          await stockService.updateStock(stockPayload.product_id, stockPayload);
         } else {
-          await productService.createProduct(data)
+          const dataProduct = await productService.createProduct(data)
+          console.log(dataProduct);
+          const stockPayload = {
+            product_id: dataProduct.producto.id,
+            quantity: productForm.quantity,
+            warehouse_location: productForm.warehouse_location,
+          };
+          await stockService.addStock(stockPayload);
         }
         
         await fetchProducts()
@@ -554,6 +601,8 @@ export default {
       productForm.precio = 0
       productForm.categoria_id = ''
       productForm.imagen = ''
+      productForm.warehouse_location = ''
+      productForm.quantity = 0
 
       if (imagePreviewUrl.value) {
         try { URL.revokeObjectURL(imagePreviewUrl.value) } catch (e) {}

@@ -96,7 +96,7 @@ export const authService = {
     },
 
     async updateProfile(userData) {
-        const response = await usersAPI.patch('/users/me', userData)
+        const response = await usersAPI.patch('/me', userData)
         return response.data
     }
 }
@@ -110,22 +110,22 @@ export const userService = {
     },
 
     async getUserById(userId) {
-        const response = await usersAPI.get(`/users/${userId}`)
+        const response = await usersAPI.get(`/${userId}`)
         return response.data
     },
 
     async createUser(userData) {
-        const response = await usersAPI.post('/users', userData)
+        const response = await usersAPI.post('/', userData)
         return response.data
     },
 
     async updateUser(userId, userData) {
-        const response = await usersAPI.patch(`/users/${userId}`, userData)
+        const response = await usersAPI.patch(`/${userId}`, userData)
         return response.data
     },
 
     async deleteUser(userId) {
-        await usersAPI.delete(`/users/${userId}`)
+        await usersAPI.delete(`/${userId}`)
     }
 }
 
