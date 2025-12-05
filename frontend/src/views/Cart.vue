@@ -170,7 +170,7 @@ export default {
     const cartItems = computed(() => cartStore.cartItems)
     const totalItems = computed(() => cartStore.totalItems)
     const totalPrice = computed(() => cartStore.totalPrice)
-    
+
     const updateQuantity = (productId, newQuantity) => {
       if (newQuantity < 1) return
       cartStore.updateQuantity(productId, newQuantity)
@@ -187,7 +187,10 @@ export default {
     }
     
     const checkout = async () => {
-      try {
+      if ( !confirm("Las unidades disponibles en el inventario pueden variar al momento de realizar el checkout. Por favor, asegúrate de que los productos en tu carrito estén disponibles antes de proceder."))
+        {return}
+        try {
+        
         await cartStore.checkout()
         checkoutSuccess.value = true
         
