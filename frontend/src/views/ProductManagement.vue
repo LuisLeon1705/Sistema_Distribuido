@@ -9,6 +9,10 @@
             <i v-else class="fas fa-magic me-2"></i>
             Generar Productos de Muestra
           </button>
+          <button class="btn btn-info" @click="showCategoryModal">
+            <i class="fas fa-tags me-2"></i>
+            Crear Categoría
+          </button>
           <button class="btn btn-primary" @click="showCreateModal">
             <i class="fas fa-plus me-2"></i>
             Nuevo Producto
@@ -180,6 +184,37 @@
         </div>
       </div>
     </div>
+    <!-- Category Modal -->
+    <div class="modal fade" id="categoryModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Nueva Categoría</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <form @submit.prevent="saveCategory">
+            <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label">Nombre *</label>
+                <input type="text" v-model="categoryForm.nombre" class="form-control" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Descripción</label>
+                <textarea v-model="categoryForm.descripcion" class="form-control" rows="3"></textarea>
+              </div>
+              <div v-if="categoryFormError" class="alert alert-danger">{{ categoryFormError }}</div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit" class="btn btn-primary" :disabled="isSavingCategory">
+                <span v-if="isSavingCategory" class="spinner-border spinner-border-sm me-2"></span>
+                Guardar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -215,6 +250,7 @@ export default {
     const formError = ref(null);
     const isEditing = ref(false);
     let productModal = null;
+    let categoryModal = null;
 
     const imageFile = ref(null);
     const imagePreview = ref(null);
@@ -226,6 +262,10 @@ export default {
       id: null, nombre: '', descripcion: '', precio: 0, categoria_id: '',
       imagen: '', estado: 'activo', quantity: 0, warehouse_location: ''
     });
+
+    const categoryForm = reactive({ nombre: '', descripcion: '' });
+    const isSavingCategory = ref(false);
+    const categoryFormError = ref(null);
 
     watch(() => productForm.imagen, (newUrl) => {
         if (uploadMode.value === 'url') {
@@ -287,6 +327,12 @@ export default {
         isEditing.value = false;
         resetForm();
         productModal?.show();
+    };
+
+    const showCategoryModal = () => {
+        Object.assign(categoryForm, { nombre: '', descripcion: ''});
+        categoryFormError.value = null;
+        categoryModal?.show();
     };
 
     const editProduct = async (product) => {
@@ -364,6 +410,21 @@ export default {
             console.error(err);
         } finally {
             isSaving.value = false;
+        }
+    };
+
+    const saveCategory = async () => {
+        isSavingCategory.value = true;
+        categoryFormError.value = null;
+        try {
+            await api.createCategory(categoryForm);
+            await fetchAll();
+            categoryModal?.hide();
+        } catch (err) {
+            categoryFormError.value = err.response?.data?.message || 'Error al guardar la categoría.';
+            console.error(err);
+        } finally {
+            isSavingCategory.value = false;
         }
     };
 
@@ -447,13 +508,15 @@ export default {
     onMounted(() => {
         fetchAll();
         productModal = new bootstrap.Modal(document.getElementById('productModal'));
+        categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
     });
     
     return { 
         products, categories, isLoading, isSaving, isSeeding, error, formError, isEditing, 
         filters, productForm, filteredProducts, imagePreview, uploadMode,
         getCategoryName, truncateText, clearFilters, handleGenerateSampleData,
-        showCreateModal, editProduct, saveProduct, deleteProduct, handleFileChange
+        showCreateModal, editProduct, saveProduct, deleteProduct, handleFileChange,
+        showCategoryModal, saveCategory, categoryForm, isSavingCategory, categoryFormError
     };
   }
 }
