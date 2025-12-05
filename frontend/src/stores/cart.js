@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia';
 import { useAuthStore } from './auth';
 import api from '../services/api';
-import { debounce } from 'lodash-es';
 
 export const useCartStore = defineStore('cart', {
     state: () => ({
@@ -17,16 +16,12 @@ export const useCartStore = defineStore('cart', {
     },
 
     actions: {
-        // Private action to sync the cart with the backend.
-        // Debounced to prevent too many API calls in rapid succession.
-        _syncCartWithBackend: debounce(async function () {
+        async syncAndRefresh() {
             const authStore = useAuthStore();
-            if (!authStore.isAuthenticated || !authStore.user?.id) {
-                return; // Don't sync if user is not logged in
-            }
+            if (!authStore.isAuthenticated || !authStore.user?.id) return;
 
-            this.isLoading = true;
             try {
+                // First, send the current optimistic state to the backend
                 const payload = {
                     user_id: authStore.user.id,
                     items: this.items.map(item => ({
@@ -36,13 +31,15 @@ export const useCartStore = defineStore('cart', {
                     })),
                 };
                 await api.addTempOrder(payload);
+
+                // Then, fetch the authoritative state from the backend
+                // This will overwrite the local state with the backend's calculated quantities
+                await this.initializeCart();
             } catch (err) {
                 this.error = 'Error al sincronizar el carrito.';
-                console.error('Error syncing cart:', err);
-            } finally {
-                this.isLoading = false;
+                console.error('Error syncing and refreshing cart:', err);
             }
-        }, 1000), // Debounce for 1 second
+        },
 
         async initializeCart() {
             const authStore = useAuthStore();
@@ -54,19 +51,30 @@ export const useCartStore = defineStore('cart', {
             this.isLoading = true;
             try {
                 const tempOrders = await api.getTempOrdersByUserId(authStore.user.id);
-                // A user might have multiple temp orders if something went wrong.
-                // We'll load the most recent one. The backend returns them sorted.
+                
                 if (tempOrders && tempOrders.length > 0) {
-                    this.items = tempOrders[0].items.map(item => ({
-                        ...item,
-                        // Ensure price is a number, as JSON can sometimes be stringy
-                        price: parseFloat(item.price)
-                    }));
+                    const mostRecentOrder = tempOrders[0];
+                    const productPromises = mostRecentOrder.items.map(item => 
+                        api.getProductById(item.product_id).catch(() => null)
+                    );
+                    const products = await Promise.all(productPromises);
+                    const productsMap = new Map(products.filter(p => p).map(p => [p.id, p]));
+
+                    this.items = mostRecentOrder.items.map(item => {
+                        const product = productsMap.get(item.product_id);
+                        return {
+                            product_id: item.product_id,
+                            name: product ? product.nombre : 'Producto no disponible',
+                            price: parseFloat(item.price),
+                            quantity: item.quantity,
+                            image: product ? product.imagen : null,
+                        };
+                    });
                 } else {
                     this.items = [];
                 }
             } catch (err) {
-                this.items = []; // Start with an empty cart on error
+                this.items = [];
                 this.error = 'Error al cargar el carrito.';
                 console.error('Error fetching cart:', err);
             } finally {
@@ -88,12 +96,12 @@ export const useCartStore = defineStore('cart', {
                     image: product.imagen,
                 });
             }
-            this._syncCartWithBackend();
+            this.syncAndRefresh();
         },
 
         removeFromCart(productId) {
             this.items = this.items.filter(item => item.product_id !== productId);
-            this._syncCartWithBackend();
+            this.syncAndRefresh();
         },
 
         updateQuantity(productId, quantity) {
@@ -105,15 +113,12 @@ export const useCartStore = defineStore('cart', {
                     this.items = this.items.filter(i => i.product_id !== productId);
                 }
             }
-            this._syncCartWithBackend();
+            this.syncAndRefresh();
         },
 
         async clearCart() {
             this.items = [];
-            // Sync the empty cart to the backend
-            await this._syncCartWithBackend();
-            // Cancel any pending debounced calls since we just cleared everything
-            this._syncCartWithBackend.cancel();
+            this.syncAndRefresh();
         },
 
         async checkout() {
@@ -137,7 +142,6 @@ export const useCartStore = defineStore('cart', {
                     })),
                 };
                 const order = await api.createOrder(orderData);
-                // After successful checkout, clear the cart on frontend and backend
                 await this.clearCart();
                 return order;
             } catch (error) {

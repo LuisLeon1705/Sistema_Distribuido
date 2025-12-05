@@ -135,8 +135,22 @@
                 </div>
               </div>
               <div class="mb-3">
-                  <label class="form-label">URL de Imagen</label>
-                  <input type="url" v-model="productForm.imagen" class="form-control" placeholder="https://ejemplo.com/imagen.jpg">
+                <label class="form-label">Imagen del Producto</label>
+                <div>
+                    <div class="btn-group btn-group-sm mb-2">
+                        <button type="button" class="btn" :class="uploadMode === 'file' ? 'btn-primary' : 'btn-outline-primary'" @click="uploadMode = 'file'">Subir Archivo</button>
+                        <button type="button" class="btn" :class="uploadMode === 'url' ? 'btn-primary' : 'btn-outline-primary'" @click="uploadMode = 'url'">Desde URL</button>
+                    </div>
+                </div>
+
+                <div v-if="uploadMode === 'file'">
+                    <input type="file" @change="handleFileChange" class="form-control" accept="image/*">
+                </div>
+                <div v-if="uploadMode === 'url'">
+                    <input type="url" v-model="productForm.imagen" class="form-control" placeholder="https://ejemplo.com/imagen.jpg">
+                </div>
+
+                <img v-if="imagePreview" :src="imagePreview" alt="Vista previa" class="img-thumbnail mt-2" style="max-height: 150px;">
               </div>
 
               <hr class="my-4">
@@ -170,7 +184,7 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import * as bootstrap from 'bootstrap';
 import api from '../services/api';
 
@@ -201,12 +215,22 @@ export default {
     const formError = ref(null);
     const isEditing = ref(false);
     let productModal = null;
+
+    const imageFile = ref(null);
+    const imagePreview = ref(null);
+    const uploadMode = ref('file');
     
     const filters = reactive({ category: '', status: '', search: '' });
     
     const productForm = reactive({
       id: null, nombre: '', descripcion: '', precio: 0, categoria_id: '',
       imagen: '', estado: 'activo', quantity: 0, warehouse_location: ''
+    });
+
+    watch(() => productForm.imagen, (newUrl) => {
+        if (uploadMode.value === 'url') {
+            imagePreview.value = newUrl;
+        }
     });
 
     const filteredProducts = computed(() => {
@@ -244,7 +268,19 @@ export default {
             id: null, nombre: '', descripcion: '', precio: 0, categoria_id: '',
             imagen: '', estado: 'activo', quantity: 0, warehouse_location: ''
         });
+        imageFile.value = null;
+        imagePreview.value = null;
         formError.value = null;
+        uploadMode.value = 'file';
+    };
+
+    const handleFileChange = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            imageFile.value = file;
+            imagePreview.value = URL.createObjectURL(file);
+            productForm.imagen = ''; // Clear URL if a file is selected
+        }
     };
     
     const showCreateModal = () => {
@@ -266,6 +302,11 @@ export default {
             estado: product.estado
         });
         
+        if (product.imagen) {
+            imagePreview.value = product.imagen;
+            uploadMode.value = 'url';
+        }
+        
         try {
             const stockResponse = await api.getStock(product.id);
             if (stockResponse.data && stockResponse.data.length > 0) {
@@ -282,23 +323,36 @@ export default {
     const saveProduct = async () => {
         isSaving.value = true;
         formError.value = null;
+
+        const formData = new FormData();
+        
+        Object.keys(productForm).forEach(key => {
+            if (key !== 'id') {
+                 formData.append(key, productForm[key]);
+            }
+        });
+
+        if (uploadMode.value === 'file' && imageFile.value) {
+            formData.append('imagen', imageFile.value);
+        }
+
         try {
-            const { id, ...productData } = productForm;
             let savedProduct;
             if (isEditing.value) {
-                savedProduct = await api.updateProduct(id, productData);
+                savedProduct = await api.updateProduct(productForm.id, formData);
             } else {
-                savedProduct = await api.createProduct(productData);
+                savedProduct = await api.createProduct(formData);
             }
 
             const stockPayload = {
-                product_id: savedProduct.producto?.id || id,
+                product_id: savedProduct.producto?.id || productForm.id,
                 quantity: productForm.quantity,
                 warehouse_location: productForm.warehouse_location,
             };
 
             if (isEditing.value) {
-                await api.updateStock(stockPayload.product_id, stockPayload);
+                const { product_id, ...updateData } = stockPayload;
+                await api.updateStock(stockPayload.product_id, updateData);
             } else {
                 await api.addStock(stockPayload);
             }
@@ -353,17 +407,26 @@ export default {
                 const newCatId = categoryIdMap.get(prod.data.id_categoria);
                 if (!newCatId) continue;
 
-                const productPayload = { ...prod.data, categoria_id: newCatId };
+                const { id_categoria, imagen, ...productData } = prod.data;
+                const productPayload = { 
+                    ...productData, 
+                    categoria_id: newCatId,
+                    imagen_url: imagen
+                };
                 
                 // Use a try-catch for each product to be more resilient
                 try {
                     const newProductResponse = await api.createProduct(productPayload);
                     if (newProductResponse && newProductResponse.producto) {
-                        await api.addStock({
-                            product_id: newProductResponse.producto.id,
-                            quantity: prod.stock,
-                            warehouse_location: 'Almacén Principal'
-                        });
+                        try {
+                            await api.addStock({
+                                product_id: newProductResponse.producto.id,
+                                quantity: prod.stock,
+                                warehouse_location: 'Almacén Principal'
+                            });
+                        } catch (stockErr) {
+                            console.error(`Failed to add stock for product ${prod.data.nombre}:`, stockErr);
+                        }
                     }
                 } catch(e) {
                      console.error(`Failed to create product ${prod.data.nombre}:`, e);
@@ -388,9 +451,9 @@ export default {
     
     return { 
         products, categories, isLoading, isSaving, isSeeding, error, formError, isEditing, 
-        filters, productForm, filteredProducts,
+        filters, productForm, filteredProducts, imagePreview, uploadMode,
         getCategoryName, truncateText, clearFilters, handleGenerateSampleData,
-        showCreateModal, editProduct, saveProduct, deleteProduct
+        showCreateModal, editProduct, saveProduct, deleteProduct, handleFileChange
     };
   }
 }

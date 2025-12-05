@@ -75,24 +75,3 @@ CREATE TABLE productos (
         REFERENCES categorias(id) 
         ON DELETE CASCADE
 );
-
-INSERT INTO categorias (id, nombre, descripcion, codigo, created_at, updated_at) VALUES
-('11111111-1111-1111-1111-111111111111', 'Bebidas', 'Bebidas para cada ocasión: jugos, refrescos y más.', 'BEB', NOW(), NOW()),
-('22222222-2222-2222-2222-222222222222', 'Víveres', 'Productos básicos de tu despensa.', 'VIB', NOW(), NOW()),
-('33333333-3333-3333-3333-333333333333', 'Dulces', 'Endulza tus momentos con caramelos, chocolates y golosinas irresistibles.', 'DUL', NOW(), NOW());
-
-INSERT INTO productos (id, codigo, nombre, detalles, precio, id_categoria, descripcion, imagen_url, estado, created_at, updated_at) VALUES
-('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'BEB-000001', 'Coca Cola Original', '2 litros', 3.00, '11111111-1111-1111-1111-111111111111', 'Bebida gaseosa clásica', 'https://productos-sistema-distribuido.s3.us-east-1.amazonaws.com/cocacola.jpg', true, NOW(), NOW()),
-('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'BEB-000002', 'Jugo de Naranja', '1 litro', 2.50, '11111111-1111-1111-1111-111111111111', 'Saludable y natrual', 'https://productos-sistema-distribuido.s3.us-east-1.amazonaws.com/naranja.jpg', true, NOW(), NOW()),
-('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13', 'BEB-000003', 'Te de Manzana', '750 ml', 5.00, '11111111-1111-1111-1111-111111111111', 'Refrescante y delicioso', 'https://productos-sistema-distribuido.s3.us-east-1.amazonaws.com/manzana.jpg', true, NOW(), NOW()),
-('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14', 'BEB-000004', 'Arizona', '350 ml', 1.25, '11111111-1111-1111-1111-111111111111', 'Recarga energías con Arizona', 'https://productos-sistema-distribuido.s3.us-east-1.amazonaws.com/arizona.png', true, NOW(), NOW()),
-
-('b0eebc99-9c0b-4ef8-bb6d-6bb9bd380b21', 'VIB-000001', 'Harina', '1 kl', 1.10, '22222222-2222-2222-2222-222222222222', 'Ideal para repostería', 'https://productos-sistema-distribuido.s3.us-east-1.amazonaws.com/harina.jpg', true, NOW(), NOW()),
-('b0eebc99-9c0b-4ef8-bb6d-6bb9bd380b22', 'VIB-000002', 'Pasta', '1 kl', 2.20, '22222222-2222-2222-2222-222222222222', 'Fácil de cocinar', 'https://productos-sistema-distribuido.s3.us-east-1.amazonaws.com/pasta.jpg', true, NOW(), NOW()),
-('b0eebc99-9c0b-4ef8-bb6d-6bb9bd380b23', 'VIB-000003', 'Aceite', '750 ml', 4.35, '22222222-2222-2222-2222-222222222222', 'Oliva extra virgen', 'https://productos-sistema-distribuido.s3.us-east-1.amazonaws.com/aceite.jpg', true, NOW(), NOW()),
-('b0eebc99-9c0b-4ef8-bb6d-6bb9bd380b24', 'VIB-000004', 'Arroz', '1 kl', 1.90, '22222222-2222-2222-2222-222222222222', 'Grano largo premium', 'https://productos-sistema-distribuido.s3.us-east-1.amazonaws.com/descarga.jpg', true, NOW(), NOW()),
-
-('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380c31', 'DUL-000001', 'Galleta Oreo', '150 mg', 2.50, '33333333-3333-3333-3333-333333333333', 'Clásica y deliciosa', 'https://productos-sistema-distribuido.s3.us-east-1.amazonaws.com/oreo.jpg', true, NOW(), NOW()),
-('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380c32', 'DUL-000002', 'Chocolate Savoy', '350 mg', 3.60, '33333333-3333-3333-3333-333333333333', 'Delicioso chocolate oscuro', 'https://productos-sistema-distribuido.s3.us-east-1.amazonaws.com/chocolate.jpg', true, NOW(), NOW()),
-('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380c33', 'DUL-000003', 'Pringles', '400 mg', 4.00, '33333333-3333-3333-3333-333333333333', 'Papas fritas en tubo', 'https://productos-sistema-distribuido.s3.us-east-1.amazonaws.com/pringles.jpg', true, NOW(), NOW()),
-('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380c34', 'DUL-000004', 'Flips de Chocolate', '150 mg', 2.30, '33333333-3333-3333-3333-333333333333', 'Crujientes y dulces', 'https://productos-sistema-distribuido.s3.us-east-1.amazonaws.com/flips.jpg', true, NOW(), NOW());

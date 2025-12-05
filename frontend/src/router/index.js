@@ -41,7 +41,15 @@ const routes = [
     {
         path: '/products',
         name: 'Products',
-        component: Products
+        component: Products,
+        beforeEnter: (to, from, next) => {
+            const authStore = useAuthStore();
+            if (authStore.isAdmin) {
+                next({ name: 'ProductManagement' });
+            } else {
+                next();
+            }
+        }
     },
     {
         path: '/cart',

@@ -1,371 +1,182 @@
+# Sistema de Gestión Distribuido
 
-# Documentación del Proyecto
+Este proyecto es una aplicación web de comercio electrónico construida sobre una arquitectura de microservicios. Incluye funcionalidades para la gestión de productos, inventario, pedidos y autenticación de usuarios. El frontend está desarrollado con Vue.js y el backend se compone de múltiples servicios construidos con Python (FastAPI), PHP (Laravel) y Rust (Axum).
 
-Este documento proporciona una visión general de la arquitectura de microservicios para el proyecto Gestor.
+## Características
 
-## Servicios
+-   **Autenticación de Usuarios**: Registro, inicio de sesión y gestión de sesiones con tokens JWT.
+-   **Verificación de Correo Electrónico**: Proceso de registro seguro con verificación por código.
+-   **Gestión de Productos**: Operaciones CRUD para productos y categorías.
+-   **Gestión de Inventario**: Seguimiento del stock de productos en tiempo real.
+-   **Carrito de Compras Persistente**: El carrito de compras se guarda en el backend y se sincroniza entre sesiones.
+-   **Gestión de Pedidos**: Creación y seguimiento de pedidos de clientes.
+-   **Roles de Usuario**: Roles de Administrador y Cliente con diferentes permisos.
+-   **Paneles de Administración**: Interfaces para gestionar productos, pedidos y usuarios.
 
-El backend se compone de tres servicios principales:
+## Arquitectura
 
-1.  **Servicio de Autenticación**: Gestiona la autenticación y autorización de usuarios.
-2.  **Servicio de Productos**: Administra la información de los productos.
-3.  **Servicio de Inventario**: Administra los niveles de stock y los pedidos de los clientes.
+El sistema está compuesto por los siguientes microservicios:
 
-El proyecto también incluye una aplicación frontend simple.
+1.  **Frontend (`/frontend`)**: Una aplicación de una sola página (SPA) construida con **Vue.js**. Sirve como la interfaz de usuario para clientes y administradores.
+2.  **Servicio de Autenticación (`/backend/authservice`)**: Construido con **Python (FastAPI)**, gestiona el registro de usuarios, inicio de sesión, validación de correo electrónico y roles.
+3.  **Servicio de Productos (`/backend/productservice`)**: Construido con **PHP (Laravel)**, se encarga de toda la información relacionada con los productos y categorías (nombres, descripciones, precios, etc.).
+4.  **Servicio de Inventario (`/backend/inventoryservice`)**: Construido con **Rust (Axum)**, gestiona el stock de los productos y los pedidos de los clientes. También maneja la lógica del carrito de compras temporal.
+
+Todos los servicios están orquestados usando Docker y se comunican a través de una red definida en `docker-compose.yml`.
+
+## Cómo Empezar
+
+Sigue estos pasos para levantar el entorno de desarrollo completo.
+
+### Prerrequisitos
+
+-   Tener instalado [Docker](https://www.docker.com/get-started/) y Docker Compose.
+
+### Instalación y Ejecución
+
+1.  Clona este repositorio en tu máquina local.
+2.  Abre una terminal en el directorio raíz del proyecto.
+3.  Ejecuta el siguiente comando para construir e iniciar todos los servicios en segundo plano:
+
+    ```bash
+    docker-compose up --build -d
+    ```
+
+4.  Una vez que todos los contenedores estén en funcionamiento, la aplicación estará accesible.
+
+## Uso de la Aplicación
+
+-   **Aplicación Frontend**: Abre tu navegador y ve a `http://localhost:3000`.
+-   **API de Autenticación**: Accesible en `http://localhost:8001`.
+-   **API de Inventario**: Accesible en `http://localhost:8002`.
+-   **API de Productos**: Accesible en `http://localhost:8003`.
+
+### Credenciales de Administrador
+
+Se crea un usuario administrador por defecto para facilitar las pruebas y la gestión inicial.
+
+-   **Usuario**: `admin@admin.com`
+-   **Contraseña**: `-Admin123-`
+
+### Proceso de Verificación de Correo
+
+Cuando un nuevo usuario se registra, el sistema sigue estos pasos:
+
+1.  El usuario se registra con su nombre de usuario, correo electrónico y contraseña.
+2.  El servicio de autenticación envía un código de verificación de 6 dígitos al correo electrónico proporcionado.
+3.  **Importante**: Dado que este es un entorno de desarrollo local sin un servidor de correo real, el código de verificación se **imprime en la consola del contenedor del `authservice`**.
+4.  Para ver el código, revisa los logs del servicio de autenticación:
+    ```bash
+    docker logs authservice
+    ```
+5.  Busca una línea que se parezca a: `Verification code for ... is ...`.
+6.  Introduce este código en la página de verificación de la aplicación frontend para activar la cuenta.
 
 ---
 
-### 1. Servicio de Autenticación (`/backend/authservice`)
+<details>
+<summary>Documentación de la API del Servicio de Autenticación y Usuarios</summary>
 
-*   **Estado**: Funcional
-*   **Descripción**: Este servicio es responsable del registro de usuarios, inicio de sesión y gestión de sesiones. Emitirá tokens JWT para ser consumidos por otros servicios. El esquema de la base de datos incluye una tabla de `users` con roles (`admin`, `customer`).
+El servicio de autenticación y usuarios se expone en `http://localhost:8001` y se divide en dos prefijos principales: `/auth` y `/users`.
 
----
+### Endpoints de Autenticación (`/auth`)
 
-### 2. Servicio de Productos (`/backend/productservice`)
+-   **`POST /register`**: Registra un nuevo usuario (rol "customer" por defecto).
+-   **`POST /login`**: Inicia sesión y devuelve un token JWT.
+-   **`POST /logout`**: Cierra la sesión del usuario.
+-   **`POST /send-verification-code`**: Reenvía un código de verificación al correo del usuario.
+-   **`POST /verify-email`**: Verifica el correo de un usuario usando el código recibido.
 
-*   **Estado**: Funcional
-*   **Descripción**: Este servicio gestionará el catálogo de productos. Está destinado a proporcionar operaciones CRUD para los productos, incluyendo detalles como nombre, descripción, precio y categoría. El esquema de la base de datos define una tabla de `products`.
+### Endpoints de Usuarios (`/users`)
 
----
+-   **`GET /me`**: Obtiene el perfil del usuario autenticado actualmente.
+-   **`PATCH /me`**: Actualiza el perfil del usuario autenticado actualmente.
+-   **`POST /`** `(Admin)`: Crea un nuevo usuario.
+-   **`GET /`** `(Admin)`: Lista todos los usuarios con opciones de filtrado.
+-   **`GET /{user_id}`** `(Admin)`: Obtiene un usuario específico por su ID.
+-   **`PATCH /{user_id}`** `(Admin)`: Actualiza los datos de un usuario específico.
+-   **`DELETE /{user_id}`** `(Admin)`: Elimina un usuario específico.
 
-### 3. Servicio de Inventario (`/backend/inventoryservice`)
+</details>
 
-*   **Estado**: Funcional
-*   **Descripción**: Este servicio, construido en Rust utilizando el framework Axum, es el núcleo del sistema de gestión de inventario y pedidos. Se conecta a una base de datos PostgreSQL para administrar el stock y procesar los pedidos de los clientes.
+<details>
+<summary>Documentación de la API del Servicio de Productos</summary>
 
-#### Documentación de Endpoints de API del Servicio de Inventario
+El servicio de productos se expone en `http://localhost:8003` con un prefijo `/api`.
 
-Este documento describe los endpoints de la API REST proporcionados por el Servicio de Inventario.
+### Endpoints de Productos (`/api/productos`)
 
-##### URL Base
+-   **`GET /productos`**: Obtiene una lista de todos los productos.
+-   **`GET /productos/activos`**: Obtiene una lista de los productos con estado "activo".
+-   **`GET /productos/{id}`**: Obtiene un producto específico por su ID.
+-   **`GET /productos/codigo/{codigo}`**: Obtiene un producto por su código.
+-   **`GET /productos/categoria/{id}`**: Obtiene todos los productos de una categoría específica.
+-   **`POST /productos`** `(Requiere JWT)`: Crea un nuevo producto.
+-   **`PUT /productos/{id}`** `(Requiere JWT)`: Actualiza un producto existente.
+-   **`DELETE /productos/{id}`** `(Requiere JWT)`: Elimina un producto.
 
-Todos los endpoints son relativos a la URL base del servicio (por ejemplo, `http://localhost:8000`).
+### Endpoints de Categorías (`/api/categorias`)
 
----
+-   **`GET /categorias`**: Obtiene una lista de todas las categorías.
+-   **`GET /categorias/{id}`**: Obtiene una categoría específica por su ID.
+-   **`POST /categorias`** `(Requiere JWT)`: Crea una nueva categoría.
+-   **`PUT /categorias/{id}`** `(Requiere JWT)`: Actualiza una categoría existente.
+-   **`DELETE /categorias/{id}`** `(Requiere JWT)`: Elimina una categoría.
 
-##### 1. Endpoints de Pedidos
+</details>
 
-###### `GET /orders`
+<details>
+<summary>Documentación de la API del Servicio de Inventario</summary>
+
+El servicio de inventario se expone en `http://localhost:8002`.
+
+### 1. Endpoints de Pedidos
+
+#### `GET /orders`
 Recupera una lista de todos los pedidos.
-- **Método:** `GET`
-- **URL:** `/orders`
-- **Cuerpo de la Solicitud:** Ninguno
-- **Respuesta:** `200 OK`
-  ```json
-  [
-    {
-      "id": 1,
-      "user_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
-      "total_price": "123.45",
-      "status": "pending",
-      "created_at": "2023-10-27T10:00:00Z"
-    }
-  ]
-  ```
 
-###### `POST /orders`
-Crea un nuevo pedido a partir de un pedido temporal asociado a un usuario.
-- **Método:** `POST`
-- **URL:** `/orders`
-- **Cuerpo de la Solicitud:**
-  ```json
-  {
-    "user_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
-    "items": []
-  }
-  ```
-  *(Nota: El array `items` en el cuerpo de la solicitud es ignorado actualmente. Los ítems del pedido real se obtienen del pedido temporal asociado al `user_id`.)*
-- **Respuesta:** `201 Created`
-  ```json
-  {
-    "id": 1,
-    "user_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
-    "total_price": "123.45",
-    "status": "pending",
-    "created_at": "2023-10-27T10:00:00Z"
-  }
-  ```
-- **Respuestas de Error:**
-  - `400 Bad Request`: Si no se encuentra un pedido temporal para el `user_id` o el pedido temporal no tiene ítems.
-  - `500 Internal Server Error`: Para otros problemas del lado del servidor.
+#### `POST /orders`
+Crea un nuevo pedido a partir de un pedido temporal.
 
-###### `GET /orders/:order_id`
+#### `GET /orders/:order_id`
 Recupera un pedido específico por su ID.
-- **Método:** `GET`
-- **URL:** `/orders/{order_id}` (ej., `/orders/1`)
-- **Cuerpo de la Solicitud:** Ninguno
-- **Respuesta:** `200 OK`
-  ```json
-  {
-    "id": 1,
-    "user_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
-    "total_price": "123.45",
-    "status": "pending",
-    "created_at": "2023-10-27T10:00:00Z"
-  }
-  ```
-- **Respuestas de Error:**
-  - `404 Not Found`: Si el pedido con el ID dado no existe.
-  - `500 Internal Server Error`: Para otros problemas del lado del servidor.
 
-###### `GET /orders/:order_id/items`
-Recupera todos los ítems pertenecientes a un pedido específico.
-- **Método:** `GET`
-- **URL:** `/orders/{order_id}/items` (ej., `/orders/1/items`)
-- **Cuerpo de la Solicitud:** Ninguno
-- **Respuesta:** `200 OK`
-  ```json
-  [
-    {
-      "id": 101,
-      "order_id": 1,
-      "product_id": "c1d2e3f4-g5h6-7890-1234-567890abcdef",
-      "quantity": 2,
-      "price_at_time_of_purchase": "50.00"
-    }
-  ]
-  ```
-- **Respuestas de Error:**
-  - `500 Internal Server Error`: Para problemas del lado del servidor.
+#### `GET /orders/:order_id/items`
+Recupera todos los ítems de un pedido específico.
 
-###### `GET /orders/user/:user_id`
-Recupera todos los pedidos realizados por un usuario específico.
-- **Método:** `GET`
-- **URL:** `/orders/user/{user_id}` (ej., `/orders/user/a1b2c3d4-e5f6-7890-1234-567890abcdef`)
-- **Cuerpo de la Solicitud:** Ninguno
-- **Respuesta:** `200 OK`
-  ```json
-  [
-    {
-      "id": 1,
-      "user_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
-      "total_price": "123.45",
-      "status": "pending",
-      "created_at": "2023-10-27T10:00:00Z"
-    }
-  ]
-  ```
-- **Respuestas de Error:**
-  - `500 Internal Server Error`: Para problemas del lado del servidor.
+#### `GET /orders/user/:user_id`
+Recupera todos los pedidos de un usuario específico.
 
-###### `POST /orders/status`
-Actualiza el estado de un pedido. Solo los pedidos con estado "pendiente" pueden ser actualizados. Si el estado se cambia a "cancelado", los ítems se devuelven al stock.
-- **Método:** `POST`
-- **URL:** `/orders/status`
-- **Cuerpo de la Solicitud:**
-  ```json
-  {
-    "order_id": 1,
-    "new_status": "completed"
-  }
-  ```
-  Valores posibles para `new_status`: `"completed"`, `"cancelled"`.
-- **Respuesta:** `200 OK`
-  ```json
-  {
-    "id": 1,
-    "user_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
-    "total_price": "123.45",
-    "status": "completed",
-    "created_at": "2023-10-27T10:00:00Z"
-  }
-  ```
-- **Respuestas de Error:**
-  - `400 Bad Request`: Si el estado del pedido no es "pendiente" o para transiciones de estado inválidas.
-  - `404 Not Found`: Si el pedido con el ID dado no existe.
-  - `500 Internal Server Error`: Para otros problemas del lado del servidor.
+#### `POST /orders/status`
+Actualiza el estado de un pedido (`completed` o `cancelled`).
 
 ---
 
-##### 2. Endpoints de Stock
+### 2. Endpoints de Stock
 
-###### `POST /stock`
+#### `POST /stock`
 Añade nuevo stock para un producto.
-- **Método:** `POST`
-- **URL:** `/stock`
-- **Cuerpo de la Solicitud:**
-  ```json
-  {
-    "product_id": "f1g2h3i4-j5k6-7890-1234-567890abcdef",
-    "quantity": 100,
-    "warehouse_location": "Warehouse A"
-  }
-  ```
-- **Respuesta:** `200 OK`
-  ```json
-  {
-    "id": 1,
-    "product_id": "f1g2h3i4-j5k6-7890-1234-567890abcdef",
-    "quantity": 100,
-    "last_updated": "2023-10-27T10:00:00Z",
-    "warehouse_location": "Warehouse A"
-  }
-  ```
-- **Respuestas de Error:**
-  - `500 Internal Server Error`: Para problemas del lado del servidor.
 
-###### `GET /stock`
+#### `GET /stock`
 Recupera una lista de todas las entradas de stock.
-- **Método:** `GET`
-- **URL:** `/stock`
-- **Cuerpo de la Solicitud:** Ninguno
-- **Respuesta:** `200 OK`
-  ```json
-  [
-    {
-      "id": 1,
-      "product_id": "f1g2h3i4-j5k6-7890-1234-567890abcdef",
-      "quantity": 100,
-      "last_updated": "2023-10-27T10:00:00Z",
-      "warehouse_location": "Warehouse A"
-    }
-  ]
-  ```
-- **Respuestas de Error:**
-  - `500 Internal Server Error`: Para problemas del lado del servidor.
 
-###### `GET /stock/:product_id`
-Recupera información de stock para un producto específico.
-- **Método:** `GET`
-- **URL:** `/stock/{product_id}` (ej., `/stock/f1g2h3i4-j5k6-7890-1234-567890abcdef`)
-- **Cuerpo de la Solicitud:** Ninguno
-- **Respuesta:** `200 OK`
-  ```json
-  [
-    {
-      "id": 1,
-      "product_id": "f1g2h3i4-j5k6-7890-1234-567890abcdef",
-      "quantity": 100,
-      "last_updated": "2023-10-27T10:00:00Z",
-      "warehouse_location": "Warehouse A"
-    }
-  ]
-  ```
-- **Respuestas de Error:**
-  - `500 Internal Server Error`: Para problemas del lado del servidor.
+#### `GET /stock/:product_id`
+Recupera el stock de un producto específico.
 
-###### `PUT /stock/:product_id`
-Actualiza la cantidad o la ubicación del almacén del stock de un producto específico.
-- **Método:** `PUT`
-- **URL:** `/stock/{product_id}` (ej., `/stock/f1g2h3i4-j5k6-7890-1234-567890abcdef`)
-- **Cuerpo de la Solicitud:**
-  ```json
-  {
-    "quantity": 120,
-    "warehouse_location": "Warehouse B"
-  }
-  ```
-  (Los campos son opcionales; solo se actualizarán los campos proporcionados)
-- **Respuesta:** `200 OK`
-  ```json
-  {
-    "id": 1,
-    "product_id": "f1g2h3i4-j5k6-7890-1234-567890abcdef",
-    "quantity": 120,
-    "last_updated": "2023-10-27T10:00:00Z",
-    "warehouse_location": "Warehouse B"
-  }
-  ```
-- **Respuestas de Error:**
-  - `404 Not Found`: Si la entrada de stock para el ID de producto dado no existe.
-  - `500 Internal Server Error`: Para otros problemas del lado del servidor.
+#### `PUT /stock/:product_id`
+Actualiza el stock de un producto.
 
-###### `DELETE /stock/:product_id`
-Elimina una entrada de stock para un producto específico.
-- **Método:** `DELETE`
-- **URL:** `/stock/{product_id}` (ej., `/stock/f1g2h3i4-j5k6-7890-1234-567890abcdef`)
-- **Cuerpo de la Solicitud:** Ninguno
-- **Respuesta:** `204 No Content`
-- **Respuestas de Error:**
-  - `404 Not Found`: Si la entrada de stock para el ID de producto dado no existe.
-  - `500 Internal Server Error`: Para otros problemas del lado del servidor.
+#### `DELETE /stock/:product_id`
+Elimina una entrada de stock.
 
 ---
 
-##### 3. Endpoints de Pedidos Temporales
+### 3. Endpoints de Pedidos Temporales
 
-Los pedidos temporales se almacenan en un archivo JSON local (`data/order_list.json`) y se utilizan para guardar la información del pedido antes de que se finalice y se mueva a la base de datos principal.
+#### `POST /temp_orders`
+Añade o actualiza un pedido temporal (carrito de compras) para un usuario. El backend ajusta las cantidades según el stock disponible y devuelve el estado final del carrito.
 
-###### `POST /temp_orders`
-Añade un nuevo pedido temporal. Si ya existe un pedido temporal con el mismo `user_id`, será reemplazado.
-- **Método:** `POST`
-- **URL:** `/temp_orders`
-- **Cuerpo de la Solicitud:**
-  ```json
-  {
-    "user_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
-    "items": [
-      {
-        "product_id": "b2c3d4e5-f6a7-8901-2345-67890abcdef1",
-        "quantity": 1,
-        "price": "10.00"
-      },
-      {
-        "product_id": "c3d4e5f6-a7b8-9012-3456-7890abcdef21",
-        "quantity": 3,
-        "price": "5.50"
-      }
-    ]
-  }
-  ```
-- **Respuesta:** `201 Created`
-  ```json
-  {
-    "user_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
-    "items": [
-      {
-        "product_id": "b2c3d4e5-f6a7-8901-2345-67890abcdef1",
-        "quantity": 1,
-        "price": "10.00"
-      }
-    ],
-    "created_at": "2023-10-27T10:00:00Z"
-  }
-  ```
-  *(Nota: La `quantity` en la respuesta podría ajustarse si excede el stock disponible.)*
-- **Respuestas de Error:**
-  - `500 Internal Server Error`: Para problemas del lado del servidor.
+#### `GET /temp_orders/user/:user_id`
+Recupera el pedido temporal de un usuario.
 
-###### `GET /temp_orders/user/:user_id`
-Recupera todos los pedidos temporales asociados a un usuario específico.
-- **Método:** `GET`
-- **URL:** `/temp_orders/user/{user_id}` (ej., `/temp_orders/user/a1b2c3d4-e5f6-7890-1234-567890abcdef`)
-- **Cuerpo de la Solicitud:** Ninguno
-- **Respuesta:** `200 OK`
-  ```json
-  [
-    {
-      "user_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
-      "items": [
-        {
-          "product_id": "b2c3d4e5-f6a7-8901-2345-67890abcdef1",
-          "quantity": 1,
-          "price": "10.00"
-        }
-      ],
-      "created_at": "2023-10-27T10:00:00Z"
-    }
-  ]
-  ```
-- **Respuestas de Error:**
-  - `500 Internal Server Error`: Para problemas del lado del servidor.
-
----
-
-### 4. Frontend (`/frontend`)
-
-*   **Estado**: En construcción
-*   **Descripción**: Un simple `index.html` de marcador de posición servido por un contenedor Nginx. Eventualmente se desarrollará en una interfaz de usuario completa para interactuar con los servicios del backend.
-
----
-
-## Cómo Ejecutar
-
-Toda la pila de la aplicación se puede iniciar usando Docker Compose.
-
-```bash
-docker-compose up --build
-```
-
-Este comando construirá las imágenes para cada servicio e iniciará los contenedores.
+</details>

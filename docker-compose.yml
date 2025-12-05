@@ -56,7 +56,7 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "8002:3001"
+      - "8002:3000"
     networks:
       - sistema-distribuido
 

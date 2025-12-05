@@ -110,7 +110,7 @@ const userService = {
     },
 
     async getUserById(userId) {
-        const response = await usersAPI.get(`/users/${userId}`)
+        const response = await usersAPI.get(`/${userId}`)
         return response.data
     },
 
@@ -226,7 +226,7 @@ const orderService = {
     },
 
     async getAllOrders() {
-        const response = await inventoryAPI.get('/admin/orders')
+        const response = await inventoryAPI.get('/orders')
         return response.data
     },
 

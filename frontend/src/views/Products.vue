@@ -123,22 +123,27 @@
                       <span class="h5 text-primary mb-0">
                         ${{ parseFloat(product.precio).toFixed(2) }}
                       </span>
-                      <button 
-                        v-if="isAuthenticated && product.estado === 'activo'" 
-                        class="btn btn-primary btn-sm"
-                        @click="addToCart(product)"
-                        :disabled="cartStore.isLoading"
-                      >
-                        <i class="fas fa-cart-plus me-1"></i>
-                        Agregar
-                      </button>
-                      <button 
-                        v-else-if="!isAuthenticated" 
-                        class="btn btn-outline-primary btn-sm"
-                        @click="$router.push('/login')"
-                      >
-                        Inicia sesión
-                      </button>
+                      <div v-if="product.stock_quantity > 0">
+                        <button 
+                          v-if="isAuthenticated && product.estado === 'activo'" 
+                          class="btn btn-primary btn-sm"
+                          @click="addToCart(product)"
+                          :disabled="cartStore.isLoading"
+                        >
+                          <i class="fas fa-cart-plus me-1"></i>
+                          Agregar
+                        </button>
+                        <button 
+                          v-else-if="!isAuthenticated" 
+                          class="btn btn-outline-primary btn-sm"
+                          @click="$router.push('/login')"
+                        >
+                          Inicia sesión
+                        </button>
+                      </div>
+                      <div v-else>
+                          <span class="text-danger fw-bold">Fuera de stock</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -172,6 +177,7 @@ export default {
     
     const products = ref([])
     const categories = ref([])
+    const stockLevels = ref(new Map())
     const isLoading = ref(false)
     const error = ref(null)
     
@@ -182,6 +188,16 @@ export default {
     const sortBy = ref('name')
     
     const isAuthenticated = computed(() => authStore.isAuthenticated)
+
+    const productsWithStock = computed(() => {
+      return products.value.map(product => {
+        const stock = stockLevels.value.get(product.id) || { quantity: 0 };
+        return {
+          ...product,
+          stock_quantity: stock.quantity,
+        };
+      });
+    });
     
     const bloquearSignos = (e) => {
       if (['-', '+', 'e', 'E'].includes(e.key)) {
@@ -189,7 +205,7 @@ export default {
       }
     };
     const filteredProducts = computed(() => {
-      let filtered = products.value
+      let filtered = productsWithStock.value
       
       // Filter by category
       if (selectedCategory.value) {
@@ -211,7 +227,7 @@ export default {
         filtered = filtered.filter(product => parseFloat(product.precio) >= priceRange.value.min)
       }
       if (priceRange.value.min == "" && priceRange.value.max == "") {
-        filtered = products.value
+        filtered = productsWithStock.value
       }
       // Filter by search term
       if (searchTerm.value) {
@@ -264,6 +280,19 @@ export default {
         console.error('Error fetching categories:', err)
       }
     }
+
+    const fetchStockLevels = async () => {
+      try {
+        const stockData = await api.getStock(); // Assuming getStock() fetches all stock
+        const stockMap = new Map();
+        stockData.data.forEach(item => {
+            stockMap.set(item.product_id, item);
+        });
+        stockLevels.value = stockMap;
+      } catch (err) {
+        console.error('Error fetching stock levels:', err);
+      }
+    };
     
     const getCategoryName = (categoryId) => {
       const category = categories.value.find(cat => cat.id === categoryId)
@@ -292,7 +321,8 @@ export default {
     onMounted(async () => {
       await Promise.all([
         fetchProducts(),
-        fetchCategories()
+        fetchCategories(),
+        fetchStockLevels()
       ])
     })
     
