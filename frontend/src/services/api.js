@@ -57,7 +57,7 @@ const addResponseInterceptor = (apiInstance) => {
 })
 
 // Auth Service
-const authService = {
+export const authService = {
     async register(userData) {
         const response = await authAPI.post('/register', userData)
         return response.data
@@ -96,13 +96,13 @@ const authService = {
     },
 
     async updateProfile(userData) {
-        const response = await usersAPI.patch('/users/me', userData)
+        const response = await usersAPI.patch('/me', userData)
         return response.data
     }
 }
 
 // User Management Service (Admin only)
-const userService = {
+export const userService = {
     async getUsers(filters = {}) {
         const params = new URLSearchParams(filters)
         const response = await usersAPI.get(`/${params}`)
@@ -115,22 +115,22 @@ const userService = {
     },
 
     async createUser(userData) {
-        const response = await usersAPI.post('/users', userData)
+        const response = await usersAPI.post('/', userData)
         return response.data
     },
 
     async updateUser(userId, userData) {
-        const response = await usersAPI.patch(`/users/${userId}`, userData)
+        const response = await usersAPI.patch(`/${userId}`, userData)
         return response.data
     },
 
     async deleteUser(userId) {
-        await usersAPI.delete(`/users/${userId}`)
+        await usersAPI.delete(`/${userId}`)
     }
 }
 
 // Product Service
-const productService = {
+export const productService = {
     async getProducts() {
         const response = await productsAPI.get('/productos')
         return response.data
@@ -198,7 +198,7 @@ const productService = {
 }
 
 // Inventory/Orders Service
-const orderService = {
+export const orderService = {
     async createOrder(orderData) {
         const response = await inventoryAPI.post('/orders', orderData)
         return response.data
@@ -242,7 +242,7 @@ const orderService = {
 }
 
 // Stock Service
-const stockService = {
+export const stockService = {
     async getStock(productId) {
         const url = productId ? `/stock/${productId}` : '/stock';
         return await inventoryAPI.get(url);
