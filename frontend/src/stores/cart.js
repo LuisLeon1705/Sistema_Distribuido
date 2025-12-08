@@ -51,10 +51,10 @@ export const useCartStore = defineStore('cart', {
             this.isLoading = true;
             try {
                 const tempOrders = await api.getTempOrdersByUserId(authStore.user.id);
-                
+
                 if (tempOrders && tempOrders.length > 0) {
                     const mostRecentOrder = tempOrders[0];
-                    const productPromises = mostRecentOrder.items.map(item => 
+                    const productPromises = mostRecentOrder.items.map(item =>
                         api.getProductById(item.product_id).catch(() => null)
                     );
                     const products = await Promise.all(productPromises);
@@ -82,21 +82,38 @@ export const useCartStore = defineStore('cart', {
             }
         },
 
-        addToCart(product, quantity = 1) {
-            const existingItem = this.items.find(item => item.product_id === product.id);
+        async addToCart(product, quantity = 1) {
+            try {
+                // Verificar stock disponible
+                const stockResponse = await api.getStock(product.id);
+                const availableStock = stockResponse.data?.[0]?.quantity || 0;
 
-            if (existingItem) {
-                existingItem.quantity += quantity;
-            } else {
-                this.items.push({
-                    product_id: product.id,
-                    name: product.nombre,
-                    price: parseFloat(product.precio),
-                    quantity: quantity,
-                    image: product.imagen,
-                });
+                const existingItem = this.items.find(item => item.product_id === product.id);
+                const currentQuantity = existingItem ? existingItem.quantity : 0;
+                const newTotalQuantity = currentQuantity + quantity;
+
+                if (newTotalQuantity > availableStock) {
+                    this.error = `Stock insuficiente. Disponible: ${availableStock}, en carrito: ${currentQuantity}`;
+                    setTimeout(() => this.error = null, 5000);
+                    return;
+                }
+
+                if (existingItem) {
+                    existingItem.quantity += quantity;
+                } else {
+                    this.items.push({
+                        product_id: product.id,
+                        name: product.nombre,
+                        price: parseFloat(product.precio),
+                        quantity: quantity,
+                        image: product.imagen,
+                    });
+                }
+                this.syncAndRefresh();
+            } catch (err) {
+                this.error = 'Error al verificar el stock';
+                console.error('Error checking stock:', err);
             }
-            this.syncAndRefresh();
         },
 
         removeFromCart(productId) {
@@ -104,16 +121,34 @@ export const useCartStore = defineStore('cart', {
             this.syncAndRefresh();
         },
 
-        updateQuantity(productId, quantity) {
+        async updateQuantity(productId, quantity) {
             const item = this.items.find(item => item.product_id === productId);
-            if (item) {
-                if (quantity > 0) {
-                    item.quantity = quantity;
-                } else {
-                    this.items = this.items.filter(i => i.product_id !== productId);
-                }
+            if (!item) return;
+
+            if (quantity <= 0) {
+                this.items = this.items.filter(i => i.product_id !== productId);
+                this.syncAndRefresh();
+                return;
             }
-            this.syncAndRefresh();
+
+            try {
+                // Verificar stock disponible
+                const stockResponse = await api.getStock(productId);
+                const availableStock = stockResponse.data?.[0]?.quantity || 0;
+
+                if (quantity > availableStock) {
+                    this.error = `Stock insuficiente. Disponible: ${availableStock}`;
+                    setTimeout(() => this.error = null, 5000);
+                    // Mantener la cantidad anterior
+                    return;
+                }
+
+                item.quantity = quantity;
+                this.syncAndRefresh();
+            } catch (err) {
+                this.error = 'Error al verificar el stock';
+                console.error('Error checking stock:', err);
+            }
         },
 
         async clearCart() {
@@ -123,7 +158,7 @@ export const useCartStore = defineStore('cart', {
 
         async checkout() {
             if (this.items.length === 0) throw new Error('El carrito está vacío');
-            
+
             const authStore = useAuthStore();
             if (!authStore.user?.id) {
                 this.error = "Debes iniciar sesión para comprar.";

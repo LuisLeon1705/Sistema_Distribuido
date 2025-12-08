@@ -4,11 +4,6 @@
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Gestión de Productos</h2>
         <div class="d-flex gap-2">
-           <button class="btn btn-success" @click="handleGenerateSampleData" :disabled="isSeeding">
-            <span v-if="isSeeding" class="spinner-border spinner-border-sm me-2"></span>
-            <i v-else class="fas fa-magic me-2"></i>
-            Generar Productos de Muestra
-          </button>
           <button class="btn btn-info" @click="showCategoryModal">
             <i class="fas fa-tags me-2"></i>
             Crear Categoría
@@ -153,7 +148,16 @@
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Precio *</label>
-                  <input type="number" step="0.01" min="0" v-model.number="productForm.precio" class="form-control" required>
+                  <input 
+                    type="number" 
+                    step="0.01" 
+                    min="0.01" 
+                    v-model.number="productForm.precio" 
+                    @keydown="bloquearSignos"
+                    class="form-control" 
+                    required
+                  >
+                  <small class="text-muted">El precio debe ser mayor a 0</small>
                 </div>
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Estado</label>
@@ -262,6 +266,38 @@
         </div>
       </div>
     </div>
+
+    <!-- Category Modal -->
+    <div class="modal fade" id="categoryModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Nueva Categoría</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <form @submit.prevent="saveCategory">
+            <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label">Nombre *</label>
+                <input type="text" v-model="categoryForm.nombre" class="form-control" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Descripción</label>
+                <textarea v-model="categoryForm.descripcion" class="form-control" rows="3"></textarea>
+              </div>
+              <div v-if="categoryFormError" class="alert alert-danger">{{ categoryFormError }}</div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit" class="btn btn-primary" :disabled="isSavingCategory">
+                <span v-if="isSavingCategory" class="spinner-border spinner-border-sm me-2"></span>
+                Guardar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -300,6 +336,7 @@ export default {
     const selectedStock = ref(null);
     let productModal = null;
     let stockModal = null;
+    let categoryModal = null;
 
     const imageFile = ref(null);
     const imagePreview = ref(null);
@@ -373,6 +410,12 @@ export default {
         }
     };
 
+    const bloquearSignos = (e) => {
+        if (['-', '+', 'e', 'E'].includes(e.key)) {
+            e.preventDefault();
+        }
+    };
+    
     const getCategoryName = (catId) => categories.value.find(c => c.id === catId)?.nombre || 'N/A';
     const truncateText = (text, len) => text?.length > len ? `${text.substring(0, len)}...` : text;
     const clearFilters = () => { filters.category = ''; filters.status = ''; filters.search = ''; };
@@ -612,6 +655,7 @@ export default {
         fetchAll();
         productModal = new bootstrap.Modal(document.getElementById('productModal'));
         stockModal = new bootstrap.Modal(document.getElementById('stockModal'));
+        categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
     });
     
     return { 
@@ -619,8 +663,9 @@ export default {
         isLoadingStock, selectedStock,
         filters, productForm, filteredProducts, paginatedProducts, imagePreview, uploadMode,
         currentPage, itemsPerPage, totalPages,
-        getCategoryName, truncateText, clearFilters, handleGenerateSampleData,
-        showCreateModal, editProduct, saveProduct, deleteProduct, handleFileChange,
+        categoryForm, isSavingCategory, categoryFormError,
+        getCategoryName, truncateText, clearFilters, handleGenerateSampleData, bloquearSignos,
+        showCreateModal, showCategoryModal, editProduct, saveProduct, saveCategory, deleteProduct, handleFileChange,
         viewStock, editFromStockView, goToPage
     };
   }

@@ -30,9 +30,10 @@ class ValidateJwtToken
             }
             $credentials = JWT::decode($token, new Key($jwtSecret, $jwtAlg));
             
-            if (isset($credentials->role) && $credentials->role !== 'admin') {
-                 // solo los admins pueden modificar producto
-                return response()->json(['message' => 'Permisos insuficientes (Se requiere Admin)'], 403);
+            // Permitir acceso a admin e inventory
+            $allowedRoles = ['admin', 'inventory'];
+            if (isset($credentials->role) && !in_array($credentials->role, $allowedRoles)) {
+                return response()->json(['message' => 'Permisos insuficientes (Se requiere Admin o Inventory)'], 403);
             }
 
             $request->merge([

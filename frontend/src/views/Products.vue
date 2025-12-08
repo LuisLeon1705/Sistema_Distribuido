@@ -218,13 +218,18 @@ export default {
     const isAuthenticated = computed(() => authStore.isAuthenticated)
 
     const productsWithStock = computed(() => {
-      return products.value.map(product => {
-        const stock = stockLevels.value.get(product.id) || { quantity: 0 };
-        return {
-          ...product,
-          stock_quantity: stock.quantity,
-        };
-      });
+      return products.value
+        .map(product => {
+          const stock = stockLevels.value.get(product.id) || { quantity: 0 };
+          return {
+            ...product,
+            stock_quantity: stock.quantity,
+          };
+        })
+        .filter(product => {
+          // Solo mostrar productos con precio > 0 y stock > 0
+          return parseFloat(product.precio) > 0 && product.stock_quantity > 0 && product.estado === 'activo';
+        });
     });
     
     const bloquearSignos = (e) => {
