@@ -1,5 +1,3 @@
-version: '3.8'
-
 networks:
   sistema-distribuido:
     driver: bridge
@@ -23,7 +21,7 @@ services:
     networks:
       - sistema-distribuido
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U user -d postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5

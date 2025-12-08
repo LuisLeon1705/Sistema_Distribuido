@@ -4,11 +4,6 @@
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Gestión de Productos</h2>
         <div class="d-flex gap-2">
-           <button class="btn btn-success" @click="handleGenerateSampleData" :disabled="isSeeding">
-            <span v-if="isSeeding" class="spinner-border spinner-border-sm me-2"></span>
-            <i v-else class="fas fa-magic me-2"></i>
-            Generar Productos de Muestra
-          </button>
           <button class="btn btn-info" @click="showCategoryModal">
             <i class="fas fa-tags me-2"></i>
             Crear Categoría
@@ -68,7 +63,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="product in filteredProducts" :key="product.id">
+                <tr v-for="product in paginatedProducts" :key="product.id">
                   <td>{{ product.codigo }}</td>
                   <td><img :src="product.imagen || '/placeholder-product.jpg'" :alt="product.nombre" class="table-img"></td>
                   <td>
@@ -80,6 +75,7 @@
                   <td><span class="badge" :class="product.estado === 'activo' ? 'bg-success' : 'bg-secondary'">{{ product.estado }}</span></td>
                   <td>
                     <div class="btn-group btn-group-sm">
+                      <button class="btn btn-outline-info" @click="viewStock(product)" title="Ver Stock"><i class="fas fa-boxes"></i></button>
                       <button class="btn btn-outline-primary" @click="editProduct(product)" title="Editar"><i class="fas fa-edit"></i></button>
                       <button class="btn btn-outline-danger" @click="deleteProduct(product.id)" title="Eliminar"><i class="fas fa-trash"></i></button>
                     </div>
@@ -92,6 +88,30 @@
               <h5>No se encontraron productos</h5>
               <p class="text-muted">Ajusta los filtros o crea un nuevo producto.</p>
             </div>
+            
+            <!-- Pagination -->
+            <nav v-if="!isLoading && filteredProducts.length > 0 && totalPages > 1" aria-label="Product pagination" class="mt-3">
+              <ul class="pagination justify-content-center mb-0">
+                <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                  <button class="page-link" @click="goToPage(currentPage - 1)" :disabled="currentPage === 1">
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                </li>
+                
+                <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: currentPage === page }">
+                  <button class="page-link" @click="goToPage(page)">{{ page }}</button>
+                </li>
+                
+                <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                  <button class="page-link" @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages">
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                </li>
+              </ul>
+            </nav>
+            <p v-if="filteredProducts.length > itemsPerPage" class="text-center text-muted small mt-2 mb-0">
+              Mostrando {{ (currentPage - 1) * itemsPerPage + 1 }} - {{ Math.min(currentPage * itemsPerPage, filteredProducts.length) }} de {{ filteredProducts.length }} productos
+            </p>
           </div>
         </div>
       </div>
@@ -128,7 +148,16 @@
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Precio *</label>
-                  <input type="number" step="0.01" min="0" v-model.number="productForm.precio" class="form-control" required>
+                  <input 
+                    type="number" 
+                    step="0.01" 
+                    min="0.01" 
+                    v-model.number="productForm.precio" 
+                    @keydown="bloquearSignos"
+                    class="form-control" 
+                    required
+                  >
+                  <small class="text-muted">El precio debe ser mayor a 0</small>
                 </div>
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Estado</label>
@@ -184,6 +213,60 @@
         </div>
       </div>
     </div>
+
+    <!-- Stock Details Modal -->
+    <div class="modal fade" id="stockModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Detalles de Stock</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="isLoadingStock" class="text-center py-4">
+              <div class="spinner-border"></div>
+              <p class="mt-2">Cargando información de stock...</p>
+            </div>
+            <div v-else-if="selectedStock">
+              <div class="mb-3">
+                <h6>{{ selectedStock.productName }}</h6>
+                <p class="text-muted mb-0">Código: {{ selectedStock.productCode }}</p>
+              </div>
+              <hr>
+              <div class="row">
+                <div class="col-6">
+                  <p class="mb-1 text-muted">Cantidad en Stock</p>
+                  <h4 class="text-primary">{{ selectedStock.quantity }}</h4>
+                </div>
+                <div class="col-6">
+                  <p class="mb-1 text-muted">Ubicación</p>
+                  <h5>{{ selectedStock.warehouse_location }}</h5>
+                </div>
+              </div>
+              <hr>
+              <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle me-2"></i>
+                <small>
+                  <strong>ID del Producto:</strong> {{ selectedStock.product_id }}
+                </small>
+              </div>
+            </div>
+            <div v-else class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              No hay información de stock disponible para este producto.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <button type="button" class="btn btn-primary" @click="editFromStockView" v-if="selectedStock">
+              <i class="fas fa-edit me-2"></i>
+              Editar Producto
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Category Modal -->
     <div class="modal fade" id="categoryModal" tabindex="-1">
       <div class="modal-dialog">
@@ -249,7 +332,10 @@ export default {
     const error = ref(null);
     const formError = ref(null);
     const isEditing = ref(false);
+    const isLoadingStock = ref(false);
+    const selectedStock = ref(null);
     let productModal = null;
+    let stockModal = null;
     let categoryModal = null;
 
     const imageFile = ref(null);
@@ -257,6 +343,10 @@ export default {
     const uploadMode = ref('file');
     
     const filters = reactive({ category: '', status: '', search: '' });
+    
+    // Pagination
+    const currentPage = ref(1);
+    const itemsPerPage = ref(12); // 12 productos por página
     
     const productForm = reactive({
       id: null, nombre: '', descripcion: '', precio: 0, categoria_id: '',
@@ -280,6 +370,25 @@ export default {
             (!filters.search || p.nombre.toLowerCase().includes(filters.search.toLowerCase()))
         );
     });
+    
+    const totalPages = computed(() => Math.ceil(filteredProducts.value.length / itemsPerPage.value));
+    
+    const paginatedProducts = computed(() => {
+        const start = (currentPage.value - 1) * itemsPerPage.value;
+        const end = start + itemsPerPage.value;
+        return filteredProducts.value.slice(start, end);
+    });
+    
+    const goToPage = (page) => {
+        if (page >= 1 && page <= totalPages.value) {
+            currentPage.value = page;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+    
+    watch([() => filters.category, () => filters.status, () => filters.search], () => {
+        currentPage.value = 1;
+    });
 
     const fetchAll = async () => {
         isLoading.value = true;
@@ -299,6 +408,12 @@ export default {
         }
     };
 
+    const bloquearSignos = (e) => {
+        if (['-', '+', 'e', 'E'].includes(e.key)) {
+            e.preventDefault();
+        }
+    };
+    
     const getCategoryName = (catId) => categories.value.find(c => c.id === catId)?.nombre || 'N/A';
     const truncateText = (text, len) => text?.length > len ? `${text.substring(0, len)}...` : text;
     const clearFilters = () => { filters.category = ''; filters.status = ''; filters.search = ''; };
@@ -448,13 +563,11 @@ export default {
         isSeeding.value = true;
         try {
             const categoryIdMap = new Map();
-            // First, create categories and map their old IDs to new ones
             for (const cat of sampleCategories) {
                 try {
                     const newCat = await api.createCategory({ nombre: cat.nombre, descripcion: cat.descripcion });
                     categoryIdMap.set(cat.old_id, newCat.id);
                 } catch (e) {
-                    // Try to find existing category if creation fails (e.g., unique constraint)
                     const existingCats = await api.getCategories();
                     const existingCat = existingCats.find(c => c.nombre === cat.nombre);
                     if (existingCat) {
@@ -463,7 +576,6 @@ export default {
                 }
             }
             
-            // Then, create products and their stock
             for (const prod of sampleProducts) {
                 const newCatId = categoryIdMap.get(prod.data.id_categoria);
                 if (!newCatId) continue;
@@ -475,7 +587,6 @@ export default {
                     imagen_url: imagen
                 };
                 
-                // Use a try-catch for each product to be more resilient
                 try {
                     const newProductResponse = await api.createProduct(productPayload);
                     if (newProductResponse && newProductResponse.producto) {
@@ -505,18 +616,51 @@ export default {
         }
     };
     
+    const viewStock = async (product) => {
+        isLoadingStock.value = true;
+        selectedStock.value = null;
+        stockModal?.show();
+        
+        try {
+            const stockResponse = await api.getStock(product.id);
+            if (stockResponse.data && stockResponse.data.length > 0) {
+                selectedStock.value = {
+                    ...stockResponse.data[0],
+                    productName: product.nombre,
+                    productCode: product.codigo
+                };
+            }
+        } catch (err) {
+            console.error('Error fetching stock:', err);
+        } finally {
+            isLoadingStock.value = false;
+        }
+    };
+
+    const editFromStockView = () => {
+        stockModal?.hide();
+        const product = products.value.find(p => p.id === selectedStock.value.product_id);
+        if (product) {
+            editProduct(product);
+        }
+    };
+    
     onMounted(() => {
         fetchAll();
         productModal = new bootstrap.Modal(document.getElementById('productModal'));
+        stockModal = new bootstrap.Modal(document.getElementById('stockModal'));
         categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
     });
     
     return { 
         products, categories, isLoading, isSaving, isSeeding, error, formError, isEditing, 
-        filters, productForm, filteredProducts, imagePreview, uploadMode,
-        getCategoryName, truncateText, clearFilters, handleGenerateSampleData,
-        showCreateModal, editProduct, saveProduct, deleteProduct, handleFileChange,
-        showCategoryModal, saveCategory, categoryForm, isSavingCategory, categoryFormError
+        isLoadingStock, selectedStock,
+        filters, productForm, filteredProducts, paginatedProducts, imagePreview, uploadMode,
+        currentPage, itemsPerPage, totalPages,
+        categoryForm, isSavingCategory, categoryFormError,
+        getCategoryName, truncateText, clearFilters, handleGenerateSampleData, bloquearSignos,
+        showCreateModal, showCategoryModal, editProduct, saveProduct, saveCategory, deleteProduct, handleFileChange,
+        viewStock, editFromStockView, goToPage
     };
   }
 }

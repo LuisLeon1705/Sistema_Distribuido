@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..database import get_db
-from ..security import get_current_user, require_role, get_password_hash
+from ..security import get_current_user, require_role, require_roles, get_password_hash
 
 router = APIRouter()
 
@@ -95,7 +95,7 @@ def create_user_admin(
 @router.get("/", response_model=List[schemas.UserRead])
 def list_users(
     db: Session = Depends(get_db),
-    _: models.User = Depends(require_role("admin")),
+    _: models.User = Depends(require_roles("admin", "inventory")),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     username: Optional[str] = None,
@@ -124,7 +124,7 @@ def list_users(
 def get_user_by_id(
     user_id: UUID,
     db: Session = Depends(get_db),
-    _: models.User = Depends(require_role("admin")),
+    _: models.User = Depends(require_roles("admin", "inventory")),
 ):
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:

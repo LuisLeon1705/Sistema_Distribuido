@@ -105,7 +105,9 @@ const authService = {
 const userService = {
     async getUsers(filters = {}) {
         const params = new URLSearchParams(filters)
-        const response = await usersAPI.get(`/${params}`)
+        const queryString = params.toString()
+        const url = queryString ? `/?${queryString}` : '/'
+        const response = await usersAPI.get(url)
         return response.data
     },
 
@@ -115,17 +117,22 @@ const userService = {
     },
 
     async createUser(userData) {
-        const response = await usersAPI.post('/users', userData)
+        const response = await usersAPI.post('/', userData)
+        return response.data
+    },
+
+    async createUserAdmin(userData) {
+        const response = await usersAPI.post('/', userData)
         return response.data
     },
 
     async updateUser(userId, userData) {
-        const response = await usersAPI.patch(`/users/${userId}`, userData)
+        const response = await usersAPI.patch(`/${userId}`, userData)
         return response.data
     },
 
     async deleteUser(userId) {
-        await usersAPI.delete(`/users/${userId}`)
+        await usersAPI.delete(`/${userId}`)
     }
 }
 
@@ -275,4 +282,3 @@ const api = {
 }
 
 export default api;
-

@@ -1,6 +1,6 @@
 <template>
   <div class="user-management">
-    <div class="container-fluid">
+    <div class="container">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Gestión de Usuarios</h2>
         <button class="btn btn-primary" @click="showCreateModal">
@@ -8,20 +8,57 @@
           Nuevo Usuario
         </button>
       </div>
-      
+
+      <!-- Stats Cards -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="card bg-primary text-white">
+            <div class="card-body">
+              <h6 class="card-title">Total Usuarios</h6>
+              <h3>{{ users.length }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-danger text-white">
+            <div class="card-body">
+              <h6 class="card-title">Administradores</h6>
+              <h3>{{ getUsersByRole(1).length }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-success text-white">
+            <div class="card-body">
+              <h6 class="card-title">Clientes</h6>
+              <h3>{{ getUsersByRole(2).length }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-info text-white">
+            <div class="card-body">
+              <h6 class="card-title">Inventario</h6>
+              <h3>{{ getUsersByRole(3).length }}</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Filters -->
       <div class="card mb-4">
         <div class="card-body">
-          <div class="row">
+          <div class="row g-2">
             <div class="col-md-3">
-              <select v-model="filters.role" @change="applyFilters" class="form-select">
+              <select v-model="filters.role" class="form-select">
                 <option value="">Todos los roles</option>
-                <option value="admin">Administradores</option>
-                <option value="customer">Clientes</option>
+                <option value="1">Admin</option>
+                <option value="2">Cliente</option>
+                <option value="3">Inventario</option>
               </select>
             </div>
             <div class="col-md-3">
-              <select v-model="filters.status" @change="applyFilters" class="form-select">
+              <select v-model="filters.status" class="form-select">
                 <option value="">Todos los estados</option>
                 <option value="true">Activos</option>
                 <option value="false">Inactivos</option>
@@ -31,102 +68,75 @@
               <input 
                 type="text" 
                 v-model="filters.search" 
-                @input="applyFilters"
-                placeholder="Buscar por usuario, email..." 
+                placeholder="Buscar por nombre, email o teléfono..." 
                 class="form-control"
               >
             </div>
             <div class="col-md-2">
-              <button @click="clearFilters" class="btn btn-outline-secondary w-100">
-                Limpiar
-              </button>
+              <button @click="clearFilters" class="btn btn-outline-secondary w-100">Limpiar</button>
             </div>
           </div>
         </div>
       </div>
-      
+
       <!-- Users Table -->
       <div class="card">
         <div class="card-body">
-          <!-- Loading State -->
           <div v-if="isLoading" class="text-center py-4">
-            <div class="spinner-border" role="status">
-              <span class="visually-hidden">Cargando...</span>
-            </div>
+            <div class="spinner-border"></div>
+            <p class="mt-2">Cargando usuarios...</p>
           </div>
-          
-          <!-- Error State -->
-          <div v-else-if="error" class="alert alert-danger">
-            {{ error }}
-          </div>
-          
-          <!-- Users Table -->
+          <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
           <div v-else class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover align-middle">
               <thead>
                 <tr>
-                  <th>ID</th>
                   <th>Usuario</th>
                   <th>Email</th>
                   <th>Teléfono</th>
                   <th>Rol</th>
                   <th>Estado</th>
-                  <th>Fecha</th>
+                  <th>Verificado</th>
+                  <th>Fecha Registro</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="user in users" :key="user.id">
-                  <td>{{ user.id }}</td>
+                <tr v-for="user in paginatedUsers" :key="user.id">
                   <td>
                     <div class="fw-medium">{{ user.username }}</div>
-                    <small v-if="user.is_verified" class="text-success">
-                      <i class="fas fa-check-circle"></i> Verificado
-                    </small>
-                    <small v-else class="text-warning">
-                      <i class="fas fa-exclamation-circle"></i> No verificado
-                    </small>
+                    <small class="text-muted">ID: {{ user.id.substring(0, 8) }}...</small>
                   </td>
                   <td>{{ user.email }}</td>
                   <td>{{ user.phone_number }}</td>
                   <td>
-                    <span 
-                      class="badge"
-                      :class="user.role?.name === 'admin' ? 'bg-danger' : 'bg-primary'"
-                    >
-                      {{ user.role?.name || 'customer' }}
+                    <span class="badge" :class="getRoleBadgeClass(user.role?.id)">
+                      {{ getRoleName(user.role?.name) }}
                     </span>
                   </td>
                   <td>
-                    <span 
-                      class="badge"
-                      :class="user.is_active ? 'bg-success' : 'bg-secondary'"
-                    >
+                    <span class="badge" :class="user.is_active ? 'bg-success' : 'bg-secondary'">
                       {{ user.is_active ? 'Activo' : 'Inactivo' }}
                     </span>
                   </td>
                   <td>
-                    <div>{{ formatDate(user.created_at) }}</div>
-                    <small v-if="user.last_login_at" class="text-muted">
-                      Último acceso: {{ formatDate(user.last_login_at) }}
-                    </small>
+                    <i class="fas" :class="user.is_verified ? 'fa-check-circle text-success' : 'fa-times-circle text-muted'"></i>
                   </td>
+                  <td>{{ formatDate(user.created_at) }}</td>
                   <td>
                     <div class="btn-group btn-group-sm">
-                      <button 
-                        class="btn btn-outline-primary"
-                        @click="editUser(user)"
-                        title="Editar"
-                      >
+                      <button class="btn btn-outline-primary" @click="editUser(user)" title="Editar">
                         <i class="fas fa-edit"></i>
                       </button>
+                      <button class="btn btn-outline-info" @click="viewUserDetails(user)" title="Ver detalles">
+                        <i class="fas fa-eye"></i>
+                      </button>
                       <button 
-                        class="btn btn-outline-danger"
-                        @click="deleteUser(user.id)"
-                        title="Eliminar"
-                        :disabled="user.id === currentUserId"
+                        class="btn btn-outline-danger" 
+                        @click="toggleUserStatus(user)" 
+                        :title="user.is_active ? 'Desactivar' : 'Activar'"
                       >
-                        <i class="fas fa-trash"></i>
+                        <i class="fas" :class="user.is_active ? 'fa-ban' : 'fa-check'"></i>
                       </button>
                     </div>
                   </td>
@@ -134,137 +144,158 @@
               </tbody>
             </table>
             
-            <!-- Empty State -->
-            <div v-if="users.length === 0" class="text-center py-4">
+            <div v-if="filteredUsers.length === 0" class="text-center py-4">
               <i class="fas fa-users fa-3x text-muted mb-3"></i>
               <h5>No se encontraron usuarios</h5>
-              <p class="text-muted">Ajusta los filtros para ver usuarios</p>
+              <p class="text-muted">Ajusta los filtros o crea un nuevo usuario</p>
             </div>
+
+            <!-- Pagination -->
+            <nav v-if="!isLoading && filteredUsers.length > 0 && totalPages > 1" aria-label="User pagination" class="mt-3">
+              <ul class="pagination justify-content-center mb-0">
+                <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                  <button class="page-link" @click="goToPage(currentPage - 1)" :disabled="currentPage === 1">
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                </li>
+                <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: currentPage === page }">
+                  <button class="page-link" @click="goToPage(page)">{{ page }}</button>
+                </li>
+                <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                  <button class="page-link" @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages">
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                </li>
+              </ul>
+            </nav>
+            <p v-if="filteredUsers.length > itemsPerPage" class="text-center text-muted small mt-2 mb-0">
+              Mostrando {{ (currentPage - 1) * itemsPerPage + 1 }} - {{ Math.min(currentPage * itemsPerPage, filteredUsers.length) }} de {{ filteredUsers.length }} usuarios
+            </p>
           </div>
         </div>
       </div>
     </div>
-    
-    <!-- User Modal -->
+
+    <!-- User Form Modal -->
     <div class="modal fade" id="userModal" tabindex="-1">
-      <div class="modal-dialog modal-lg">
+      <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">
-              {{ isEditing ? 'Editar Usuario' : 'Nuevo Usuario' }}
-            </h5>
+            <h5 class="modal-title">{{ isEditing ? 'Editar Usuario' : 'Nuevo Usuario' }}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <form @submit.prevent="saveUser">
             <div class="modal-body">
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Usuario *</label>
-                    <input 
-                      type="text" 
-                      v-model="userForm.username"
-                      class="form-control"
-                      required
-                    >
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Email *</label>
-                    <input 
-                      type="email" 
-                      v-model="userForm.email"
-                      class="form-control"
-                      required
-                    >
-                  </div>
-                </div>
-              </div>
-              
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Teléfono *</label>
-                    <input 
-                      type="tel" 
-                      v-model="userForm.phone_number"
-                      class="form-control"
-                      required
-                    >
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Rol</label>
-                    <select v-model="userForm.role_name" class="form-select">
-                      <option value="customer">Cliente</option>
-                      <option value="admin">Administrador</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              
               <div class="mb-3">
-                <label class="form-label">
-                  {{ isEditing ? 'Nueva Contraseña (opcional)' : 'Contraseña *' }}
-                </label>
-                <input 
-                  type="password" 
-                  v-model="userForm.password"
-                  class="form-control"
-                  :required="!isEditing"
-                  :placeholder="isEditing ? 'Dejar vacío para mantener la actual' : ''"
-                >
+                <label class="form-label">Nombre de Usuario *</label>
+                <input type="text" v-model="userForm.username" class="form-control" required :disabled="isEditing">
               </div>
-              
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <div class="form-check">
-                      <input 
-                        class="form-check-input" 
-                        type="checkbox" 
-                        v-model="userForm.is_active"
-                        id="isActive"
-                      >
-                      <label class="form-check-label" for="isActive">
-                        Usuario activo
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <div class="form-check">
-                      <input 
-                        class="form-check-input" 
-                        type="checkbox" 
-                        v-model="userForm.is_verified"
-                        id="isVerified"
-                      >
-                      <label class="form-check-label" for="isVerified">
-                        Usuario verificado
-                      </label>
-                    </div>
-                  </div>
+              <div class="mb-3">
+                <label class="form-label">Email *</label>
+                <input type="email" v-model="userForm.email" class="form-control" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Teléfono *</label>
+                <input type="tel" v-model="userForm.phone_number" class="form-control" required>
+              </div>
+              <div class="mb-3" v-if="!isEditing">
+                <label class="form-label">Contraseña *</label>
+                <input type="password" v-model="userForm.password" class="form-control" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Rol *</label>
+                <select v-model.number="userForm.role_id" class="form-select" required>
+                  <option :value="1">Admin</option>
+                  <option :value="2">Cliente</option>
+                  <option :value="3">Inventario</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" v-model="userForm.is_active" id="isActive">
+                  <label class="form-check-label" for="isActive">Usuario Activo</label>
                 </div>
               </div>
-              
-              <div v-if="formError" class="alert alert-danger">
-                {{ formError }}
+              <div class="mb-3">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" v-model="userForm.is_verified" id="isVerified">
+                  <label class="form-check-label" for="isVerified">Usuario Verificado</label>
+                </div>
               </div>
+              <div v-if="formError" class="alert alert-danger">{{ formError }}</div>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                Cancelar
-              </button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
               <button type="submit" class="btn btn-primary" :disabled="isSaving">
                 <span v-if="isSaving" class="spinner-border spinner-border-sm me-2"></span>
-                {{ isSaving ? 'Guardando...' : 'Guardar' }}
+                Guardar
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Details Modal -->
+    <div class="modal fade" id="userDetailsModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content" v-if="selectedUser">
+          <div class="modal-header">
+            <h5 class="modal-title">Detalles de Usuario</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row mb-3">
+              <div class="col-12">
+                <h6 class="text-muted">Información Personal</h6>
+                <p class="mb-1"><strong>Usuario:</strong> {{ selectedUser.username }}</p>
+                <p class="mb-1"><strong>Email:</strong> {{ selectedUser.email }}</p>
+                <p class="mb-1"><strong>Teléfono:</strong> {{ selectedUser.phone_number }}</p>
+                <p class="mb-1"><strong>ID:</strong> <code>{{ selectedUser.id }}</code></p>
+              </div>
+            </div>
+            <hr>
+            <div class="row mb-3">
+              <div class="col-12">
+                <h6 class="text-muted">Estado y Permisos</h6>
+                <p class="mb-1">
+                  <strong>Rol:</strong> 
+                  <span class="badge" :class="getRoleBadgeClass(selectedUser.role?.id)">
+                    {{ getRoleName(selectedUser.role?.name) }}
+                  </span>
+                </p>
+                <p class="mb-1">
+                  <strong>Estado:</strong> 
+                  <span class="badge" :class="selectedUser.is_active ? 'bg-success' : 'bg-secondary'">
+                    {{ selectedUser.is_active ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </p>
+                <p class="mb-1">
+                  <strong>Verificado:</strong> 
+                  <i class="fas" :class="selectedUser.is_verified ? 'fa-check-circle text-success' : 'fa-times-circle text-danger'"></i>
+                  {{ selectedUser.is_verified ? 'Sí' : 'No' }}
+                </p>
+              </div>
+            </div>
+            <hr>
+            <div class="row">
+              <div class="col-12">
+                <h6 class="text-muted">Fechas</h6>
+                <p class="mb-1"><strong>Registro:</strong> {{ formatDate(selectedUser.created_at) }}</p>
+                <p class="mb-1"><strong>Última Actualización:</strong> {{ formatDate(selectedUser.updated_at) }}</p>
+                <p class="mb-1" v-if="selectedUser.last_login_at">
+                  <strong>Último Acceso:</strong> {{ formatDate(selectedUser.last_login_at) }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <button type="button" class="btn btn-primary" @click="editFromDetails">
+              <i class="fas fa-edit me-2"></i>
+              Editar
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -272,53 +303,81 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useAuthStore } from '../stores/auth'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import api from '../services/api'
+import * as bootstrap from 'bootstrap'
 
 export default {
   name: 'UserManagement',
   setup() {
-    const authStore = useAuthStore()
     const users = ref([])
+    const selectedUser = ref(null)
     const isLoading = ref(false)
     const isSaving = ref(false)
     const error = ref(null)
     const formError = ref(null)
     const isEditing = ref(false)
-    
+
+    let userModal = null
+    let detailsModal = null
+
     const filters = reactive({
       role: '',
       status: '',
       search: ''
     })
-    
+
     const userForm = reactive({
       id: null,
       username: '',
       email: '',
       phone_number: '',
       password: '',
-      role_name: 'customer',
+      role_id: 2,
       is_active: true,
       is_verified: false
     })
-    
-    const currentUserId = computed(() => authStore.user?.id)
-    
+
+    const currentPage = ref(1)
+    const itemsPerPage = ref(15) // 15 usuarios por página
+
+    const filteredUsers = computed(() => {
+      return users.value.filter(user => {
+        const roleMatch = !filters.role || user.role?.id == filters.role
+        const statusMatch = !filters.status || user.is_active.toString() === filters.status
+        const searchMatch = !filters.search || 
+          user.username.toLowerCase().includes(filters.search.toLowerCase()) ||
+          user.email.toLowerCase().includes(filters.search.toLowerCase()) ||
+          user.phone_number.includes(filters.search)
+        return roleMatch && statusMatch && searchMatch
+      })
+    })
+
+    // Pagination computed
+    const totalPages = computed(() => Math.ceil(filteredUsers.value.length / itemsPerPage.value))
+
+    const paginatedUsers = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage.value
+      const end = start + itemsPerPage.value
+      return filteredUsers.value.slice(start, end)
+    })
+
+    const goToPage = (page) => {
+      if (page >= 1 && page <= totalPages.value) {
+        currentPage.value = page
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    }
+
+    watch([() => filters.role, () => filters.status, () => filters.search], () => {
+      currentPage.value = 1
+    })
+
     const fetchUsers = async () => {
       isLoading.value = true
       error.value = null
       try {
-        const filterParams = {}
-        if (filters.role) filterParams.role = filters.role
-        if (filters.status !== '') filterParams.is_active = filters.status === 'true'
-        if (filters.search) {
-          filterParams.username = filters.search
-          // Note: The API might not support searching by email, but we can try
-        }
-        
-        users.value = await api.getUsers(filterParams)
+        users.value = await api.getUsers()
       } catch (err) {
         error.value = 'Error al cargar usuarios'
         console.error('Error fetching users:', err)
@@ -326,74 +385,97 @@ export default {
         isLoading.value = false
       }
     }
-    
+
+    const getUsersByRole = (roleId) => users.value.filter(u => u.role?.id === roleId)
+
+    const getRoleName = (roleNameOrId) => {
+      if (typeof roleNameOrId === 'string') {
+        const nameMap = { 'admin': 'Admin', 'customer': 'Cliente', 'inventory': 'Inventario' }
+        return nameMap[roleNameOrId] || roleNameOrId
+      }
+      const roles = { 1: 'Admin', 2: 'Cliente', 3: 'Inventario' }
+      return roles[roleNameOrId] || 'Desconocido'
+    }
+
+    const getRoleBadgeClass = (roleId) => {
+      const classes = { 1: 'bg-danger', 2: 'bg-success', 3: 'bg-info' }
+      return classes[roleId] || 'bg-secondary'
+    }
+
     const formatDate = (dateString) => {
-      if (!dateString) return 'N/A'
-      const date = new Date(dateString)
-      return date.toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
+      return new Date(dateString).toLocaleString('es-ES', { 
+        dateStyle: 'short', 
+        timeStyle: 'short' 
       })
     }
-    
+
+    const resetForm = () => {
+      Object.assign(userForm, {
+        id: null,
+        username: '',
+        email: '',
+        phone_number: '',
+        password: '',
+        role_id: 2,
+        is_active: true,
+        is_verified: false
+      })
+      formError.value = null
+    }
+
     const showCreateModal = () => {
       isEditing.value = false
       resetForm()
-      const modal = new bootstrap.Modal(document.getElementById('userModal'))
-      modal.show()
+      userModal?.show()
     }
-    
+
     const editUser = (user) => {
       isEditing.value = true
-      userForm.id = user.id
-      userForm.username = user.username
-      userForm.email = user.email
-      userForm.phone_number = user.phone_number
-      userForm.password = ''
-      userForm.role_name = user.role?.name || 'customer'
-      userForm.is_active = user.is_active
-      userForm.is_verified = user.is_verified
-      
-      const modal = new bootstrap.Modal(document.getElementById('userModal'))
-      modal.show()
+      resetForm()
+      Object.assign(userForm, {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        phone_number: user.phone_number,
+        role_id: user.role?.id || 2,
+        is_active: user.is_active,
+        is_verified: user.is_verified
+      })
+      userModal?.show()
     }
-    
+
+    // Helper para convertir role_id a role_name
+    const getRoleNameForAPI = (roleId) => {
+      const roleMap = { 1: 'admin', 2: 'customer', 3: 'inventory' }
+      return roleMap[roleId] || 'customer'
+    }
+
     const saveUser = async () => {
       isSaving.value = true
       formError.value = null
       
       try {
-        const data = {
-          username: userForm.username,
-          email: userForm.email,
-          phone_number: userForm.phone_number,
-          role_name: userForm.role_name,
-          is_active: userForm.is_active,
-          is_verified: userForm.is_verified
-        }
-        
-        // Only include password if it's provided
-        if (userForm.password) {
-          data.password = userForm.password
-        }
-        
         if (isEditing.value) {
-          await api.updateUser(userForm.id, data)
-        } else {
-          // Password is required for new users
-          if (!userForm.password) {
-            formError.value = 'La contraseña es requerida para nuevos usuarios'
-            return
+          const { id, password, username, role_id, ...updateData } = userForm
+          const dataToSend = {
+            ...updateData,
+            role_name: getRoleNameForAPI(role_id)
           }
-          data.password = userForm.password
-          await api.createUser(data)
+          await api.updateUser(id, dataToSend)
+        } else {
+          await api.createUserAdmin({
+            username: userForm.username,
+            email: userForm.email,
+            password: userForm.password,
+            phone_number: userForm.phone_number,
+            role_name: getRoleNameForAPI(userForm.role_id),
+            is_active: userForm.is_active,
+            is_verified: userForm.is_verified
+          })
         }
         
         await fetchUsers()
-        
-        const modal = bootstrap.Modal.getInstance(document.getElementById('userModal'))
-        modal.hide()
+        userModal?.hide()
       } catch (err) {
         formError.value = err.response?.data?.detail || 'Error al guardar usuario'
         console.error('Error saving user:', err)
@@ -401,53 +483,53 @@ export default {
         isSaving.value = false
       }
     }
-    
-    const deleteUser = async (userId) => {
-      if (userId === currentUserId.value) {
-        alert('No puedes eliminar tu propia cuenta')
+
+    const viewUserDetails = (user) => {
+      selectedUser.value = user
+      detailsModal?.show()
+    }
+
+    const editFromDetails = () => {
+      detailsModal?.hide()
+      if (selectedUser.value) {
+        editUser(selectedUser.value)
+      }
+    }
+
+    const toggleUserStatus = async (user) => {
+      const newStatus = !user.is_active
+      const action = newStatus ? 'activar' : 'desactivar'
+      
+      if (!confirm(`¿Estás seguro de que deseas ${action} a ${user.username}?`)) {
         return
       }
-      
-      if (confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
-        try {
-          await api.deleteUser(userId)
-          await fetchUsers()
-        } catch (err) {
-          error.value = 'Error al eliminar usuario'
-          console.error('Error deleting user:', err)
-        }
+
+      try {
+        await api.updateUser(user.id, { is_active: newStatus })
+        await fetchUsers()
+      } catch (err) {
+        error.value = `Error al ${action} usuario`
+        console.error('Error toggling user status:', err)
       }
     }
-    
-    const resetForm = () => {
-      userForm.id = null
-      userForm.username = ''
-      userForm.email = ''
-      userForm.phone_number = ''
-      userForm.password = ''
-      userForm.role_name = 'customer'
-      userForm.is_active = true
-      userForm.is_verified = false
-      formError.value = null
-    }
-    
-    const applyFilters = () => {
-      fetchUsers()
-    }
-    
+
     const clearFilters = () => {
       filters.role = ''
       filters.status = ''
       filters.search = ''
-      fetchUsers()
     }
-    
+
     onMounted(() => {
       fetchUsers()
+      userModal = new bootstrap.Modal(document.getElementById('userModal'))
+      detailsModal = new bootstrap.Modal(document.getElementById('userDetailsModal'))
     })
-    
+
     return {
       users,
+      selectedUser,
+      filteredUsers,
+      paginatedUsers,
       isLoading,
       isSaving,
       error,
@@ -455,35 +537,45 @@ export default {
       isEditing,
       filters,
       userForm,
-      currentUserId,
+      currentPage,
+      itemsPerPage,
+      totalPages,
+      getUsersByRole,
+      getRoleName,
+      getRoleBadgeClass,
       formatDate,
       showCreateModal,
       editUser,
       saveUser,
-      deleteUser,
-      applyFilters,
-      clearFilters
+      viewUserDetails,
+      editFromDetails,
+      toggleUserStatus,
+      clearFilters,
+      goToPage
     }
   }
 }
 </script>
 
 <style scoped>
-.table th {
-  border-top: none;
-  font-weight: 600;
+.card {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  border: none;
 }
 
-.btn-group-sm > .btn {
-  padding: 0.25rem 0.5rem;
-}
-
-.modal-body {
-  max-height: 80vh;
-  overflow-y: auto;
+.table td, .table th {
+  vertical-align: middle;
 }
 
 .badge {
-  font-size: 0.8em;
+  font-size: 0.85em;
+  padding: .4em .6em;
+}
+
+code {
+  font-size: 0.85em;
+  background-color: #f8f9fa;
+  padding: 2px 6px;
+  border-radius: 3px;
 }
 </style>

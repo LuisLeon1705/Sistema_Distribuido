@@ -11,57 +11,51 @@
       
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto">
-          <li class="nav-item">
-            <template v-if="!isAdmin">
+          <!-- Links para Customers -->
+          <template v-if="!isStaff">
+            <li class="nav-item">
               <router-link class="nav-link" to="/">Inicio</router-link>
-            </template>
-          </li>
-          <li class="nav-item">
-            <template v-if="!isAdmin">
+            </li>
+            <li class="nav-item">
               <router-link class="nav-link" to="/products">Productos</router-link>
-            </template>
-          </li>
-          
-          <!-- Authenticated user links -->
-          <template v-if="isAuthenticated">
-            <template v-if="!isAdmin">
-              <li class="nav-item">
-                <router-link class="nav-link" to="/cart">
-                  Carrito
-                  <span v-if="cartItemsCount > 0" class="badge bg-danger ms-1">
-                    {{ cartItemsCount }}
-                  </span>
-                </router-link>
-              </li>
-              <li class="nav-item">
-                <router-link class="nav-link" to="/orders">Mis Órdenes</router-link>
-              </li>
-            </template>
+            </li>
           </template>
           
-          <!-- Admin links -->
-          <template v-if="isAdmin">
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                Administración
-              </a>
-              <ul class="dropdown-menu">
-                <li>
-                  <router-link class="dropdown-item" to="/admin/products">
-                    Gestión de Productos
-                  </router-link>
-                </li>
-                <li>
-                  <router-link class="dropdown-item" to="/admin/orders">
-                    Gestión de Órdenes
-                  </router-link>
-                </li>
-                <li>
-                  <router-link class="dropdown-item" to="/admin/users">
-                    Gestión de Usuarios
-                  </router-link>
-                </li>
-              </ul>
+          <!-- Links de carrito y órdenes solo para customers autenticados -->
+          <template v-if="isAuthenticated && canUseCart">
+            <li class="nav-item">
+              <router-link class="nav-link" to="/cart">
+                Carrito
+                <span v-if="cartItemsCount > 0" class="badge bg-danger ms-1">
+                  {{ cartItemsCount }}
+                </span>
+              </router-link>
+            </li>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/orders">Mis Órdenes</router-link>
+            </li>
+          </template>
+          
+          <!-- Links para Staff (Admin e Inventory) -->
+          <template v-if="isStaff">
+            <li class="nav-item">
+              <router-link class="nav-link" to="/admin/products">
+                <i class="fas fa-box me-1"></i>
+                Gestión de Productos
+              </router-link>
+            </li>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/admin/orders">
+                <i class="fas fa-clipboard-list me-1"></i>
+                Gestión de Órdenes
+              </router-link>
+            </li>
+            <!-- Solo Admin puede ver gestión de usuarios -->
+            <li class="nav-item" v-if="isAdmin">
+              <router-link class="nav-link" to="/admin/users">
+                <i class="fas fa-users me-1"></i>
+                Gestión de Usuarios
+              </router-link>
             </li>
           </template>
         </ul>
@@ -81,15 +75,19 @@
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                 {{ user?.username }}
-                <span class="badge bg-secondary ms-1">{{ userRole }}</span>
+                <span class="badge ms-1" :class="getRoleBadgeClass">{{ getRoleDisplayName }}</span>
               </a>
               <ul class="dropdown-menu dropdown-menu-end">
                 <li>
-                  <router-link class="dropdown-item" to="/profile">Mi Perfil</router-link>
+                  <router-link class="dropdown-item" to="/profile">
+                    <i class="fas fa-user me-2"></i>Mi Perfil
+                  </router-link>
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
-                  <a class="dropdown-item" href="#" @click="handleLogout">Cerrar Sesión</a>
+                  <a class="dropdown-item text-danger" href="#" @click="handleLogout">
+                    <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                  </a>
                 </li>
               </ul>
             </li>
@@ -115,15 +113,43 @@ export default {
 
     const isAuthenticated = computed(() => authStore.isAuthenticated) 
     const isAdmin = computed(() => authStore.isAdmin)
+    const isStaff = computed(() => authStore.isStaff)
+    const canUseCart = computed(() => authStore.canUseCart)
     const user = computed(() => authStore.user)
     const userRole = computed(() => authStore.userRole)
     const cartItemsCount = computed(() => cartStore.totalItems)
+
+    const getRoleBadgeClass = computed(() => {
+      const role = authStore.userRole
+      switch(role) {
+        case 'admin':
+          return 'bg-danger'
+        case 'inventory':
+          return 'bg-warning text-dark'
+        case 'customer':
+        default:
+          return 'bg-secondary'
+      }
+    })
+
+    const getRoleDisplayName = computed(() => {
+      const role = authStore.userRole
+      switch(role) {
+        case 'admin':
+          return 'Administrador'
+        case 'inventory':
+          return 'Inventario'
+        case 'customer':
+        default:
+          return 'Cliente'
+      }
+    })
 
     const handleLogout = async () => {
       try {
         await authStore.logout()
         cartStore.clearCart()
-        router.push('/')
+        router.push('/login')
       } catch (error) {
         console.error('Logout error:', error)
       }
@@ -132,9 +158,13 @@ export default {
     return {
       isAuthenticated,
       isAdmin,
+      isStaff,
+      canUseCart,
       user,
       userRole,
       cartItemsCount,
+      getRoleBadgeClass,
+      getRoleDisplayName,
       handleLogout
     }
   }
@@ -153,5 +183,9 @@ export default {
 
 .badge {
   font-size: 0.7em;
+}
+
+.dropdown-item i {
+  width: 20px;
 }
 </style>

@@ -84,3 +84,15 @@ def require_role(required_role: str):
         return current_user
 
     return role_dependency
+
+def require_roles(*required_roles: str):
+    """Permite el acceso si el usuario tiene cualquiera de los roles especificados"""
+    def role_dependency(current_user: models.User = Depends(get_current_user)):
+        if not current_user.role or current_user.role.name not in required_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail=f"Insufficient permissions. Required one of: {', '.join(required_roles)}"
+            )
+        return current_user
+
+    return role_dependency

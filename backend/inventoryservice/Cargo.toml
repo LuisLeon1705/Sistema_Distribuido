@@ -21,6 +21,8 @@ rust_decimal = "1.32"
 rust_decimal_macros = "1.32"
 async-trait = "0.1.7"
 reqwest = { version = "0.11", features = ["json"] }
+tower = "0.4"
+tower-http = { version = "0.4", features = ["cors"] }
 
 [dev-dependencies]
 tower = { version = "0.4", features = ["util"] }
