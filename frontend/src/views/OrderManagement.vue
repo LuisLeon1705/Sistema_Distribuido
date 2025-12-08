@@ -248,7 +248,6 @@ export default {
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     });
     
-    // Pagination computed
     const totalPages = computed(() => Math.ceil(filteredOrders.value.length / itemsPerPage.value));
     
     const paginatedOrders = computed(() => {

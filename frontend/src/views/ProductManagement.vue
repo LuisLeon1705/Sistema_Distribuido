@@ -371,7 +371,6 @@ export default {
         );
     });
     
-    // Pagination computed
     const totalPages = computed(() => Math.ceil(filteredProducts.value.length / itemsPerPage.value));
     
     const paginatedProducts = computed(() => {
@@ -387,7 +386,6 @@ export default {
         }
     };
     
-    // Reset pagination when filters change
     watch([() => filters.category, () => filters.status, () => filters.search], () => {
         currentPage.value = 1;
     });
@@ -565,13 +563,11 @@ export default {
         isSeeding.value = true;
         try {
             const categoryIdMap = new Map();
-            // First, create categories and map their old IDs to new ones
             for (const cat of sampleCategories) {
                 try {
                     const newCat = await api.createCategory({ nombre: cat.nombre, descripcion: cat.descripcion });
                     categoryIdMap.set(cat.old_id, newCat.id);
                 } catch (e) {
-                    // Try to find existing category if creation fails (e.g., unique constraint)
                     const existingCats = await api.getCategories();
                     const existingCat = existingCats.find(c => c.nombre === cat.nombre);
                     if (existingCat) {
@@ -580,7 +576,6 @@ export default {
                 }
             }
             
-            // Then, create products and their stock
             for (const prod of sampleProducts) {
                 const newCatId = categoryIdMap.get(prod.data.id_categoria);
                 if (!newCatId) continue;
@@ -592,7 +587,6 @@ export default {
                     imagen_url: imagen
                 };
                 
-                // Use a try-catch for each product to be more resilient
                 try {
                     const newProductResponse = await api.createProduct(productPayload);
                     if (newProductResponse && newProductResponse.producto) {

@@ -338,7 +338,6 @@ export default {
       is_verified: false
     })
 
-    // Pagination
     const currentPage = ref(1)
     const itemsPerPage = ref(15) // 15 usuarios por página
 
@@ -370,7 +369,6 @@ export default {
       }
     }
 
-    // Reset pagination when filters change
     watch([() => filters.role, () => filters.status, () => filters.search], () => {
       currentPage.value = 1
     })
@@ -391,7 +389,6 @@ export default {
     const getUsersByRole = (roleId) => users.value.filter(u => u.role?.id === roleId)
 
     const getRoleName = (roleNameOrId) => {
-      // Puede recibir nombre de rol (string) o ID (number)
       if (typeof roleNameOrId === 'string') {
         const nameMap = { 'admin': 'Admin', 'customer': 'Cliente', 'inventory': 'Inventario' }
         return nameMap[roleNameOrId] || roleNameOrId
@@ -460,14 +457,12 @@ export default {
       try {
         if (isEditing.value) {
           const { id, password, username, role_id, ...updateData } = userForm
-          // Convertir role_id a role_name para el backend
           const dataToSend = {
             ...updateData,
             role_name: getRoleNameForAPI(role_id)
           }
           await api.updateUser(id, dataToSend)
         } else {
-          // Para crear usuario, usar la ruta de admin con role_name
           await api.createUserAdmin({
             username: userForm.username,
             email: userForm.email,
