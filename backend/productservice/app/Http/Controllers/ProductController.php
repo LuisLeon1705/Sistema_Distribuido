@@ -21,6 +21,8 @@ class ProductController extends Controller
     // -------------------------------- POST --------------------------------
         public function store(Request $request)
         {
+            \Illuminate\Support\Facades\Log::info('Creando producto - Datos recibidos:', $request->all());
+
             $request->validate([
                 'nombre' => 'required|string|max:255',
                 'detalles' => 'nullable|string|max:255',
@@ -40,6 +42,7 @@ class ProductController extends Controller
                 $path = $request->file('imagen')->store('productos', 's3');
                 if (!$path) {
                     // Si entra aquí, es que la conexión con AWS falló
+                    \Illuminate\Support\Facades\Log::error('Error al subir imagen a S3.');
                     return response()->json([
                         'error' => 'No se pudo subir la imagen a S3.',
                         'debug_hint' => 'Revisa tus credenciales en .env o el nombre del bucket.'
@@ -62,10 +65,12 @@ class ProductController extends Controller
                 $data['id_categoria'] = $request->input('categoria_id');
             }
             if (!isset($data['id_categoria'])) {
+                \Illuminate\Support\Facades\Log::warning('Intento de crear producto sin categoría.');
                 return response()->json(['error' => 'La categoría es obligatoria para generar el código.'], 422);
             }
             $categoria = Category::find($data['id_categoria']);
             if (!$categoria) {
+                \Illuminate\Support\Facades\Log::warning('Categoría no encontrada:', ['id_categoria' => $data['id_categoria']]);
                 return response()->json(['error' => 'Categoría no encontrada.'], 404);
             }
             $prefijo = $categoria && $categoria->codigo ? strtoupper($categoria->codigo) : 'DEF';
@@ -86,7 +91,16 @@ class ProductController extends Controller
             } else {
                 $data['estado'] = true;
             }
-            $product = Product::create($data);
+
+            \Illuminate\Support\Facades\Log::info('Intentando crear producto en la BD con:', $data);
+            try {
+                $product = Product::create($data);
+                 \Illuminate\Support\Facades\Log::info('Producto creado exitosamente:', $product->toArray());
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Error al crear el producto en la BD:', ['exception' => $e->getMessage()]);
+                return response()->json(['error' => 'Error interno del servidor al crear el producto.'], 500);
+            }
+
             return response()->json([
                 'mensaje' => 'Producto creado exitosamente',
                 'producto' => $product

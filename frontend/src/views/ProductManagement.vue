@@ -9,6 +9,10 @@
             <i v-else class="fas fa-magic me-2"></i>
             Generar Productos de Muestra
           </button>
+          <button class="btn btn-info" @click="showCategoryModal">
+            <i class="fas fa-tags me-2"></i>
+            Crear Categoría
+          </button>
           <button class="btn btn-primary" @click="showCreateModal">
             <i class="fas fa-plus me-2"></i>
             Nuevo Producto
@@ -284,6 +288,10 @@ export default {
       imagen: '', estado: 'activo', quantity: 0, warehouse_location: ''
     });
 
+    const categoryForm = reactive({ nombre: '', descripcion: '' });
+    const isSavingCategory = ref(false);
+    const categoryFormError = ref(null);
+
     watch(() => productForm.imagen, (newUrl) => {
         if (uploadMode.value === 'url') {
             imagePreview.value = newUrl;
@@ -344,6 +352,12 @@ export default {
         isEditing.value = false;
         resetForm();
         productModal?.show();
+    };
+
+    const showCategoryModal = () => {
+        Object.assign(categoryForm, { nombre: '', descripcion: ''});
+        categoryFormError.value = null;
+        categoryModal?.show();
     };
 
     const editProduct = async (product) => {
@@ -421,6 +435,21 @@ export default {
             console.error(err);
         } finally {
             isSaving.value = false;
+        }
+    };
+
+    const saveCategory = async () => {
+        isSavingCategory.value = true;
+        categoryFormError.value = null;
+        try {
+            await api.createCategory(categoryForm);
+            await fetchAll();
+            categoryModal?.hide();
+        } catch (err) {
+            categoryFormError.value = err.response?.data?.message || 'Error al guardar la categoría.';
+            console.error(err);
+        } finally {
+            isSavingCategory.value = false;
         }
     };
 
