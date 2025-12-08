@@ -38,21 +38,17 @@ pub async fn seed_stock_handler(State(db): State<Db>) -> Result<StatusCode, impl
 // ----------------------------------------------------------------------
 
 pub async fn get_orders(State(db): State<Db>) -> Result<Json<Vec<Order>>, StatusCode> {
-    let orders = sqlx::query_as!(
-        Order,
+    let orders = sqlx::query_as::<_, Order>(
         r#"
-        SELECT id as "id!",
-               user_id as "user_id!",
-               total_price as "total_price!",
-               status as "status!: _",
-               created_at as "created_at!"
+        SELECT id, user_id, total_price, status, created_at
         FROM orders
+        ORDER BY created_at DESC
         "#,
     )
     .fetch_all(&db)
     .await
-    .map_err(|_e| {
-        eprintln!("Failed to fetch orders: {}", _e);
+    .map_err(|e| {
+        eprintln!("Failed to fetch orders: {}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 

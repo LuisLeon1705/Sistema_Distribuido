@@ -13,6 +13,7 @@ use std::net::SocketAddr;
 use dotenvy::dotenv;
 use sqlx::postgres::PgPoolOptions;
 use tokio::time::{self, Duration};
+use tower_http::cors::{CorsLayer, Any};
 
 const CLEANUP_INTERVAL: Duration = Duration::from_secs(300); // 5 minutes
 
@@ -44,7 +45,13 @@ async fn main() {
     //     eprintln!("Failed to seed database: {}", e);
     // }
 
-    let app = create_router(db);
+    // Configure CORS
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
+
+    let app = create_router(db).layer(cors);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     println!("listening on {}", addr);
