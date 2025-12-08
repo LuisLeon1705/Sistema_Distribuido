@@ -12,8 +12,13 @@ export const useAuthStore = defineStore('auth', {
     getters: {
         isAuthenticated: (state) => !!state.token && !!state.user,
         isAdmin: (state) => state.user?.role?.name === 'admin',
+        isInventory: (state) => state.user?.role?.name === 'inventory',
         isCustomer: (state) => state.user?.role?.name === 'customer',
-        userRole: (state) => state.user?.role?.name || null
+        userRole: (state) => state.user?.role?.name || null,
+        // Getter para identificar si puede usar el carrito (solo customers)
+        canUseCart: (state) => state.user?.role?.name === 'customer',
+        // Getter para identificar si es staff (admin o inventory)
+        isStaff: (state) => ['admin', 'inventory'].includes(state.user?.role?.name)
     },
 
     actions: {

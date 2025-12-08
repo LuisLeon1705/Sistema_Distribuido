@@ -76,6 +76,7 @@
                   <td><span class="badge" :class="product.estado === 'activo' ? 'bg-success' : 'bg-secondary'">{{ product.estado }}</span></td>
                   <td>
                     <div class="btn-group btn-group-sm">
+                      <button class="btn btn-outline-info" @click="viewStock(product)" title="Ver Stock"><i class="fas fa-boxes"></i></button>
                       <button class="btn btn-outline-primary" @click="editProduct(product)" title="Editar"><i class="fas fa-edit"></i></button>
                       <button class="btn btn-outline-danger" @click="deleteProduct(product.id)" title="Eliminar"><i class="fas fa-trash"></i></button>
                     </div>
@@ -180,6 +181,59 @@
         </div>
       </div>
     </div>
+
+    <!-- Stock Details Modal -->
+    <div class="modal fade" id="stockModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Detalles de Stock</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="isLoadingStock" class="text-center py-4">
+              <div class="spinner-border"></div>
+              <p class="mt-2">Cargando información de stock...</p>
+            </div>
+            <div v-else-if="selectedStock">
+              <div class="mb-3">
+                <h6>{{ selectedStock.productName }}</h6>
+                <p class="text-muted mb-0">Código: {{ selectedStock.productCode }}</p>
+              </div>
+              <hr>
+              <div class="row">
+                <div class="col-6">
+                  <p class="mb-1 text-muted">Cantidad en Stock</p>
+                  <h4 class="text-primary">{{ selectedStock.quantity }}</h4>
+                </div>
+                <div class="col-6">
+                  <p class="mb-1 text-muted">Ubicación</p>
+                  <h5>{{ selectedStock.warehouse_location }}</h5>
+                </div>
+              </div>
+              <hr>
+              <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle me-2"></i>
+                <small>
+                  <strong>ID del Producto:</strong> {{ selectedStock.product_id }}
+                </small>
+              </div>
+            </div>
+            <div v-else class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              No hay información de stock disponible para este producto.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <button type="button" class="btn btn-primary" @click="editFromStockView" v-if="selectedStock">
+              <i class="fas fa-edit me-2"></i>
+              Editar Producto
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -214,7 +268,10 @@ export default {
     const error = ref(null);
     const formError = ref(null);
     const isEditing = ref(false);
+    const isLoadingStock = ref(false);
+    const selectedStock = ref(null);
     let productModal = null;
+    let stockModal = null;
 
     const imageFile = ref(null);
     const imagePreview = ref(null);
@@ -444,16 +501,48 @@ export default {
         }
     };
     
+    const viewStock = async (product) => {
+        isLoadingStock.value = true;
+        selectedStock.value = null;
+        stockModal?.show();
+        
+        try {
+            const stockResponse = await api.getStock(product.id);
+            if (stockResponse.data && stockResponse.data.length > 0) {
+                selectedStock.value = {
+                    ...stockResponse.data[0],
+                    productName: product.nombre,
+                    productCode: product.codigo
+                };
+            }
+        } catch (err) {
+            console.error('Error fetching stock:', err);
+        } finally {
+            isLoadingStock.value = false;
+        }
+    };
+
+    const editFromStockView = () => {
+        stockModal?.hide();
+        const product = products.value.find(p => p.id === selectedStock.value.product_id);
+        if (product) {
+            editProduct(product);
+        }
+    };
+    
     onMounted(() => {
         fetchAll();
         productModal = new bootstrap.Modal(document.getElementById('productModal'));
+        stockModal = new bootstrap.Modal(document.getElementById('stockModal'));
     });
     
     return { 
         products, categories, isLoading, isSaving, isSeeding, error, formError, isEditing, 
+        isLoadingStock, selectedStock,
         filters, productForm, filteredProducts, imagePreview, uploadMode,
         getCategoryName, truncateText, clearFilters, handleGenerateSampleData,
-        showCreateModal, editProduct, saveProduct, deleteProduct, handleFileChange
+        showCreateModal, editProduct, saveProduct, deleteProduct, handleFileChange,
+        viewStock, editFromStockView
     };
   }
 }

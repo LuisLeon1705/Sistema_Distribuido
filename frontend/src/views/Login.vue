@@ -108,7 +108,12 @@ export default {
       
       try {
         await authStore.login(credentials)
-        router.push('/')
+        // Redirigir según el rol del usuario
+        if (authStore.isStaff) {
+          router.push('/admin/products')
+        } else {
+          router.push('/')
+        }
       } catch (error) {
         console.error('Login error:', error)
       }
