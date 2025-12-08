@@ -68,7 +68,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="product in filteredProducts" :key="product.id">
+                <tr v-for="product in paginatedProducts" :key="product.id">
                   <td>{{ product.codigo }}</td>
                   <td><img :src="product.imagen || '/placeholder-product.jpg'" :alt="product.nombre" class="table-img"></td>
                   <td>
@@ -93,6 +93,30 @@
               <h5>No se encontraron productos</h5>
               <p class="text-muted">Ajusta los filtros o crea un nuevo producto.</p>
             </div>
+            
+            <!-- Pagination -->
+            <nav v-if="!isLoading && filteredProducts.length > 0 && totalPages > 1" aria-label="Product pagination" class="mt-3">
+              <ul class="pagination justify-content-center mb-0">
+                <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                  <button class="page-link" @click="goToPage(currentPage - 1)" :disabled="currentPage === 1">
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                </li>
+                
+                <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: currentPage === page }">
+                  <button class="page-link" @click="goToPage(page)">{{ page }}</button>
+                </li>
+                
+                <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                  <button class="page-link" @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages">
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                </li>
+              </ul>
+            </nav>
+            <p v-if="filteredProducts.length > itemsPerPage" class="text-center text-muted small mt-2 mb-0">
+              Mostrando {{ (currentPage - 1) * itemsPerPage + 1 }} - {{ Math.min(currentPage * itemsPerPage, filteredProducts.length) }} de {{ filteredProducts.length }} productos
+            </p>
           </div>
         </div>
       </div>
@@ -283,6 +307,10 @@ export default {
     
     const filters = reactive({ category: '', status: '', search: '' });
     
+    // Pagination
+    const currentPage = ref(1);
+    const itemsPerPage = ref(12); // 12 productos por página
+    
     const productForm = reactive({
       id: null, nombre: '', descripcion: '', precio: 0, categoria_id: '',
       imagen: '', estado: 'activo', quantity: 0, warehouse_location: ''
@@ -304,6 +332,27 @@ export default {
             (!filters.status || p.estado === filters.status) &&
             (!filters.search || p.nombre.toLowerCase().includes(filters.search.toLowerCase()))
         );
+    });
+    
+    // Pagination computed
+    const totalPages = computed(() => Math.ceil(filteredProducts.value.length / itemsPerPage.value));
+    
+    const paginatedProducts = computed(() => {
+        const start = (currentPage.value - 1) * itemsPerPage.value;
+        const end = start + itemsPerPage.value;
+        return filteredProducts.value.slice(start, end);
+    });
+    
+    const goToPage = (page) => {
+        if (page >= 1 && page <= totalPages.value) {
+            currentPage.value = page;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+    
+    // Reset pagination when filters change
+    watch([() => filters.category, () => filters.status, () => filters.search], () => {
+        currentPage.value = 1;
     });
 
     const fetchAll = async () => {
@@ -568,10 +617,11 @@ export default {
     return { 
         products, categories, isLoading, isSaving, isSeeding, error, formError, isEditing, 
         isLoadingStock, selectedStock,
-        filters, productForm, filteredProducts, imagePreview, uploadMode,
+        filters, productForm, filteredProducts, paginatedProducts, imagePreview, uploadMode,
+        currentPage, itemsPerPage, totalPages,
         getCategoryName, truncateText, clearFilters, handleGenerateSampleData,
         showCreateModal, editProduct, saveProduct, deleteProduct, handleFileChange,
-        viewStock, editFromStockView
+        viewStock, editFromStockView, goToPage
     };
   }
 }

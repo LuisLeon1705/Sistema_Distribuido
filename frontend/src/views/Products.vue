@@ -99,7 +99,7 @@
           
           <!-- Products Grid -->
           <div v-else class="row">
-            <div class="col-md-4 mb-4" v-for="product in displayedProducts" :key="product.id">
+            <div class="col-md-4 mb-4" v-for="product in paginatedProducts" :key="product.id">
               <div class="card h-100 product-card">
                 <div class="product-image-container">
                   <img 
@@ -151,6 +151,30 @@
             </div>
           </div>
           
+          <!-- Pagination -->
+          <nav v-if="!isLoading && filteredProducts.length > 0 && totalPages > 1" aria-label="Paginación de productos" class="mt-4">
+            <ul class="pagination justify-content-center">
+              <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                <button class="page-link" @click="goToPage(currentPage - 1)" :disabled="currentPage === 1">
+                  <i class="fas fa-chevron-left"></i>
+                </button>
+              </li>
+              
+              <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: currentPage === page }">
+                <button class="page-link" @click="goToPage(page)">{{ page }}</button>
+              </li>
+              
+              <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                <button class="page-link" @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages">
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+              </li>
+            </ul>
+            <p class="text-center text-muted small">
+              Mostrando {{ (currentPage - 1) * itemsPerPage + 1 }} - {{ Math.min(currentPage * itemsPerPage, filteredProducts.length) }} de {{ filteredProducts.length }} productos
+            </p>
+          </nav>
+          
           <!-- Empty State -->
           <div v-if="!isLoading && filteredProducts.length === 0" class="text-center py-5">
             <i class="fas fa-search fa-3x text-muted mb-3"></i>
@@ -186,6 +210,10 @@ export default {
     const priceRange = ref({ min: null, max: null })
     const searchTerm = ref('')
     const sortBy = ref('name')
+    
+    // Pagination
+    const currentPage = ref(1)
+    const itemsPerPage = ref(9) // 3 columnas x 3 filas
     
     const isAuthenticated = computed(() => authStore.isAuthenticated)
 
@@ -260,6 +288,27 @@ export default {
       return sorted
     })
     
+    // Pagination computed properties
+    const totalPages = computed(() => Math.ceil(displayedProducts.value.length / itemsPerPage.value))
+    
+    const paginatedProducts = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage.value
+      const end = start + itemsPerPage.value
+      return displayedProducts.value.slice(start, end)
+    })
+    
+    const goToPage = (page) => {
+      if (page >= 1 && page <= totalPages.value) {
+        currentPage.value = page
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    }
+    
+    // Watch for filter changes to reset pagination
+    watch([selectedCategory, priceRange, searchTerm], () => {
+      currentPage.value = 1
+    })
+    
     const fetchProducts = async () => {
       isLoading.value = true
       error.value = null
@@ -331,12 +380,16 @@ export default {
       categories,
       filteredProducts,
       displayedProducts,
+      paginatedProducts,
       isLoading,
       error,
       selectedCategory,
       priceRange,
       searchTerm,
       sortBy,
+      currentPage,
+      itemsPerPage,
+      totalPages,
       isAuthenticated,
       cartStore,
       getCategoryName,
@@ -344,6 +397,7 @@ export default {
       applyFilters,
       applySorting,
       clearFilters,
+      goToPage,
       bloquearSignos
     }
   }

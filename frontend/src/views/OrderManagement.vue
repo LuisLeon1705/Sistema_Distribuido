@@ -97,7 +97,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="order in filteredOrders" :key="order.id">
+                <tr v-for="order in paginatedOrders" :key="order.id">
                   <td><span class="fw-bold">#{{ order.id }}</span></td>
                   <td>{{ getUsername(order.user_id) }}</td>
                   <td>{{ formatDate(order.created_at) }}</td>
@@ -118,6 +118,28 @@
               <h5>No se encontraron órdenes</h5>
               <p class="text-muted">Ajusta los filtros para ver órdenes</p>
             </div>
+            
+            <!-- Pagination -->
+            <nav v-if="!isLoading && filteredOrders.length > 0 && totalPages > 1" aria-label="Order pagination" class="mt-3">
+              <ul class="pagination justify-content-center mb-0">
+                <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                  <button class="page-link" @click="goToPage(currentPage - 1)" :disabled="currentPage === 1">
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                </li>
+                <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: currentPage === page }">
+                  <button class="page-link" @click="goToPage(page)">{{ page }}</button>
+                </li>
+                <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                  <button class="page-link" @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages">
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                </li>
+              </ul>
+            </nav>
+            <p v-if="filteredOrders.length > itemsPerPage" class="text-center text-muted small mt-2 mb-0">
+              Mostrando {{ (currentPage - 1) * itemsPerPage + 1 }} - {{ Math.min(currentPage * itemsPerPage, filteredOrders.length) }} de {{ filteredOrders.length }} órdenes
+            </p>
           </div>
         </div>
       </div>
@@ -192,7 +214,7 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import api from '../services/api'
 import * as bootstrap from 'bootstrap'
 
@@ -214,6 +236,10 @@ export default {
     const filters = reactive({ status: '', date: '', search: '' });
     const selectedOrderForm = reactive({ status: '' });
     
+    // Pagination
+    const currentPage = ref(1);
+    const itemsPerPage = ref(15); // 15 órdenes por página
+    
     const filteredOrders = computed(() => {
       return orders.value
         .filter(order => {
@@ -225,6 +251,27 @@ export default {
           return statusMatch && dateMatch && searchMatch;
         })
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    });
+    
+    // Pagination computed
+    const totalPages = computed(() => Math.ceil(filteredOrders.value.length / itemsPerPage.value));
+    
+    const paginatedOrders = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage.value;
+      const end = start + itemsPerPage.value;
+      return filteredOrders.value.slice(start, end);
+    });
+    
+    const goToPage = (page) => {
+      if (page >= 1 && page <= totalPages.value) {
+        currentPage.value = page;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+    
+    // Reset pagination when filters change
+    watch([() => filters.status, () => filters.date, () => filters.search], () => {
+      currentPage.value = 1;
     });
     
     const fetchOrders = async () => {
@@ -365,12 +412,16 @@ export default {
       selectedOrderForm,
       selectedOrderItems,
       filteredOrders,
+      paginatedOrders,
       isLoading,
       isFetchingDetails,
       isSaving,
       isSeeding,
       error,
       filters,
+      currentPage,
+      itemsPerPage,
+      totalPages,
       refreshOrders,
       getOrdersByStatus,
       getStatusText,
@@ -382,6 +433,7 @@ export default {
       applyFilters,
       clearFilters,
       handleSeedStock,
+      goToPage,
     }
   }
 }
