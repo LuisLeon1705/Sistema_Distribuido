@@ -60,7 +60,7 @@ pub struct CreateStock {
     pub warehouse_location: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct UpdateStock {
     pub quantity: Option<i32>,
     pub warehouse_location: Option<String>,
@@ -85,4 +85,3 @@ pub struct UpdateOrderStatusPayload {
     pub order_id: i32,
     pub new_status: OrderStatus,
 }
-
