@@ -91,6 +91,8 @@ services:
       - SPRING_DATASOURCE_USERNAME=user
       - SPRING_DATASOURCE_PASSWORD=password
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - JWT_SECRET=auth-token-secret-key-123asldkjalskdjlaskjdalksdjaksjd
+      - JWT_SECRET_KEY=auth-token-secret-key-123asldkjalskdjlaskjdalksdjaksjd
     depends_on:
       db:
         condition: service_healthy
