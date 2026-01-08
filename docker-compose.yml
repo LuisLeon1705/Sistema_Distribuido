@@ -81,6 +81,21 @@ services:
       - "8003:80"
     networks:
       - sistema-distribuido
+  orders-service:
+    build: ./backend/ordersservice
+    container_name: ordersservice
+    ports:
+      - "8081:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/orders_db
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - sistema-distribuido
 
   frontend:
     build:
