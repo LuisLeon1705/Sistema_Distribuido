@@ -81,7 +81,7 @@ services:
       - "8003:80"
     networks:
       - sistema-distribuido
-  orders-service:
+  ordersservice:
     build: ./backend/ordersservice
     container_name: ordersservice
     ports:
