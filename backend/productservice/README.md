@@ -148,7 +148,7 @@ Debes enviar el token en el encabezado de la petición:
 Para validar correctamente los tokens emitidos por el servicio de autenticación debes configurar las mismas variables utilizadas por `authservice`:
 
 ```
-JWT_SECRET_KEY=auth-token-secret-key-123
+JWT_SECRET_KEY=5da4065109ac40d49a724461fcde8c0f5f233275b72eed2229a9af2ac2300155
 JWT_ALGORITHM=HS256
 ```
 Estas variables pueden establecerse en `docker-compose.yml` o en el `.env` local del servicio de productos.
