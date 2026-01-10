@@ -26,6 +26,17 @@ Crea una nueva orden de compra. El sistema conectará internamente con el servic
 * **URL:** `/` (Raíz del servicio)
 * **URL Completa:** `http://localhost:8081/api/orders`
 
+---
+
+Al enviar una solicitud de creación de orden, el sistema realiza automáticamente los siguientes pasos:
+
+1.  **Validación de Existencia:** Consulta al `InventoryService` si existe registro del producto.
+2.  **Verificación de Cantidad:** Compara la cantidad solicitada vs. la disponible.
+    * Si `solicitado > disponible` -> Retorna error **500/400** y **NO** crea la orden.
+3.  **Descuento de Stock:** Si la orden se guarda exitosamente, el sistema resta automáticamente las unidades en el inventario.
+
+---
+
 ### Body (Request)
 
 ```json
@@ -83,6 +94,12 @@ Ocurre si el ID del producto no existe en el servicio de PHP.
     "mensaje": "El ID del producto solicitado no existe en el catálogo externo."
 }
 ```
+### Errores Posibles en POST /
+
+| Código | Error | Causa |
+| :--- | :--- | :--- |
+| `500` | RuntimeException | "Stock insuficiente para el producto: [Nombre]. Disponible: X, Solicitado: Y". |
+| `500` | RuntimeException | "No hay registro de inventario para el producto [UUID]". |
 ---
 
 ## 2. Obtener Mis Órdenes
@@ -159,3 +176,65 @@ No requiere cuerpo
 ### Respuesta
 * **Si es Admin::** `Devuelve un Array JSON con todas las órdenes del sistema (200 OK).`
 * **Si es Usuario Normal:** Devuelve 403 Forbidden con mensaje: "Acceso denegado. Se requiere rol de administrador.".
+
+---
+
+
+## 6. Actualizar Estado de Orden
+
+Permite cambiar el estado de una orden (ej. de `CREADO` a `PAGADO`, `COMPLETED` o `CANCELLED`).
+Este endpoint incluye lógica inteligente de **Devolución de Stock**.
+
+* **Método:** `PUT`
+* **URL:** `/{id}/status`
+* **URL Completa:** `http://localhost:8081/api/orders/c9f5d3a1-4e7d-4e3f-83d9-c2effaf66cb3/status`
+
+### Reglas de Negocio y Permisos
+
+| Rol | Permisos |
+| :--- | :--- |
+| **ADMIN** | Puede cambiar el estado a cualquier valor (`COMPLETED`, `PAID`, `CANCELLED`, etc.). |
+| **USUARIO** | Solo puede cambiar el estado a **`CANCELLED`** (para cancelar su propia compra). |
+
+> **🔄 Devolución de Stock:** Si el nuevo estado es `CANCELLED` y la orden no estaba cancelada previamente, el sistema **sumará** automáticamente los productos de vuelta al `InventoryService`.
+
+### Body (Request)
+
+```json
+{
+  "status": "CANCELLED"
+}
+```
+
+| Campo | Tipo | Obligatorio | Descripción |
+| :--- | :--- | :--- | :--- |
+| 'status' | 'String' | Sí | El nuevo estado. Valores típicos: CANCELLED, COMPLETED, PAID. |
+
+### Respuesta Exitosa (200 OK) 
+Devuelve el objeto Orden actualizado.
+
+```json
+{
+    "id": "c9f5d3a1-...",
+    "userId": "a1b2c3d4-...",
+    "total": 550.00,
+    "status": "CANCELLED",  // <--- Estado actualizado
+    "createdAt": "2026-01-10T03:30:00",
+    "items": [
+        {
+            "productId": "550e8400-...",
+            "quantity": 2,
+            "price": 275.00
+        }
+    ]
+}
+```
+
+### Errores Comunes
+
+| Código | Mensaje | Causa |
+| :--- | :--- | :--- |
+| `403` | "No tienes permiso para modificar esta orden." | Usuario intentando modificar orden ajena. |
+| `403` | "Los usuarios solo pueden cancelar sus órdenes." | Usuario intentando poner estado COMPLETED o PAID. |
+| `400` | "No puedes cancelar una orden que ya fue completada." | Intento de cancelar una orden que ya finalizó su ciclo. |
+| `404` | "Orden no encontrada" | El ID proporcionado en la URL no existe. |
