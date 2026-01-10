@@ -41,4 +41,17 @@ public class JwtUtil {
                 .getBody();
         return UUID.fromString(claims.getSubject());
     }
+
+    public String getRoleFromToken(String token) {
+        String[] parts = token.split("\\.");
+        String unsignedToken = parts[0] + "." + parts[1] + ".";
+
+        Claims claims = Jwts.parserBuilder()
+                .build()
+                .parseClaimsJwt(unsignedToken)
+                .getBody();
+
+        // Extraemos el campo "role" que puso Python
+        return claims.get("role", String.class);
+    }
 }
