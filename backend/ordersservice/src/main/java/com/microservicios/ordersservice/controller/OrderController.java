@@ -1,7 +1,10 @@
 package com.microservicios.ordersservice.controller;
 
+import com.microservicios.ordersservice.client.InventoryClient;
 import com.microservicios.ordersservice.client.ProductClient;
 import com.microservicios.ordersservice.dto.ProductDto;
+import com.microservicios.ordersservice.dto.OrderStatusDto;
+import com.microservicios.ordersservice.dto.StockDto;
 import com.microservicios.ordersservice.security.JwtUtil;
 import com.microservicios.ordersservice.model.Order;
 import com.microservicios.ordersservice.model.OrderItem;
@@ -10,10 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.ResponseEntity;
-import java.util.List;
 
 //import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -29,10 +33,14 @@ public class OrderController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private InventoryClient inventoryClient;
+
     // ---------------------------------------------------------
     // 1. CREAR ORDEN (POST)
     // ---------------------------------------------------------
     @PostMapping
+    @Transactional
     public Order createOrder(@RequestBody Order order, Authentication authentication) {
         UUID userId = (UUID) authentication.getPrincipal();
         order.setUserId(userId);
@@ -42,21 +50,40 @@ public class OrderController {
         if (order.getItems() != null) {
             for (OrderItem item : order.getItems()) {
                 String productIdStr = item.getProductId().toString();
+                ProductDto productReal = null;
+                Double precioReal = 0.0;
+
                 try {
-                    ProductDto productReal = productClient.getProductById(productIdStr);
-    
+                    // Validar producto y precio real (php)
+                    productReal = productClient.getProductById(productIdStr);
+                    
                     if (productReal == null) {
                         throw new RuntimeException("El producto " + item.getProductId() + " no existe.");
                     }
-    
-                    Double precioReal = productReal.getPrice().doubleValue();
+                    precioReal = productReal.getPrice().doubleValue();
                     item.setPrice(precioReal);
                     
-                    Double subtotal = precioReal * item.getQuantity();
-                    totalCalculado += subtotal;
                 } catch (feign.FeignException.NotFound e) {
                     throw new RuntimeException("El producto con ID " + productIdStr + " no existe en el sistema.");
                 }
+
+                // validar stock en inventario (rust)
+                List<StockDto> stocks = inventoryClient.getStockByProductId(productIdStr);
+                if (stocks == null || stocks.isEmpty()) {
+                    throw new RuntimeException("No hay registro de inventario para el producto " + productIdStr);
+                }
+                
+                StockDto stockActual = stocks.get(0);
+                
+                if (stockActual.getQuantity() < item.getQuantity()) {
+                    String nombreProd = (productReal != null) ? productReal.getName() : "Desconocido";
+                    throw new RuntimeException("Stock insuficiente para el producto: " + nombreProd + 
+                    ". Disponible: " + stockActual.getQuantity() + 
+                    ", Solicitado: " + item.getQuantity());
+                }
+
+                Double subtotal = precioReal * item.getQuantity();
+                totalCalculado += subtotal;
             }
         }
 
@@ -67,8 +94,23 @@ public class OrderController {
         if (order.getItems() != null) {
             order.addItems(order.getItems());
         }
+        Order savedOrder = orderRepository.save(order);
+        if (order.getItems() != null) {
+            for (OrderItem item : order.getItems()) {
+                String productIdStr = item.getProductId().toString();
+                List<StockDto> stocks = inventoryClient.getStockByProductId(productIdStr);
+                StockDto stockActual = stocks.get(0);
+                int nuevaCantidad = stockActual.getQuantity() - item.getQuantity();
+                StockDto stockUpdate = new StockDto();
 
-        return orderRepository.save(order);
+                stockUpdate.setQuantity(nuevaCantidad);
+                stockUpdate.setWarehouseLocation(stockActual.getWarehouseLocation());
+
+                inventoryClient.updateStock(productIdStr, stockUpdate);
+                System.out.println("----- Stock actualizado para " + productIdStr + ". Nuevo total: " + nuevaCantidad);
+            }
+        }
+        return savedOrder;
     }
 
     // ---------------------------------------------------------
@@ -122,5 +164,70 @@ public class OrderController {
         // 4. Si es admin, devolver todo
         List<Order> allOrders = orderRepository.findAll();
         return ResponseEntity.ok(allOrders);
+    }
+
+    @PutMapping("/{id}/status")
+    @Transactional
+    public ResponseEntity<?> updateOrderStatus(
+            @PathVariable UUID id,
+            @RequestBody OrderStatusDto statusDto,
+            @RequestHeader("Authorization") String tokenHeader) {
+        
+        String token = tokenHeader.replace("Bearer ", "");
+        UUID userIdFromToken = jwtUtil.getUserIdFromToken(token);
+        String role = jwtUtil.getRoleFromToken(token);
+        String newStatus = statusDto.getStatus().toUpperCase();
+
+        // buscar orden
+        Order order = orderRepository.findById(id).orElse(null);
+
+        if (order == null) {
+            return ResponseEntity.status(404).body("Orden no encontrada.");
+        }
+
+        // validar permisos
+        boolean isAdmin = "admin".equals(role);
+        boolean isOwner = order.getUserId().equals(userIdFromToken);
+        
+        if (!isAdmin && isOwner) {
+            return ResponseEntity.status(403).body("No tienes permiso para modificar esta orden.");
+        }
+
+        if (!isAdmin && isOwner) {
+            if (!"CANCELLED".equals(newStatus)) {
+                return ResponseEntity.status(403).body("Los usuarios solo pueden cancelar sus propias órdenes.");
+            }
+            if ("COMPLETED".equals(order.getStatus())) {
+                return ResponseEntity.status(400).body("No se puede cancelar una orden ya completada.");
+            }
+        }
+
+        // si se cancela para devolver el stock
+        if ("CANCELLED".equals(newStatus) && !"CANCELLED".equals(order.getStatus())) {
+            System.out.println(" ---- Orden Cancelada, devolviendo el stock");
+            if (order.getItems() != null) {
+                for (OrderItem item : order.getItems()) {
+                    String productIdStr = item.getProductId().toString();
+                    try {
+                        List<StockDto> stocks = inventoryClient.getStockByProductId(productIdStr);
+                        if (stocks != null && !stocks.isEmpty()) {
+                            StockDto stockActual = stocks.get(0);
+                            int nuevaCantidad = stockActual.getQuantity() + item.getQuantity();
+                            StockDto stockUpdate = new StockDto();
+                            stockUpdate.setQuantity(nuevaCantidad);
+                            stockUpdate.setWarehouseLocation(stockActual.getWarehouseLocation());
+                            inventoryClient.updateStock(productIdStr, stockUpdate);
+                            System.out.println("----- Stock restaurado para " + productIdStr + ". Nuevo total: " + nuevaCantidad);
+                        }
+                    } catch (Exception e) {
+                        System.out.println("Error al restaurar el stock para el producto " + productIdStr + ": " + e.getMessage());
+                    }
+
+                }
+            }
+        }
+        order.setStatus(newStatus);
+        orderRepository.save(order);
+        return ResponseEntity.ok(order);
     }
 }
