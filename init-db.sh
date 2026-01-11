@@ -9,6 +9,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE DATABASE auth_db;
     CREATE DATABASE inventory_db;
     CREATE DATABASE products_db;
+    CREATE DATABASE orders_db;
 EOSQL
 
 # Load schemas into their respective databases
