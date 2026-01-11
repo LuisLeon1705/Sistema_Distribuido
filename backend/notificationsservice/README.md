@@ -2,7 +2,7 @@
 
 Microservicio de notificaciones desarrollado en Go con Gin framework. Proporciona funcionalidades para enviar notificaciones por email y mantener un registro de todas las notificaciones del sistema.
 
-## 🚀 Tecnologías
+## Tecnologías
 
 - **Go 1.21**
 - **Gin Framework** - Web framework
@@ -10,7 +10,7 @@ Microservicio de notificaciones desarrollado en Go con Gin framework. Proporcion
 - **GoMail** - Envío de emails
 - **UUID** - Generación de identificadores únicos
 
-## 📋 Características
+## Características
 
 - ✅ Envío de notificaciones por email con plantillas HTML
 - ✅ Notificaciones de creación de pedidos
@@ -20,7 +20,7 @@ Microservicio de notificaciones desarrollado en Go con Gin framework. Proporcion
 - ✅ CORS habilitado
 - ✅ Dockerizado
 
-## 🔌 Endpoints
+## Endpoints
 
 ### Públicos (Para microservicios internos)
 
@@ -45,7 +45,7 @@ GET /api/notifications/:id       # Obtener por ID
 GET /health
 ```
 
-## 📝 Ejemplos de Uso
+## Ejemplos de Uso
 
 ### 1. Notificar creación de pedido
 
@@ -109,7 +109,7 @@ Content-Type: application/json
 GET http://localhost:8004/notifications
 ```
 
-## ⚙️ Variables de Entorno
+## Variables de Entorno
 
 ```env
 PORT=8000
@@ -125,7 +125,7 @@ SMTP_USE_TLS=false
 EMAIL_FROM=servicio@ejemplo.com
 ```
 
-## 🐳 Docker
+## Docker
 
 ### Construir imagen
 
@@ -147,7 +147,7 @@ El servicio está incluido en el docker-compose.yml principal:
 docker-compose up notificationsservice
 ```
 
-## 🧪 Desarrollo Local
+## Desarrollo Local
 
 ### Prerrequisitos
 
@@ -168,7 +168,7 @@ go run .
 
 El servicio estará disponible en `http://localhost:8000`
 
-## 📦 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 notificationsservice/
@@ -185,7 +185,7 @@ notificationsservice/
 └── README.md            # Documentación
 ```
 
-## 🔐 Autenticación
+## Autenticación
 
 Los endpoints bajo `/api/*` requieren un token JWT válido en el header:
 
@@ -197,7 +197,7 @@ El token debe contener los claims:
 - `sub`: ID del usuario
 - `role`: Rol del usuario (admin, staff, customer)
 
-## 📧 Configuración SMTP
+## Configuración SMTP
 
 El servicio soporta:
 - SMTP con SSL/TLS (puerto 465)
@@ -205,7 +205,7 @@ El servicio soporta:
 
 Si no se configura SMTP, las notificaciones se registrarán en los logs en lugar de enviarse.
 
-## 🔄 Integración con Otros Servicios
+## Integración con Otros Servicios
 
 ### Desde Orders Service (Java/Spring)
 
@@ -235,7 +235,7 @@ curl -X POST http://notificationsservice:8000/notifications/order-created \
   }'
 ```
 
-## 📊 Base de Datos
+## Base de Datos
 
 El servicio utiliza una base de datos en memoria (mapa concurrente) para almacenar las notificaciones. Los datos se pierden al reiniciar el servicio.
 
@@ -244,7 +244,7 @@ Para persistencia permanente, considera:
 - Usar Redis para cache
 - Implementar event sourcing
 
-## 🎨 Plantillas de Email
+## Plantillas de Email
 
 Las notificaciones incluyen plantillas HTML responsivas con:
 - Diseño profesional
@@ -252,13 +252,13 @@ Las notificaciones incluyen plantillas HTML responsivas con:
 - Emojis y formato atractivo
 - Compatible con la mayoría de clientes de email
 
-## 🚦 Estados de Notificación
+## Estados de Notificación
 
 - `pending`: Notificación creada, esperando envío
 - `sent`: Email enviado exitosamente
 - `failed`: Error al enviar email
 
-## 📈 Mejoras Futuras
+## Mejoras Futuras
 
 - [ ] Persistencia en base de datos (PostgreSQL)
 - [ ] Soporte para SMS
@@ -268,11 +268,3 @@ Las notificaciones incluyen plantillas HTML responsivas con:
 - [ ] Reintentos automáticos para envíos fallidos
 - [ ] Dashboard de métricas
 - [ ] Webhooks para eventos
-
-## 🤝 Contribución
-
-Este servicio es parte del sistema distribuido de gestión. Para contribuir, sigue los estándares del proyecto principal.
-
-## 📄 Licencia
-
-Parte del proyecto Sistema Distribuido - 2026
