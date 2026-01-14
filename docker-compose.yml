@@ -16,6 +16,7 @@ services:
       - ./backend/authservice/db/schema.sql:/schemas/auth_schema.sql
       - ./backend/inventoryservice/db/schema.sql:/schemas/inventory_schema.sql
       - ./backend/productservice/db/schema.sql:/schemas/products_schema.sql
+      - ./backend/ordersservice/db/schema.sql:/schemas/orders_schema.sql
     ports:
       - "5432:5432"
     networks:
@@ -24,7 +25,8 @@ services:
       test: [ "CMD-SHELL", "pg_isready -U user -d postgres" ]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 40s
 
   authservice:
     build:
@@ -90,7 +92,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/orders_db
       - SPRING_DATASOURCE_USERNAME=user
       - SPRING_DATASOURCE_PASSWORD=password
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=validate
       - JWT_SECRET=5da4065109ac40d49a724461fcde8c0f5f233275b72eed2229a9af2ac2300155
       - JWT_SECRET_KEY=5da4065109ac40d49a724461fcde8c0f5f233275b72eed2229a9af2ac2300155
     depends_on:
