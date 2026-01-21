@@ -99,6 +99,20 @@ services:
     networks:
       - sistema-distribuido
 
+  notificationsservice:
+    build:
+      context: ./backend/notificationsservice
+      dockerfile: Dockerfile
+    container_name: notificationsservice
+    env_file: ./backend/notificationsservice/.env
+    environment:
+      PORT: 8000
+      JWT_SECRET_KEY: 5da4065109ac40d49a724461fcde8c0f5f233275b72eed2229a9af2ac2300155
+    ports:
+      - "8004:8000"
+    networks:
+      - sistema-distribuido
+
   frontend:
     build:
       context: ./frontend
