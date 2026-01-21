@@ -4,6 +4,16 @@
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Gestión de Órdenes</h2>
         <div class="d-flex gap-2">
+<<<<<<< HEAD
+=======
+          <!--
+          <button class="btn btn-info" @click="handleSeedStock" :disabled="isSeeding">
+            <span v-if="isSeeding" class="spinner-border spinner-border-sm me-2"></span>
+            <i v-else class="fas fa-seedling me-2"></i>
+            Generar Stock de Productos
+          </button>
+          -->
+>>>>>>> origin/main-backup
           <button class="btn btn-outline-secondary" @click="refreshOrders">
             <i class="fas fa-sync me-2"></i>
             Actualizar

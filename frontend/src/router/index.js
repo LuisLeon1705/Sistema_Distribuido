@@ -48,7 +48,14 @@ const routes = [
         path: '/cart',
         name: 'Cart',
         component: Cart,
+<<<<<<< HEAD
         meta: { requiresAuth: true, requiresCustomer: true } // Solo para customers
+=======
+        meta: { 
+            requiresAuth: true, 
+            hideForAdmin: true
+        }
+>>>>>>> origin/main-backup
     },
     {
         path: '/orders',
@@ -129,9 +136,14 @@ router.beforeEach(async (to, from, next) => {
         return next('/')
     }
 
+<<<<<<< HEAD
     // If route requires customer and user is staff (admin or inventory)
     if (requiresCustomer && authStore.isStaff) {
         return next('/admin/products')
+=======
+    if (to.meta.hideForAdmin && authStore.isAdmin) {
+        return next('/')
+>>>>>>> origin/main-backup
     }
 
     next()

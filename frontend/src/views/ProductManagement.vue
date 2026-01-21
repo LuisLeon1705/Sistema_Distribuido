@@ -3,24 +3,40 @@
     <div class="container-fluid">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Gestión de Productos</h2>
+<<<<<<< HEAD
         <div class="d-flex gap-2">
           <button class="btn btn-info" @click="showCategoryModal">
             <i class="fas fa-tags me-2"></i>
             Crear Categoría
+=======
+        <div class="flex flex-row justify-content-end align-items-center gap-4">
+          <button class="btn btn-primary mx-4" @click="showCreateModalCategory">
+            <i class="fas fa-plus me-2"></i>
+            Nueva Categoría
+>>>>>>> origin/main-backup
           </button>
-          <button class="btn btn-primary" @click="showCreateModal">
+          <button class="btn btn-primary mx-4" @click="showCreateModal">
             <i class="fas fa-plus me-2"></i>
             Nuevo Producto
           </button>
+          <button class="btn btn-success" @click="handleGenerateSampleData" :disabled="isSeeding">
+            <span v-if="isSeeding" class="spinner-border spinner-border-sm me-2"></span>
+            <i v-else class="fas fa-magic me-2"></i>
+              Generar Stock Inicial
+          </button>
         </div>
+        <button v-if="isAdmin" class="btn btn-outline-secondary ms-2" @click="showCategoriesModal">
+          <i class="fas fa-folder-plus me-2"></i>
+          Gestión de Categorías
+        </button>
       </div>
-      
+
       <!-- Filters -->
       <div class="card mb-4">
         <div class="card-body">
-          <div class="row g-2">
+          <div class="row">
             <div class="col-md-3">
-              <select v-model="filters.category" class="form-select">
+              <select v-model="filters.category" @change="applyFilters" class="form-select">
                 <option value="">Todas las categorías</option>
                 <option v-for="category in categories" :key="category.id" :value="category.id">
                   {{ category.nombre }}
@@ -28,29 +44,48 @@
               </select>
             </div>
             <div class="col-md-3">
-              <select v-model="filters.status" class="form-select">
+              <select v-model="filters.status" @change="applyFilters" class="form-select">
                 <option value="">Todos los estados</option>
                 <option value="activo">Activo</option>
                 <option value="inactivo">Inactivo</option>
               </select>
             </div>
             <div class="col-md-4">
-              <input type="text" v-model="filters.search" placeholder="Buscar productos..." class="form-control">
+              <input 
+                type="text" 
+                v-model="filters.search" 
+                @input="applyFilters"
+                placeholder="Buscar productos..." 
+                class="form-control"
+              >
             </div>
             <div class="col-md-2">
-              <button @click="clearFilters" class="btn btn-outline-secondary w-100">Limpiar</button>
+              <button @click="clearFilters" class="btn btn-outline-secondary w-100">
+                Limpiar
+              </button>
             </div>
           </div>
         </div>
       </div>
-      
+
       <!-- Products Table -->
       <div class="card">
         <div class="card-body">
-          <div v-if="isLoading" class="text-center py-4"><div class="spinner-border"></div></div>
-          <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
+          <!-- Loading State -->
+          <div v-if="isLoading" class="text-center py-4">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+          </div>
+
+          <!-- Error State -->
+          <div v-else-if="error" class="alert alert-danger">
+            {{ error }}
+          </div>
+
+          <!-- Products Table -->
           <div v-else class="table-responsive">
-            <table class="table table-hover align-middle">
+            <table class="table table-hover">
               <thead>
                 <tr>
                   <th>Código</th>
@@ -65,28 +100,60 @@
               <tbody>
                 <tr v-for="product in paginatedProducts" :key="product.id">
                   <td>{{ product.codigo }}</td>
-                  <td><img :src="product.imagen || '/placeholder-product.jpg'" :alt="product.nombre" class="table-img"></td>
+                  <td>
+                    <img 
+                      :src="product.imagen || '/placeholder-product.jpg'" 
+                      :alt="product.nombre"
+                      style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;"
+                    >
+                  </td>
                   <td>
                     <div class="fw-medium">{{ product.nombre }}</div>
                     <small class="text-muted">{{ truncateText(product.descripcion, 50) }}</small>
                   </td>
                   <td>{{ getCategoryName(product.categoria_id) }}</td>
                   <td>${{ parseFloat(product.precio).toFixed(2) }}</td>
-                  <td><span class="badge" :class="product.estado === 'activo' ? 'bg-success' : 'bg-secondary'">{{ product.estado }}</span></td>
+                  <td>
+                    <span 
+                      class="badge"
+                      :class="product.estado === 'activo' ? 'bg-success' : 'bg-secondary'"
+                    >
+                      {{ product.estado }}
+                    </span>
+                  </td>
                   <td>
                     <div class="btn-group btn-group-sm">
+<<<<<<< HEAD
                       <button class="btn btn-outline-info" @click="viewStock(product)" title="Ver Stock"><i class="fas fa-boxes"></i></button>
                       <button class="btn btn-outline-primary" @click="editProduct(product)" title="Editar"><i class="fas fa-edit"></i></button>
                       <button class="btn btn-outline-danger" @click="deleteProduct(product.id)" title="Eliminar"><i class="fas fa-trash"></i></button>
+=======
+                      <button 
+                        class="btn btn-outline-primary"
+                        @click="editProduct(product)"
+                        title="Editar"
+                      >
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button 
+                        class="btn btn-outline-danger"
+                        @click="deleteProduct(product.id)"
+                        title="Eliminar"
+                      >
+                        <i class="fas fa-trash"></i>
+                      </button>
+>>>>>>> origin/main-backup
                     </div>
                   </td>
                 </tr>
               </tbody>
             </table>
+
+            <!-- Empty State -->
             <div v-if="filteredProducts.length === 0" class="text-center py-4">
               <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
               <h5>No se encontraron productos</h5>
-              <p class="text-muted">Ajusta los filtros o crea un nuevo producto.</p>
+              <p class="text-muted">Ajusta los filtros o crea un nuevo producto</p>
             </div>
             
             <!-- Pagination -->
@@ -116,36 +183,55 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Product Modal -->
     <div class="modal fade" id="productModal" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">{{ isEditing ? 'Editar Producto' : 'Nuevo Producto' }}</h5>
+            <h5 class="modal-title">
+              {{ isEditing ? 'Editar Producto' : 'Nuevo Producto' }}
+            </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <form @submit.prevent="saveProduct">
             <div class="modal-body">
-              <h6 class="mb-3">Detalles del Producto</h6>
               <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Nombre *</label>
-                  <input type="text" v-model="productForm.nombre" class="form-control" required>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">Nombre *</label>
+                    <input 
+                      type="text" 
+                      v-model="productForm.nombre"
+                      class="form-control"
+                      required
+                    >
+                  </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Categoría *</label>
-                  <select v-model="productForm.categoria_id" class="form-select" required>
-                    <option disabled value="">Seleccionar categoría</option>
-                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.nombre }}</option>
-                  </select>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">Categoría *</label>
+                    <select v-model="productForm.categoria_id" class="form-select" required>
+                      <option value="">Seleccionar categoría</option>
+                      <option v-for="category in categories" :key="category.id" :value="category.id">
+                        {{ category.nombre }}
+                      </option>
+                    </select>
+                  </div>
                 </div>
               </div>
+              
               <div class="mb-3">
                 <label class="form-label">Descripción</label>
-                <textarea v-model="productForm.descripcion" class="form-control" rows="3"></textarea>
+                <textarea 
+                v-model="productForm.descripcion"
+                class="form-control"
+                rows="3"
+                ></textarea>
               </div>
+
               <div class="row">
+<<<<<<< HEAD
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Precio *</label>
                   <input 
@@ -158,6 +244,21 @@
                     required
                   >
                   <small class="text-muted">El precio debe ser mayor a 0</small>
+=======
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">Precio *</label>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      min="0"
+                      v-model.number="productForm.precio"
+                      @keydown="bloquearSignos"
+                      class="form-control"
+                      required
+                    >
+                  </div>
+>>>>>>> origin/main-backup
                 </div>
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Estado</label>
@@ -185,28 +286,110 @@
 
                 <img v-if="imagePreview" :src="imagePreview" alt="Vista previa" class="img-thumbnail mt-2" style="max-height: 150px;">
               </div>
-
-              <hr class="my-4">
-
               <h6 class="mb-3">Detalles del Stock</h6>
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Cantidad en Stock *</label>
-                  <input type="number" min="0" v-model.number="productForm.quantity" class="form-control" required>
+                  <input 
+                    type="number" 
+                    min="0" 
+                    v-model.number="productForm.quantity" 
+                    @keydown="bloquearSignos" 
+                    class="form-control" 
+                    required
+                  >
                 </div>
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Ubicación en Almacén *</label>
-                  <input type="text" v-model="productForm.warehouse_location" class="form-control" required>
+                  <input 
+                    type="text" 
+                    v-model="productForm.warehouse_location"
+                    class="form-control" 
+                    required
+                  >
                 </div>
               </div>
-              
-              <div v-if="formError" class="alert alert-danger mt-3">{{ formError }}</div>
+              <br></br>
+
+              <div class="mb-3">
+                <label class="form-label">URL de Imagen</label>
+                <input 
+                  type="url" 
+                  v-model="productForm.imagen"
+                  class="form-control"
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                >
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Subir imagen</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  @change="onImageFileChange"
+                  class="form-control"
+                  ref="fileInput"
+                >
+                <div v-if="imagePreviewUrl || productForm.imagen" class="mt-2">
+                  <img :src="imagePreviewUrl || productForm.imagen" alt="Preview" style="max-width:200px; object-fit:cover; border-radius:4px;">
+                </div>
+              </div>
+
+              <div v-if="formError" class="alert alert-danger">
+                {{ formError }}
+              </div>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                Cancelar
+              </button>
               <button type="submit" class="btn btn-primary" :disabled="isSaving">
                 <span v-if="isSaving" class="spinner-border spinner-border-sm me-2"></span>
-                Guardar
+                {{ isSaving ? 'Guardando...' : 'Guardar' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="categoryModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Nueva Categoría</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <form @submit.prevent="saveCategory">
+            <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label">Nombre *</label>
+                <input 
+                  type="text" 
+                  v-model="categoryForm.nombre"
+                  class="form-control"
+                  required
+                >
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Descripción</label>
+                <textarea 
+                  v-model="categoryForm.descripcion"
+                  class="form-control"
+                  rows="3"
+                ></textarea>
+              </div>
+
+              <div v-if="categoryFormError" class="alert alert-danger">
+                {{ categoryFormError }}
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn-primary" :disabled="isSavingCategory">
+                <span v-if="isSavingCategory" class="spinner-border spinner-border-sm me-2"></span>
+                {{ isSavingCategory ? 'Guardando...' : 'Guardar' }}
               </button>
             </div>
           </form>
@@ -324,10 +507,15 @@ const sampleProducts = [
 export default {
   name: 'ProductManagement',
   setup() {
-    const products = ref([]);
-    const categories = ref([]);
-    const isLoading = ref(false);
-    const isSaving = ref(false);
+    const products = ref([])
+    const categories = ref([])
+    const isLoading = ref(false)
+    const isSaving = ref(false)
+    const error = ref(null)
+    const fileInput = ref(null)
+    const formError = ref(null)
+    const isEditing = ref(false)
+    const authStore = useAuthStore()
     const isSeeding = ref(false);
     const error = ref(null);
     const formError = ref(null);
@@ -342,7 +530,11 @@ export default {
     const imagePreview = ref(null);
     const uploadMode = ref('file');
     
-    const filters = reactive({ category: '', status: '', search: '' });
+    const filters = reactive({
+      category: '',
+      status: '',
+      search: ''
+    })
     
     // Pagination
     const currentPage = ref(1);
@@ -439,17 +631,53 @@ export default {
     };
     
     const showCreateModal = () => {
-        isEditing.value = false;
-        resetForm();
-        productModal?.show();
-    };
+      isEditing.value = false
+      resetForm()
+      const modal = new bootstrap.Modal(document.getElementById('productModal'))
+      modal.show()
+    }
+    const resetCategoryForm = () => {
+      categoryForm.nombre = ''
+      categoryForm.descripcion = ''
+      categoryFormError.value = null
+    }
 
+<<<<<<< HEAD
     const showCategoryModal = () => {
         Object.assign(categoryForm, { nombre: '', descripcion: ''});
         categoryFormError.value = null;
         categoryModal?.show();
     };
 
+=======
+    const showCreateModalCategory = () => {
+      resetCategoryForm()
+      const modal = new bootstrap.Modal(document.getElementById('categoryModal'))
+      modal.show()
+    }
+
+    const saveCategory = async () => {
+      isSavingCategory.value = true
+      categoryFormError.value = null
+      
+      try {
+        const data = {
+          nombre: categoryForm.nombre,
+          descripcion: categoryForm.descripcion
+        }
+        await productService.createCategory(data)
+        await fetchCategories()
+        const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModal'))
+        modal.hide()
+      } catch (err) {
+        categoryFormError.value = err.response?.data?.message || 'Error al crear categoría'
+        console.error('Error saving category:', err)
+      } finally {
+        isSavingCategory.value = false
+      }
+    }
+    
+>>>>>>> origin/main-backup
     const editProduct = async (product) => {
         isEditing.value = true;
         resetForm();
@@ -544,17 +772,53 @@ export default {
     };
 
     const deleteProduct = async (productId) => {
-        if (!confirm('¿Seguro que quieres eliminar este producto y su stock?')) return;
+      if (confirm('¿Estás seguro de que deseas eliminar este producto?')) {
         try {
-            await Promise.all([
-                api.deleteProduct(productId),
-                api.deleteStock(productId)
-            ]);
-            await fetchAll();
+          await productService.deleteProduct(productId)
+          await fetchProducts()
         } catch (err) {
-            console.error('Error deleting product/stock:', err);
-            error.value = 'Error al eliminar el producto.';
+          error.value = 'Error al eliminar producto'
+          console.error('Error deleting product:', err)
         }
+      }
+    }
+    
+    const resetForm = () => {
+      productForm.id = null
+      productForm.nombre = ''
+      productForm.descripcion = ''
+      productForm.precio = 0
+      productForm.categoria_id = ''
+      productForm.imagen = ''
+      productForm.warehouse_location = ''
+      productForm.quantity = 0
+
+      if (imagePreviewUrl.value) {
+        try { URL.revokeObjectURL(imagePreviewUrl.value) } catch (e) {}
+      }
+      productForm.imagenFile = null
+      imagePreviewUrl.value = ''
+      if (fileInput.value) {
+        fileInput.value.value = '' 
+      }
+      productForm.estado = 'activo'
+      formError.value = null
+    }
+    
+    const applyFilters = () => {
+      // Filters are applied automatically via computed property
+    }
+    
+    const clearFilters = () => {
+      filters.category = ''
+      filters.status = ''
+      filters.search = ''
+    }
+
+    const bloquearSignos = (e) => {
+      if (['-', '+', 'e', 'E'].includes(e.key)) {
+        e.preventDefault();
+      }
     };
 
     const handleGenerateSampleData = async () => {
@@ -606,8 +870,6 @@ export default {
             }
             
             alert('Datos de muestra generados exitosamente.');
-            await fetchAll();
-
         } catch (err) {
             alert('Error al generar datos de muestra. Revisa la consola.');
             console.error(err);
@@ -616,6 +878,7 @@ export default {
         }
     };
     
+<<<<<<< HEAD
     const viewStock = async (product) => {
         isLoadingStock.value = true;
         selectedStock.value = null;
@@ -651,6 +914,14 @@ export default {
         stockModal = new bootstrap.Modal(document.getElementById('stockModal'));
         categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
     });
+=======
+    onMounted(async () => {
+      await Promise.all([
+        fetchProducts(),
+        fetchCategories()
+      ])
+    })
+>>>>>>> origin/main-backup
     
     return { 
         products, categories, isLoading, isSaving, isSeeding, error, formError, isEditing, 
@@ -667,6 +938,23 @@ export default {
 </script>
 
 <style scoped>
+<<<<<<< HEAD
 .table-img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
 .table td, .table th { vertical-align: middle; }
 </style>
+=======
+.table th {
+  border-top: none;
+  font-weight: 600;
+}
+
+.btn-group-sm > .btn {
+  padding: 0.25rem 0.5rem;
+}
+
+.modal-body {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+</style>
+>>>>>>> origin/main-backup

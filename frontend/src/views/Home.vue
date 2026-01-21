@@ -159,6 +159,7 @@
                 <p class="card-text flex-grow-1">{{ product.descripcion }}</p>
                 <div class="d-flex justify-content-between align-items-center mt-auto">
                   <span class="h5 text-primary mb-0">${{ parseFloat(product.precio).toFixed(2) }}</span>
+                  <!--
                   <button 
                     v-if="isAuthenticated && canUseCart" 
                     class="btn btn-primary btn-sm"
@@ -166,6 +167,7 @@
                   >
                     Agregar
                   </button>
+                -->
                 </div>
               </div>
             </div>

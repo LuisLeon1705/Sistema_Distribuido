@@ -60,7 +60,7 @@
               </div>
               
               <div class="card-body">
-                 <div class="d-flex justify-content-end">
+                  <div class="d-flex justify-content-end">
                     <button 
                       class="btn btn-outline-primary btn-sm"
                       @click="viewOrderDetails(order.id)"
@@ -68,7 +68,7 @@
                       <i class="fas fa-eye me-1"></i>
                       Ver Detalles
                     </button>
-                 </div>
+                  </div>
               </div>
             </div>
           </div>
