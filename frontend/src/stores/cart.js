@@ -168,15 +168,36 @@ export const useCartStore = defineStore('cart', {
             this.isLoading = true;
             this.error = null;
             try {
+                // 1. Crear la orden
                 const orderData = {
                     user_id: authStore.user.id,
                     items: this.items.map(item => ({
-                        product_id: item.product_id,
+                        productId: item.product_id, // backend expects productId
                         quantity: item.quantity,
                         price: item.price,
                     })),
                 };
                 const order = await api.createOrder(orderData);
+
+                // 2. Enviar notificación (sin bloquear el flujo si falla)
+                try {
+                    const notificationPayload = {
+                        order_id: order.id,
+                        customer_email: authStore.user.email,
+                        customer_name: authStore.user.name || 'Cliente',
+                        total_amount: parseFloat(order.total),
+                        items: this.items.map(item => ({
+                            product_name: item.name,
+                            quantity: item.quantity,
+                            price: parseFloat(item.price)
+                        }))
+                    };
+                    await api.notifyOrderCreated(notificationPayload);
+                } catch (notifyError) {
+                    console.error('Error enviando notificación:', notifyError);
+                    // No lanzamos error para que la orden se considere exitosa
+                }
+
                 await this.clearCart();
                 return order;
             } catch (error) {

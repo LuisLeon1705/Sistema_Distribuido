@@ -1,0 +1,87 @@
+Response:
+<html>
+<head><title>405 Not Allowed</title></head>
+<body>
+<center><h1>405 Not Allowed</h1></center>
+<hr><center>nginx/1.28.1</center>
+</body>
+</html>
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+
+
+payload:
+1 requests
+716 B transferred
+559 B resources
+{user_id: "103ec3ab-1865-499e-beb5-0289d3b626d0",…}
+items
+: 
+[{productId: "019be0f3-dc19-7184-8aea-6338de5f8840", quantity: 1, price: 232}]
+0
+: 
+{productId: "019be0f3-dc19-7184-8aea-6338de5f8840", quantity: 1, price: 232}
+user_id
+: 
+"103ec3ab-1865-499e-beb5-0289d3b626d0"
+
+console:
+index-8ddc8ef9.js:31 
+ 
+ POST http://localhost:3000/api/orders/ 405 (Not Allowed)
+(anonymous)	@	index-8ddc8ef9.js:31
+xhr	@	index-8ddc8ef9.js:31
+Wl	@	index-8ddc8ef9.js:33
+Promise.then		
+_request	@	index-8ddc8ef9.js:34
+request	@	index-8ddc8ef9.js:33
+(anonymous)	@	index-8ddc8ef9.js:34
+(anonymous)	@	index-8ddc8ef9.js:29
+createOrder	@	index-8ddc8ef9.js:34
+checkout	@	index-8ddc8ef9.js:34
+re	@	index-8ddc8ef9.js:21
+u	@	index-8ddc8ef9.js:38
+n.cartItems.length.a.onClick.e.<computed>.e.<computed>	@	index-8ddc8ef9.js:38
+rr	@	index-8ddc8ef9.js:13
+Ht	@	index-8ddc8ef9.js:13
+s	@	index-8ddc8ef9.js:17
+index-8ddc8ef9.js:38 
+ Checkout error: 
+ge {message: 'Request failed with status code 405', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+code
+: 
+"ERR_BAD_REQUEST"
+config
+: 
+{transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 0, …}
+message
+: 
+"Request failed with status code 405"
+name
+: 
+"AxiosError"
+request
+: 
+XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 0, withCredentials: true, upload: XMLHttpRequestUpload, …}
+response
+: 
+{data: '<html>\r\n<head><title>405 Not Allowed</title></head…disable MSIE and Chrome friendly error page -->\r\n', status: 405, statusText: 'Not Allowed', headers: Co, config: {…}, …}
+status
+: 
+405
+stack
+: 
+"AxiosError: Request failed with status code 405\n    at _u (http://localhost:3000/assets/index-8ddc8ef9.js:31:1094)\n    at XMLHttpRequest.O (http://localhost:3000/assets/index-8ddc8ef9.js:31:5832)\n    at Qr.request (http://localhost:3000/assets/index-8ddc8ef9.js:33:2090)\n    at async Object.createOrder (http://localhost:3000/assets/index-8ddc8ef9.js:34:7956)\n    at async Proxy.checkout (http://localhost:3000/assets/index-8ddc8ef9.js:34:14552)\n    at async Proxy.u (http://localhost:3000/assets/index-8ddc8ef9.js:38:122916)"
+[[Prototype]]
+: 
+Error
+u	@	index-8ddc8ef9.js:38
+await in u		
+n.cartItems.length.a.onClick.e.<computed>.e.<computed>	@	index-8ddc8ef9.js:38
+rr	@	index-8ddc8ef9.js:13
+Ht	@	index-8ddc8ef9.js:13
+s	@	index-8ddc8ef9.js:17
