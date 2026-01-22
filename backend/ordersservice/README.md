@@ -196,7 +196,7 @@ Este endpoint incluye lógica inteligente de **Devolución de Stock**.
 | **ADMIN** | Puede cambiar el estado a cualquier valor (`COMPLETED`, `PAID`, `CANCELLED`, etc.). |
 | **USUARIO** | Solo puede cambiar el estado a **`CANCELLED`** (para cancelar su propia compra). |
 
-> **🔄 Devolución de Stock:** Si el nuevo estado es `CANCELLED` y la orden no estaba cancelada previamente, el sistema **sumará** automáticamente los productos de vuelta al `InventoryService`.
+> **Devolución de Stock:** Si el nuevo estado es `CANCELLED` y la orden no estaba cancelada previamente, el sistema **sumará** automáticamente los productos de vuelta al `InventoryService`.
 
 ### Body (Request)
 
