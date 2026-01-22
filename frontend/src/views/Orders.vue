@@ -40,27 +40,28 @@
                     <span 
                       class="badge ms-2"
                       :class="{
-                        'bg-warning': order.status === 'pending',
-                        'bg-success': order.status === 'completed',
-                        'bg-danger': order.status === 'cancelled'
+                        'bg-info': order.status === 'CREADO',
+                        'bg-warning': order.status === 'PENDING',
+                        'bg-success': order.status === 'COMPLETED' || order.status === 'PAGADO',
+                        'bg-danger': order.status === 'CANCELADO' || order.status === 'FAILED'
                       }"
                     >
                       {{ getStatusText(order.status) }}
                     </span>
                   </h5>
                   <small class="text-muted">
-                    {{ formatDate(order.created_at) }}
+                    {{ formatDate(order.createdAt) }}
                   </small>
                 </div>
                 <div class="text-end">
                   <div class="h5 text-primary mb-0">
-                    ${{ parseFloat(order.total_price).toFixed(2) }}
+                    ${{ parseFloat(order.total).toFixed(2) }}
                   </div>
                 </div>
               </div>
               
               <div class="card-body">
-                 <div class="d-flex justify-content-end">
+                 <div class="d-flex justify-content-end gap-2">
                     <button 
                       class="btn btn-outline-primary btn-sm"
                       @click="viewOrderDetails(order.id)"
@@ -91,8 +92,8 @@
               <div class="col-md-6">
                 <h6>Información General</h6>
                 <p class="mb-1"><strong>Estado:</strong> {{ getStatusText(selectedOrder.status) }}</p>
-                <p class="mb-1"><strong>Fecha:</strong> {{ formatDate(selectedOrder.created_at) }}</p>
-                <p class="mb-1"><strong>Total:</strong> ${{ parseFloat(selectedOrder.total_price).toFixed(2) }}</p>
+                <p class="mb-1"><strong>Fecha:</strong> {{ formatDate(selectedOrder.createdAt) }}</p>
+                <p class="mb-1"><strong>Total:</strong> ${{ parseFloat(selectedOrder.total).toFixed(2) }}</p>
               </div>
             </div>
             
@@ -109,10 +110,10 @@
                     <img :src="item.productImage || '/placeholder-product.jpg'" :alt="item.productName" class="me-3" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
                     <div>
                       <div class="fw-bold">{{ item.productName }}</div>
-                      <small class="text-muted">{{ item.quantity }} x ${{ parseFloat(item.price_at_time_of_purchase).toFixed(2) }}</small>
+                      <small class="text-muted">{{ item.quantity }} x ${{ parseFloat(item.price).toFixed(2) }}</small>
                     </div>
                   </div>
-                  <span class="fw-bold">${{ (item.quantity * parseFloat(item.price_at_time_of_purchase)).toFixed(2) }}</span>
+                  <span class="fw-bold">${{ (item.quantity * parseFloat(item.price)).toFixed(2) }}</span>
                 </li>
               </ul>
             </div>
@@ -149,14 +150,11 @@ export default {
     let orderDetailsModalInstance = null;
 
     const fetchOrders = async () => {
-      if (!authStore.user?.id) {
-        error.value = 'No se pudo obtener el ID del usuario para cargar las órdenes.'
-        return
-      }
+      // User ID is no longer needed here as it's extracted from the token by the backend
       isLoading.value = true;
       error.value = null;
       try {
-        orders.value = await api.getOrdersByUserId(authStore.user.id);
+        orders.value = await api.getOrdersByUserId();
       } catch (err) {
         orders.value = [];
         error.value = 'Error al cargar las órdenes';
@@ -182,17 +180,17 @@ export default {
         const detailedItems = await Promise.all(
           items.map(async (item) => {
             try {
-              const product = await api.getProductById(item.product_id);
+              const product = await api.getProductById(item.productId);
               return {
                 ...item,
                 productName: product.nombre,
                 productImage: product.imagen
               };
             } catch (e) {
-              console.error(`Error fetching product ${item.product_id}:`, e);
+              console.error(`Error fetching product ${item.productId}:`, e);
               return {
                 ...item,
-                productName: `Producto ID: ${item.product_id}`,
+                productName: `Producto ID: ${item.productId}`,
                 productImage: '/placeholder-product.jpg'
               };
             }
@@ -217,7 +215,14 @@ export default {
     }
     
     const getStatusText = (status) => {
-      const statusMap = { pending: 'Pendiente', completed: 'Completada', cancelled: 'Cancelada' }
+      const statusMap = { 
+        CREADO: 'Creado',
+        PENDING: 'Procesando Pago',
+        COMPLETED: 'Pagado',
+        PAGADO: 'Pagado',
+        CANCELADO: 'Cancelada',
+        FAILED: 'Pago Fallido'
+      }
       return statusMap[status] || status
     }
     

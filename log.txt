@@ -1,0 +1,91 @@
+    at emitErrorNT (node:internal/streams/destroy:151:8)
+
+    at emitErrorCloseNT (node:internal/streams/destroy:116:3)
+
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+
+  parent: Error: connect ECONNREFUSED ::1:5432
+
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+
+    errno: -111,
+
+    code: 'ECONNREFUSED',
+
+    syscall: 'connect',
+
+    address: '::1',
+
+    port: 5432
+
+  },
+
+  original: Error: connect ECONNREFUSED ::1:5432
+
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+
+    errno: -111,
+
+    code: 'ECONNREFUSED',
+
+    syscall: 'connect',
+
+    address: '::1',
+
+    port: 5432
+
+  }
+
+}
+
+Database connection error: ConnectionRefusedError [SequelizeConnectionRefusedError]: connect ECONNREFUSED ::1:5432
+
+    at Client._connectionCallback (/app/node_modules/sequelize/lib/dialects/postgres/connection-manager.js:133:24)
+
+    at Client._handleErrorWhileConnecting (/app/node_modules/pg/lib/client.js:376:19)
+
+    at Client._handleErrorEvent (/app/node_modules/pg/lib/client.js:386:19)
+
+    at Connection.emit (node:events:517:28)
+
+    at Socket.reportStreamError (/app/node_modules/pg/lib/connection.js:56:12)
+
+    at Socket.emit (node:events:517:28)
+
+    at emitErrorNT (node:internal/streams/destroy:151:8)
+
+    at emitErrorCloseNT (node:internal/streams/destroy:116:3)
+
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+
+  parent: Error: connect ECONNREFUSED ::1:5432
+
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+
+    errno: -111,
+
+    code: 'ECONNREFUSED',
+
+    syscall: 'connect',
+
+    address: '::1',
+
+    port: 5432
+
+  },
+
+  original: Error: connect ECONNREFUSED ::1:5432
+
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1555:16) {
+
+    errno: -111,
+
+    code: 'ECONNREFUSED',
+
+    syscall: 'connect',
+
+    address: '::1',
+
+    port: 5432
+
+  }

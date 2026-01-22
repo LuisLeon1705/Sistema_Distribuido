@@ -2,9 +2,15 @@ package com.microservicios.ordersservice.controller;
 
 import com.microservicios.ordersservice.client.InventoryClient;
 import com.microservicios.ordersservice.client.ProductClient;
+import com.microservicios.ordersservice.client.AuthClient;
+import com.microservicios.ordersservice.client.NotificationClient;
 import com.microservicios.ordersservice.dto.ProductDto;
 import com.microservicios.ordersservice.dto.OrderStatusDto;
 import com.microservicios.ordersservice.dto.StockDto;
+import com.microservicios.ordersservice.dto.UserDto;
+import com.microservicios.ordersservice.dto.notification.OrderCreatedNotificationRequest;
+import com.microservicios.ordersservice.dto.notification.StatusChangeNotificationRequest;
+import com.microservicios.ordersservice.dto.notification.NotificationItemDto;
 import com.microservicios.ordersservice.security.JwtUtil;
 import com.microservicios.ordersservice.model.Order;
 import com.microservicios.ordersservice.model.OrderItem;
@@ -16,12 +22,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.ResponseEntity;
 
-//import java.math.BigDecimal;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.util.ArrayList;
 
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping({"/api/orders", "/api/orders/"})
 public class OrderController {
 
     @Autowired
@@ -36,20 +43,29 @@ public class OrderController {
     @Autowired
     private InventoryClient inventoryClient;
 
+    @Autowired
+    private AuthClient authClient;
+
+    @Autowired
+    private NotificationClient notificationClient;
+
     // ---------------------------------------------------------
     // 1. CREAR ORDEN (POST)
     // ---------------------------------------------------------
     @PostMapping
     @Transactional
-    public Order createOrder(@RequestBody Order order, Authentication authentication) {
+    public Order createOrder(@RequestBody Order order, Authentication authentication, @RequestHeader("Authorization") String token) {
+        System.out.println(">>> Entrando a createOrder");
         UUID userId = (UUID) authentication.getPrincipal();
         order.setUserId(userId);
 
         Double totalCalculado = 0.0;
+        List<NotificationItemDto> notificationItems = new ArrayList<>();
 
         if (order.getItems() != null) {
             for (OrderItem item : order.getItems()) {
                 String productIdStr = item.getProductId().toString();
+                System.out.println(">>> Verificando producto: " + productIdStr);
                 ProductDto productReal = null;
                 Double precioReal = 0.0;
 
@@ -68,6 +84,7 @@ public class OrderController {
                 }
 
                 // validar stock en inventario (rust)
+                System.out.println(">>> Verificando stock para: " + productIdStr);
                 List<StockDto> stocks = inventoryClient.getStockByProductId(productIdStr);
                 if (stocks == null || stocks.isEmpty()) {
                     throw new RuntimeException("No hay registro de inventario para el producto " + productIdStr);
@@ -84,6 +101,13 @@ public class OrderController {
 
                 Double subtotal = precioReal * item.getQuantity();
                 totalCalculado += subtotal;
+
+                // Add to notification items
+                notificationItems.add(new NotificationItemDto(
+                    productReal.getName(),
+                    item.getQuantity(),
+                    BigDecimal.valueOf(precioReal)
+                ));
             }
         }
 
@@ -110,6 +134,25 @@ public class OrderController {
                 System.out.println("----- Stock actualizado para " + productIdStr + ". Nuevo total: " + nuevaCantidad);
             }
         }
+
+        // --- NOTIFICACIÓN ---
+        try {
+            System.out.println(">>> Enviando notificación...");
+            UserDto user = authClient.getMe(token);
+            OrderCreatedNotificationRequest notification = new OrderCreatedNotificationRequest();
+            notification.setOrderId(savedOrder.getId().toString());
+            notification.setCustomerEmail(user.getEmail());
+            notification.setCustomerName(user.getUsername());
+            notification.setTotalAmount(BigDecimal.valueOf(totalCalculado));
+            notification.setItems(notificationItems);
+
+            notificationClient.notifyOrderCreated(notification);
+            System.out.println("✅ Notificación de orden creada enviada para " + user.getEmail());
+        } catch (Exception e) {
+            System.err.println("❌ Error enviando notificación de orden creada: " + e.getMessage());
+            // No lanzamos excepción para no revertir la orden
+        }
+
         return savedOrder;
     }
 
@@ -203,9 +246,12 @@ public class OrderController {
             return ResponseEntity.status(400).body("No se puede cambiar el status de una orden ya enviada.");
         }
 
-        // si se cancela para devolver el stock
-        if ("CANCELADO".equals(newStatus) && !"CANCELADO".equals(order.getStatus())) {
-            System.out.println(" ---- Orden Cancelada, devolviendo el stock");
+        // si se cancela o falla el pago, devolver el stock
+        if (("CANCELADO".equals(newStatus) || "FAILED".equals(newStatus)) && 
+            !"CANCELADO".equals(order.getStatus()) && 
+            !"FAILED".equals(order.getStatus())) {
+            
+            System.out.println(" ---- Orden Cancelada/Fallida, devolviendo el stock");
             if (order.getItems() != null) {
                 for (OrderItem item : order.getItems()) {
                     String productIdStr = item.getProductId().toString();
@@ -227,8 +273,40 @@ public class OrderController {
                 }
             }
         }
+        String oldStatus = order.getStatus();
         order.setStatus(newStatus);
         orderRepository.save(order);
+
+        // --- NOTIFICACIÓN ---
+        try {
+            // Obtener email del destinatario (dueño de la orden)
+            String recipientEmail = null;
+            
+            if (isAdmin) {
+                // Si es admin, obtenemos los datos del usuario dueño de la orden por su ID
+                UserDto user = authClient.getUserById(token, order.getUserId());
+                recipientEmail = user.getEmail();
+            } else {
+                // Si es el usuario dueño, usamos getMe
+                UserDto user = authClient.getMe(token);
+                recipientEmail = user.getEmail();
+            }
+
+            if (recipientEmail != null) {
+                StatusChangeNotificationRequest notification = new StatusChangeNotificationRequest(
+                    order.getId().toString(),
+                    recipientEmail,
+                    oldStatus,
+                    newStatus,
+                    "El estado de tu orden ha cambiado a " + newStatus
+                );
+                notificationClient.notifyStatusChange(notification);
+                System.out.println("✅ Notificación de cambio de estado enviada a " + recipientEmail);
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Error enviando notificación de cambio de estado: " + e.getMessage());
+        }
+
         return ResponseEntity.ok(order);
     }
 }

@@ -24,16 +24,16 @@
         <div class="col-md-3">
           <div class="card bg-warning text-white">
             <div class="card-body">
-              <h6 class="card-title">Pendientes</h6>
-              <h3>{{ getOrdersByStatus('pending').length }}</h3>
+              <h6 class="card-title">Por Pagar</h6>
+              <h3>{{ getOrdersByStatus('CREADO').length }}</h3>
             </div>
           </div>
         </div>
         <div class="col-md-3">
           <div class="card bg-success text-white">
             <div class="card-body">
-              <h6 class="card-title">Completadas</h6>
-              <h3>{{ getOrdersByStatus('completed').length }}</h3>
+              <h6 class="card-title">Pagadas</h6>
+              <h3>{{ orders.filter(o => o.status === 'COMPLETED' || o.status === 'PAGADO').length }}</h3>
             </div>
           </div>
         </div>
@@ -41,7 +41,7 @@
           <div class="card bg-danger text-white">
             <div class="card-body">
               <h6 class="card-title">Canceladas</h6>
-              <h3>{{ getOrdersByStatus('cancelled').length }}</h3>
+              <h3>{{ getOrdersByStatus('CANCELADO').length }}</h3>
             </div>
           </div>
         </div>
@@ -54,9 +54,9 @@
             <div class="col-md-3">
               <select v-model="filters.status" @change="applyFilters" class="form-select">
                 <option value="">Todos los estados</option>
-                <option value="pending">Pendientes</option>
-                <option value="completed">Completadas</option>
-                <option value="cancelled">Canceladas</option>
+                <option value="CREADO">Creado</option>
+                <option value="COMPLETED">Pagado</option>
+                <option value="CANCELADO">Cancelada</option>
               </select>
             </div>
             <div class="col-md-3">
@@ -94,9 +94,9 @@
               <tbody>
                 <tr v-for="order in paginatedOrders" :key="order.id">
                   <td><span class="fw-bold">#{{ order.id }}</span></td>
-                  <td>{{ getUsername(order.user_id) }}</td>
-                  <td>{{ formatDate(order.created_at) }}</td>
-                  <td><span class="fw-bold text-primary">${{ parseFloat(order.total_price).toFixed(2) }}</span></td>
+                  <td>{{ getUsername(order.userId) }}</td>
+                  <td>{{ formatDate(order.createdAt) }}</td>
+                  <td><span class="fw-bold text-primary">${{ parseFloat(order.total).toFixed(2) }}</span></td>
                   <td>
                     <span class="badge" :class="statusBadgeClass(order.status)">{{ getStatusText(order.status) }}</span>
                   </td>
@@ -153,9 +153,9 @@
             <div class="row mb-4">
               <div class="col-md-6">
                 <h6>Información General</h6>
-                <p class="mb-1"><strong>Usuario:</strong> {{ getUsername(selectedOrder.user_id) }}</p>
-                <p class="mb-1"><strong>Fecha:</strong> {{ formatDate(selectedOrder.created_at) }}</p>
-                <p class="mb-1"><strong>Total:</strong> <span class="fw-bold text-primary">${{ parseFloat(selectedOrder.total_price).toFixed(2) }}</span></p>
+                <p class="mb-1"><strong>Usuario:</strong> {{ getUsername(selectedOrder.userId) }}</p>
+                <p class="mb-1"><strong>Fecha:</strong> {{ formatDate(selectedOrder.createdAt) }}</p>
+                <p class="mb-1"><strong>Total:</strong> <span class="fw-bold text-primary">${{ parseFloat(selectedOrder.total).toFixed(2) }}</span></p>
               </div>
               <div class="col-md-6">
                 <h6>Cambiar Estado</h6>
@@ -181,9 +181,9 @@
                 <li v-for="item in selectedOrderItems" :key="item.id" class="list-group-item d-flex justify-content-between align-items-center px-0">
                   <div>
                     <div class="fw-bold">{{ item.productName }}</div>
-                    <small class="text-muted">{{ item.quantity }} x ${{ parseFloat(item.price_at_time_of_purchase).toFixed(2) }}</small>
+                    <small class="text-muted">{{ item.quantity }} x ${{ parseFloat(item.price).toFixed(2) }}</small>
                   </div>
-                  <span class="fw-bold">${{ (item.quantity * parseFloat(item.price_at_time_of_purchase)).toFixed(2) }}</span>
+                  <span class="fw-bold">${{ (item.quantity * parseFloat(item.price)).toFixed(2) }}</span>
                 </li>
               </ul>
             </div>
@@ -239,13 +239,13 @@ export default {
       return orders.value
         .filter(order => {
           const statusMatch = !filters.status || order.status === filters.status;
-          const dateMatch = !filters.date || new Date(order.created_at).toDateString() === new Date(filters.date).toDateString();
+          const dateMatch = !filters.date || new Date(order.createdAt).toDateString() === new Date(filters.date).toDateString();
           const searchMatch = !filters.search || 
             order.id.toString().includes(filters.search) || 
-            getUsername(order.user_id).toLowerCase().includes(filters.search.toLowerCase());
+            getUsername(order.userId).toLowerCase().includes(filters.search.toLowerCase());
           return statusMatch && dateMatch && searchMatch;
         })
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     });
     
     const totalPages = computed(() => Math.ceil(filteredOrders.value.length / itemsPerPage.value));
@@ -275,7 +275,7 @@ export default {
         const ordersData = await api.getAllOrders();
         orders.value = ordersData;
 
-        const userIds = [...new Set(ordersData.map(o => o.user_id))].filter(id => !usersCache.value[id]);
+        const userIds = [...new Set(ordersData.map(o => o.userId))].filter(id => !usersCache.value[id]);
         if (userIds.length > 0) {
           const userPromises = userIds.map(id => api.getUserById(id));
           const usersData = await Promise.all(userPromises);
@@ -317,13 +317,21 @@ export default {
     
     const getOrdersByStatus = (status) => orders.value.filter(order => order.status === status);
     
-    const statusMap = { pending: 'Pendiente', completed: 'Completada', cancelled: 'Cancelada' };
+    const statusMap = { 
+      CREADO: 'Creado',
+      PENDING: 'Procesando Pago', 
+      COMPLETED: 'Pagado', 
+      PAGADO: 'Pagado',
+      CANCELADO: 'Cancelada',
+      FAILED: 'Pago Fallido'
+    };
     const getStatusText = (status) => statusMap[status] || status;
 
     const statusBadgeClass = (status) => ({
-      'bg-warning': status === 'pending',
-      'bg-success': status === 'completed',
-      'bg-danger': status === 'cancelled',
+      'bg-info': status === 'CREADO',
+      'bg-warning': status === 'PENDING',
+      'bg-success': status === 'COMPLETED' || status === 'PAGADO',
+      'bg-danger': status === 'CANCELADO' || status === 'FAILED',
     });
     
     const formatDate = (dateString) => new Date(dateString).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
@@ -340,10 +348,10 @@ export default {
         selectedOrderItems.value = await Promise.all(
           items.map(async item => {
             try {
-              const product = await api.getProductById(item.product_id);
+              const product = await api.getProductById(item.productId);
               return { ...item, productName: product.nombre };
             } catch {
-              return { ...item, productName: `ID: ${item.product_id}` };
+              return { ...item, productName: `ID: ${item.productId}` };
             }
           })
         );

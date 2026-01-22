@@ -115,6 +115,20 @@ services:
     networks:
       - sistema-distribuido
 
+  paymentservice:
+    build:
+      context: ./backend/paymentservice
+      dockerfile: Dockerfile
+    container_name: paymentservice
+    env_file: ./backend/paymentservice/.env
+    ports:
+      - "3005:3005"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - sistema-distribuido
+
   frontend:
     build:
       context: ./frontend

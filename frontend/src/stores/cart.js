@@ -169,14 +169,24 @@ export const useCartStore = defineStore('cart', {
             this.error = null;
             try {
                 const orderData = {
-                    user_id: authStore.user.id,
                     items: this.items.map(item => ({
-                        product_id: item.product_id,
+                        productId: item.product_id,
                         quantity: item.quantity,
-                        price: item.price,
                     })),
                 };
                 const order = await api.createOrder(orderData);
+                
+                // Initiate Payment automatically
+                try {
+                    await api.processPayment({
+                        orderId: order.id,
+                        amount: order.total,
+                        currency: 'USD'
+                    });
+                } catch (paymentErr) {
+                    console.error("Payment initiation failed", paymentErr);
+                }
+
                 await this.clearCart();
                 return order;
             } catch (error) {
