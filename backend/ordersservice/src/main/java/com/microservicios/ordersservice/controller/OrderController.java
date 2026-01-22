@@ -189,21 +189,22 @@ public class OrderController {
         boolean isAdmin = "admin".equals(role);
         boolean isOwner = order.getUserId().equals(userIdFromToken);
         
-        if (!isAdmin && isOwner) {
+        if (!isAdmin && !isOwner) {
             return ResponseEntity.status(403).body("No tienes permiso para modificar esta orden.");
         }
 
-        if (!isAdmin && isOwner) {
-            if (!"CANCELLED".equals(newStatus)) {
-                return ResponseEntity.status(403).body("Los usuarios solo pueden cancelar sus propias órdenes.");
-            }
-            if ("COMPLETED".equals(order.getStatus())) {
-                return ResponseEntity.status(400).body("No se puede cancelar una orden ya completada.");
-            }
+        // Evitar cambios en órdenes canceladas
+        if ("CANCELADO".equals(order.getStatus())) {
+            return ResponseEntity.status(400).body("No se puede cambiar el status de una orden ya cancelada.");
+        }
+
+        // Evitar cambios en órdenes canceladas
+        if ("ENVIADO".equals(order.getStatus())) {
+            return ResponseEntity.status(400).body("No se puede cambiar el status de una orden ya enviada.");
         }
 
         // si se cancela para devolver el stock
-        if ("CANCELLED".equals(newStatus) && !"CANCELLED".equals(order.getStatus())) {
+        if ("CANCELADO".equals(newStatus) && !"CANCELADO".equals(order.getStatus())) {
             System.out.println(" ---- Orden Cancelada, devolviendo el stock");
             if (order.getItems() != null) {
                 for (OrderItem item : order.getItems()) {

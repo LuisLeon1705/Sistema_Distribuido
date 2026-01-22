@@ -120,6 +120,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: frontend
+    restart: on-failure:5
     ports:
       - "3000:80"
     depends_on:
