@@ -277,12 +277,13 @@
 
     <div class="modal fade" id="userDetailsModal" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4" v-if="selectedUser">
-          <div class="modal-header border-bottom px-4 py-3">
-            <h5 class="modal-title fw-bold text-dark">Detalle de Cuenta</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body p-4">
+        <div class="modal-content border-0 shadow-lg rounded-4" v-show="selectedUser">
+          <div v-if="selectedUser">
+            <div class="modal-header border-bottom px-4 py-3">
+              <h5 class="modal-title fw-bold text-dark">Detalle de Cuenta</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
             <div class="text-center mb-4">
               <div class="avatar-circle bg-dark text-white mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2rem;">
                 {{ selectedUser.username.charAt(0).toUpperCase() }}
@@ -322,10 +323,6 @@
                 <span class="fw-bold text-dark">{{ selectedUser.phone_number }}</span>
               </li>
               <li class="list-group-item px-0 d-flex justify-content-between">
-                <span class="text-muted">ID Sistema</span>
-                <span class="font-monospace text-dark">{{ selectedUser.id.substring(0, 8) }}...</span>
-              </li>
-              <li class="list-group-item px-0 d-flex justify-content-between">
                 <span class="text-muted">Registro</span>
                 <span class="text-dark">{{ formatDate(selectedUser.created_at) }}</span>
               </li>
@@ -337,6 +334,7 @@
             <button type="button" class="btn btn-dark rounded-pill px-4" @click="editFromDetails">
                <i class="fas fa-pen me-2"></i>Editar
             </button>
+            </div>
           </div>
         </div>
       </div>
@@ -423,7 +421,11 @@ export default {
       return classes[roleId] || 'bg-light text-dark'
     }
 
-    const formatDate = (dateString) => new Date(dateString).toLocaleDateString('es-ES', { dateStyle: 'short' })
+    const formatDate = (dateString) => {
+      const date = new Date(dateString);
+      const time = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+      return time.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
 
     const resetForm = () => {
       Object.assign(userForm, { id: null, username: '', email: '', phone_number: '', password: '', role_id: 2, is_active: true, is_verified: false })
