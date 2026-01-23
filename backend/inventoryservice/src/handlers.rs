@@ -6,12 +6,12 @@ use axum::{
 };
 use sqlx::{PgPool};
 use uuid::Uuid;
-// ⚠️ Nota: Se ha eliminado `use serde_json::json;` si no se usa.
+// Nota: Se ha eliminado `use serde_json::json;` si no se usa.
 
 use crate::{
-    // ✅ Se unifica la importación de tipos a `models`. Esto resuelve E0308.
+    // Se unifica la importación de tipos a `models`. Esto resuelve E0308.
     models::{CreateOrder, Order, CreateStock, UpdateStock, Stock, TempOrder, UpdateOrderStatusPayload, OrderItem}, 
-    // ✅ Se importa OrderManager. Esto resuelve E0433/E0432.
+    // Se importa OrderManager. Esto resuelve E0433/E0432.
     order_logic::{OrderManager}, 
     // Se mantiene la importación necesaria para la gestión de stock
     stock_logic::{StockManager, StockManagement}, 
@@ -143,7 +143,7 @@ pub async fn add_stock_handler(
     State(pool): State<PgPool>,
     Json(create_stock): Json<CreateStock>,
 ) -> Result<Json<Stock>, StatusCode> {
-    // ✅ Usa el tipo `CreateStock` importado de `models`
+    // Usa el tipo `CreateStock` importado de `models`
     match StockManager::add_stock(&pool, create_stock).await {
         Ok(stock) => Ok(Json(stock)),
         Err(_e) => {
