@@ -11,12 +11,11 @@ from ..security import get_current_user, require_role, require_roles, get_passwo
 
 router = APIRouter()
 
-# --- RUTAS ESTÁTICAS (Deben ir primero) ---
-
 @router.get("/me", response_model=schemas.UserRead)
 def read_user_me(current_user: models.User = Depends(get_current_user)):
     """Obtiene el perfil del usuario actual"""
     return current_user
+
 
 @router.patch("/me", response_model=schemas.UserRead)
 def update_me(
@@ -50,8 +49,6 @@ def update_me(
     db.refresh(current_user)
     return current_user
 
-
-# --- RUTAS DE ADMINISTRACIÓN ---
 
 @router.post("/", response_model=schemas.UserRead, status_code=status.HTTP_201_CREATED)
 def create_user_admin(
@@ -117,8 +114,6 @@ def list_users(
     users = query.offset(skip).limit(limit).all()
     return users
 
-
-# --- RUTAS DINÁMICAS (Con :uuid para evitar conflictos) ---
 
 @router.get("/{user_id:uuid}", response_model=schemas.UserRead)
 def get_user_by_id(

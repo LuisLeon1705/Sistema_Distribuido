@@ -52,6 +52,7 @@ def _create_and_send_verification_code(user: models.User, db: Session) -> None:
 
     _send_verification_email(user.email, code)
 
+
 @router.post("/register", response_model=schemas.UserRead, status_code=status.HTTP_201_CREATED)
 def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
     role = db.query(models.Role).filter(models.Role.name == "customer").first()
@@ -85,10 +86,10 @@ def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
     try:
         _create_and_send_verification_code(user, db)
     except Exception as e:
-        print(f"ERROR SMTP: {e}")  # <--- Agrega esto para ver el error en la consola
+        print(f"ERROR SMTP: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error enviando correo: {str(e)}", # Temporalmente devuelve el error al front
+            detail=f"Error enviando correo: {str(e)}",
         )
 
     return user
@@ -150,10 +151,10 @@ def send_verification_code(
     try:
         _create_and_send_verification_code(user, db)
     except Exception as e:
-        print(f"ERROR SMTP: {e}")  # <--- Agrega esto para ver el error en la consola
+        print(f"ERROR SMTP: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error enviando correo: {str(e)}", # Temporalmente devuelve el error al front
+            detail=f"Error enviando correo: {str(e)}",
         )
 
     return {"detail": "Verification code sent"}

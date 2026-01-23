@@ -2,7 +2,6 @@ from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
 
-# Load variables from .env in development; in Docker they are injected by environment/env_file
 load_dotenv()
 
 class Settings(BaseModel):
@@ -14,7 +13,6 @@ class Settings(BaseModel):
     access_token_cookie_name: str = "access_token"
     role_cookie_name: str = "user_role"
     
-    # Email configuration for user verification
     smtp_host: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
     smtp_port: int = int(os.getenv("SMTP_PORT", "587"))
     smtp_user: str = os.getenv("SMTP_USER", "")
