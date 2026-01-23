@@ -1,155 +1,147 @@
 <template>
-  <div class="cart">
-    <div class="container">
-      <div class="row">
-        <div class="col-12">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Mi Carrito</h2>
-            <router-link to="/products" class="btn btn-outline-primary">
-              <i class="fas fa-arrow-left me-2"></i>
-              Continuar Comprando
-            </router-link>
+  <div class="cart-page">
+    <div class="container py-5">
+      
+      <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+          <h2 class="fw-bold text-dark mb-1">Mi Carrito</h2>
+          <p class="text-muted small mb-0">Revisa tus artículos antes de pagar</p>
+        </div>
+        <router-link to="/products" class="btn btn-outline-dark btn-sm rounded-pill px-4">
+          <i class="fas fa-arrow-left me-2"></i>Seguir comprando
+        </router-link>
+      </div>
+
+      <div v-if="cartItems.length === 0" class="text-center py-5 empty-cart-container">
+        <div class="mb-4">
+          <div class="bg-light d-inline-block p-4 rounded-circle">
+            <i class="fas fa-shopping-basket fa-4x text-muted opacity-50"></i>
           </div>
-          
-          <!-- Empty Cart -->
-          <div v-if="cartItems.length === 0" class="text-center py-5">
-            <i class="fas fa-shopping-cart fa-5x text-muted mb-4"></i>
-            <h3>Tu carrito está vacío</h3>
-            <p class="text-muted mb-4">Agrega algunos productos para comenzar</p>
-            <router-link to="/products" class="btn btn-primary btn-lg">
-              Ver Productos
-            </router-link>
-          </div>
-          
-          <!-- Cart Items -->
-          <div v-else>
-            <div class="row">
-              <div class="col-lg-8">
-                <div class="card mb-4">
-                  <div class="card-header">
-                    <h5 class="mb-0">Productos ({{ totalItems }} {{ totalItems === 1 ? 'artículo' : 'artículos' }})</h5>
-                  </div>
-                  <div class="card-body p-0">
-                    <div v-for="item in cartItems" :key="item.product_id" class="cart-item">
-                      <div class="row align-items-center g-3 p-3 border-bottom">
-                        <div class="col-md-2">
-                          <img 
-                            :src="item.image || '/placeholder-product.jpg'" 
-                            :alt="item.name"
-                            class="img-fluid rounded"
-                            style="height: 80px; width: 80px; object-fit: cover;"
-                          >
-                        </div>
-                        
-                        <div class="col-md-4">
-                          <h6 class="mb-1">{{ item.name }}</h6>
-                          <small class="text-muted">Precio unitario: ${{ item.price.toFixed(2) }}</small>
-                        </div>
-                        
-                        <div class="col-md-3">
-                          <div class="quantity-controls d-flex align-items-center">
-                            <button 
-                              class="btn btn-outline-secondary btn-sm"
-                              @click="updateQuantity(item.product_id, item.quantity - 1)"
-                              :disabled="item.quantity <= 1"
-                            >
-                              <i class="fas fa-minus"></i>
-                            </button>
-                            <input 
-                              type="number" 
-                              v-model.number="item.quantity"
-                              @change="updateQuantity(item.product_id, item.quantity)"
-                              class="form-control quantity-input mx-2 text-center"
-                              min="1"
-                              style="width: 70px;"
-                            >
-                            <button 
-                              class="btn btn-outline-secondary btn-sm"
-                              @click="updateQuantity(item.product_id, item.quantity + 1)"
-                            >
-                              <i class="fas fa-plus"></i>
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <div class="col-md-2 text-end">
-                          <div class="fw-bold text-primary">
-                            ${{ (item.price * item.quantity).toFixed(2) }}
-                          </div>
-                        </div>
-                        
-                        <div class="col-md-1 text-end">
-                          <button 
-                            class="btn btn-outline-danger btn-sm"
-                            @click="removeFromCart(item.product_id)"
-                            title="Eliminar del carrito"
-                          >
-                            <i class="fas fa-trash"></i>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Clear Cart Button -->
-                <div class="text-end mb-4">
-                  <button 
-                    class="btn btn-outline-danger"
-                    @click="clearCart"
-                  >
-                    <i class="fas fa-trash me-2"></i>
-                    Vaciar Carrito
-                  </button>
-                </div>
-              </div>
-              
-              <!-- Order Summary -->
-              <div class="col-lg-4">
-                <div class="card sticky-top" style="top: 20px;">
-                  <div class="card-header">
-                    <h5 class="mb-0">Resumen de la Orden</h5>
-                  </div>
-                  <div class="card-body">
-                    <div class="d-flex justify-content-between mb-3">
-                      <span>Subtotal ({{ totalItems }} {{ totalItems === 1 ? 'artículo' : 'artículos' }}):</span>
-                      <span>${{ totalPrice.toFixed(2) }}</span>
-                    </div>
-                    
-                    <div class="d-flex justify-content-between mb-3">
-                      <span>Envío:</span>
-                      <span class="text-success">Gratis</span>
-                    </div>
-                    
-                    <hr>
-                    
-                    <div class="d-flex justify-content-between mb-4">
-                      <strong>Total:</strong>
-                      <strong class="text-primary">${{ totalPrice.toFixed(2) }}</strong>
-                    </div>
-                    
-                    <button 
-                      class="btn btn-primary w-100 btn-lg"
-                      @click="checkout"
-                      :disabled="cartStore.isLoading || cartItems.length === 0"
+        </div>
+        <h3 class="fw-bold text-dark">Tu carrito está vacío</h3>
+        <p class="text-muted mb-4">¡Explora nuestro catálogo y encuentra lo que buscas!</p>
+        <router-link to="/products" class="btn btn-dark rounded-pill px-5 py-2 fw-bold shadow-sm">
+          Ver Productos
+        </router-link>
+      </div>
+
+      <div v-else class="row g-4">
+        
+        <div class="col-lg-8">
+          <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+            <div class="card-header bg-white border-bottom py-3 px-4">
+              <h6 class="mb-0 fw-bold text-dark">Artículos ({{ totalItems }})</h6>
+            </div>
+            
+            <div class="card-body p-0">
+              <div v-for="item in cartItems" :key="item.product_id" class="cart-item p-4 border-bottom last-no-border">
+                <div class="row align-items-center gy-3">
+                  
+                  <div class="col-4 col-md-2">
+                    <img 
+                      :src="item.image || '/placeholder-product.jpg'" 
+                      :alt="item.name"
+                      class="img-fluid rounded-3 border bg-light"
+                      style="width: 80px; height: 80px; object-fit: cover;"
                     >
-                      <span v-if="cartStore.isLoading" class="spinner-border spinner-border-sm me-2"></span>
-                      {{ cartStore.isLoading ? 'Procesando...' : 'Proceder al Pago' }}
-                    </button>
-                    
-                    <div v-if="cartStore.error" class="alert alert-danger mt-3">
-                      {{ cartStore.error }}
-                    </div>
-                    
-                    <div v-if="checkoutSuccess" class="alert alert-success mt-3">
-                      ¡Orden realizada exitosamente! Redirigiendo...
+                  </div>
+                  
+                  <div class="col-8 col-md-4">
+                    <h6 class="fw-bold text-dark mb-1 text-truncate">{{ item.name }}</h6>
+                    <small class="text-muted d-block">Unitario: ${{ item.price.toFixed(2) }}</small>
+                  </div>
+                  
+                  <div class="col-6 col-md-3">
+                    <div class="input-group input-group-sm bg-light rounded-pill p-1" style="width: 120px;">
+                      <button 
+                        class="btn btn-link text-dark text-decoration-none border-0 px-2"
+                        @click="updateQuantity(item.product_id, item.quantity - 1)"
+                        :disabled="item.quantity <= 1"
+                      >
+                        <i class="fas fa-minus small"></i>
+                      </button>
+                      <input 
+                        type="text" 
+                        class="form-control border-0 bg-transparent text-center fw-bold p-0" 
+                        :value="item.quantity"
+                        readonly
+                      >
+                      <button 
+                        class="btn btn-link text-dark text-decoration-none border-0 px-2"
+                        @click="updateQuantity(item.product_id, item.quantity + 1)"
+                      >
+                        <i class="fas fa-plus small"></i>
+                      </button>
                     </div>
                   </div>
+                  
+                  <div class="col-6 col-md-3 text-end d-flex flex-column align-items-end justify-content-center">
+                    <span class="fw-bold text-dark mb-2">${{ (item.price * item.quantity).toFixed(2) }}</span>
+                    <button 
+                      @click="removeFromCart(item.product_id)" 
+                      class="btn btn-link text-danger p-0 text-decoration-none small opacity-75 hover-opacity-100"
+                    >
+                      <i class="fas fa-trash-alt me-1"></i> Eliminar
+                    </button>
+                  </div>
+
                 </div>
               </div>
             </div>
           </div>
+
+          <div class="text-end">
+            <button @click="clearCart" class="btn btn-link text-muted text-decoration-none small hover-text-danger">
+              <i class="fas fa-trash me-1"></i> Vaciar carrito por completo
+            </button>
+          </div>
         </div>
+
+        <div class="col-lg-4">
+          <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 100px;">
+            <h5 class="fw-bold text-dark mb-4">Resumen</h5>
+            
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-muted">Subtotal</span>
+              <span class="fw-bold text-dark">${{ totalPrice.toFixed(2) }}</span>
+            </div>
+            
+            <div class="d-flex justify-content-between mb-4">
+              <span class="text-muted">Envío</span>
+              <span class="text-success fw-bold">Gratis</span>
+            </div>
+            
+            <div class="border-top border-dashed my-3"></div>
+            
+            <div class="d-flex justify-content-between mb-4 align-items-center">
+              <span class="fw-bold h5 mb-0">Total</span>
+              <span class="fw-bold h4 text-primary mb-0">${{ totalPrice.toFixed(2) }}</span>
+            </div>
+            
+            <button 
+              class="btn btn-dark w-100 py-3 rounded-pill fw-bold shadow-lg mb-3"
+              @click="checkout"
+              :disabled="cartStore.isLoading"
+            >
+              <span v-if="cartStore.isLoading" class="spinner-border spinner-border-sm me-2"></span>
+              {{ cartStore.isLoading ? 'Procesando...' : 'Finalizar Compra' }}
+            </button>
+            
+            <div class="text-center">
+              <small class="text-muted d-block mb-1"><i class="fas fa-lock me-1"></i> Pago 100% Seguro</small>
+            </div>
+
+            <div v-if="cartStore.error" class="alert alert-danger mt-3 py-2 small text-center border-0 bg-danger bg-opacity-10 text-danger">
+              {{ cartStore.error }}
+            </div>
+            
+            <div v-if="checkoutSuccess" class="alert alert-success mt-3 py-2 small text-center border-0 bg-success bg-opacity-10 text-success">
+              ¡Compra exitosa! Redirigiendo...
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -181,7 +173,7 @@ export default {
     }
     
     const clearCart = () => {
-      if (confirm('¿Estás seguro de que deseas vaciar el carrito?')) {
+      if (confirm('¿Vaciar todo el carrito?')) {
         cartStore.clearCart()
       }
     }
@@ -190,81 +182,51 @@ export default {
       try {
         await cartStore.checkout()
         checkoutSuccess.value = true
-        
-        setTimeout(() => {
-          router.push('/orders')
-        }, 2000)
-      } catch (error) {
-        console.error('Checkout error:', error)
-      }
+        setTimeout(() => { router.push('/orders') }, 2000)
+      } catch (error) { console.error(error) }
     }
     
-    onUnmounted(() => {
-      cartStore.clearError()
-    })
+    onUnmounted(() => { cartStore.clearError() })
     
     return {
-      cartStore,
-      cartItems,
-      totalItems,
-      totalPrice,
-      checkoutSuccess,
-      updateQuantity,
-      removeFromCart,
-      clearCart,
-      checkout
+      cartStore, cartItems, totalItems, totalPrice, checkoutSuccess,
+      updateQuantity, removeFromCart, clearCart, checkout
     }
   }
 }
 </script>
 
 <style scoped>
+.cart-page {
+  background-color: #ffffff;
+  min-height: 100vh;
+}
+
 .cart-item {
-  transition: background-color 0.3s ease;
+  transition: background-color 0.2s;
 }
 
 .cart-item:hover {
-  background-color: #f8f9fa;
+  background-color: #f8fafc;
 }
 
-.quantity-controls {
-  max-width: 150px;
+.last-no-border:last-child {
+  border-bottom: none !important;
 }
 
-.quantity-input {
-  border-radius: 0;
-  border-left: none;
-  border-right: none;
+.border-dashed {
+  border-top: 1px dashed #e2e8f0;
 }
 
-.quantity-input:focus {
-  box-shadow: none;
-  border-color: #ced4da;
+.hover-opacity-100:hover {
+  opacity: 1 !important;
 }
 
-.btn-outline-secondary {
-  border-color: #ced4da;
+.hover-text-danger:hover {
+  color: #dc3545 !important;
 }
 
 .sticky-top {
-  position: sticky;
-  top: 20px;
-  z-index: 1020;
-}
-
-@media (max-width: 768px) {
-  .quantity-controls {
-    justify-content: center;
-    margin: 10px 0;
-  }
-  
-  .cart-item .row > div {
-    text-align: center;
-    margin-bottom: 10px;
-  }
-  
-  .cart-item .row > div:last-child {
-    margin-bottom: 0;
-  }
+  z-index: 100;
 }
 </style>
