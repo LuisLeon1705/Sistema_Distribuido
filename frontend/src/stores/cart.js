@@ -7,6 +7,7 @@ export const useCartStore = defineStore('cart', {
         items: [],
         isLoading: false,
         error: null,
+        lastPaymentId: null,
     }),
 
     getters: {
@@ -156,7 +157,7 @@ export const useCartStore = defineStore('cart', {
             this.syncAndRefresh();
         },
 
-        async checkout() {
+        async checkout(orderMeta = {}) {
             if (this.items.length === 0) throw new Error('El carrito está vacío');
 
             const authStore = useAuthStore();
@@ -173,19 +174,12 @@ export const useCartStore = defineStore('cart', {
                         productId: item.product_id,
                         quantity: item.quantity,
                     })),
+                    shippingAddress: orderMeta.shippingAddress || null,
+                    shippingCity: orderMeta.shippingCity || null,
+                    shippingPostal: orderMeta.shippingPostal || null
                 };
+
                 const order = await api.createOrder(orderData);
-                
-                // Initiate Payment automatically
-                try {
-                    await api.processPayment({
-                        orderId: order.id,
-                        amount: order.total,
-                        currency: 'USD'
-                    });
-                } catch (paymentErr) {
-                    console.error("Payment initiation failed", paymentErr);
-                }
 
                 await this.clearCart();
                 return order;
@@ -199,6 +193,9 @@ export const useCartStore = defineStore('cart', {
 
         clearError() {
             this.error = null;
+        },
+        setPaymentId(paymentId) {
+            this.lastPaymentId = paymentId;
         },
     },
 });

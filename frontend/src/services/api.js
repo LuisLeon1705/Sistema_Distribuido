@@ -106,7 +106,7 @@ const authService = {
     },
 
     async updateProfile(userData) {
-        const response = await usersAPI.patch('/users/me', userData)
+        const response = await usersAPI.patch('/me', userData)
         return response.data
     }
 }
@@ -231,9 +231,14 @@ const orderService = {
         return response.data
     },
 
+    async getOrderCode(id) {
+        const response = await ordersAPI.get(`/${id}/code`)
+        return response.data
+    },
+
     async getOrderItems(orderId) {
-        const response = await ordersAPI.get(`/${orderId}`);
-        return response.data.items;
+        const response = await ordersAPI.get(`/${orderId}/items`);
+        return response.data;
     },
 
     async updateOrderStatus(orderId, newStatus) {
@@ -258,10 +263,157 @@ const orderService = {
     }
 }
 
-// Payment Service
 const paymentService = {
     async processPayment(paymentData) {
-        const response = await paymentsAPI.post('/', paymentData);
+        if (!paymentData.order_id) throw new Error('Order ID is required');
+        if (!paymentData.user_id) throw new Error('User ID is required');
+        if (!paymentData.amount || paymentData.amount <= 0) throw new Error('Valid amount is required');
+        if (!paymentData.method) throw new Error('Payment method is required');
+        
+        const completePaymentData = {
+            order_id: paymentData.order_id,
+            user_id: paymentData.user_id,
+            amount: parseFloat(paymentData.amount),
+            method: paymentData.method,
+            status: paymentData.status || 'pending',
+            currency: paymentData.currency || 'USD',
+            transaction_id: paymentData.transaction_id || null,
+            created_at: new Date().toISOString(),
+            metadata: {
+                ...paymentData.metadata,
+                payment_details: paymentData.metadata?.payment_details || {},
+                shipping_info: paymentData.metadata?.shipping_info || {},
+                browser_info: {
+                    user_agent: navigator.userAgent,
+                    timestamp: new Date().toISOString()
+                }
+            }
+        };
+        
+        console.log('Enviando datos de pago:', completePaymentData);
+        const response = await paymentsAPI.post('/', completePaymentData);
+        console.log('Respuesta del servidor:', response.data);
+        return response.data;
+    },
+
+    async getPayments(filters = {}) {
+        const params = new URLSearchParams();
+        if (filters.status) params.append('status', filters.status);
+        if (filters.method) params.append('method', filters.method);
+        if (filters.user_id) params.append('user_id', filters.user_id);
+        if (filters.order_id) params.append('order_id', filters.order_id);
+        if (filters.date_from) params.append('date_from', filters.date_from);
+        if (filters.date_to) params.append('date_to', filters.date_to);
+        if (filters.limit) params.append('limit', filters.limit);
+        if (filters.offset) params.append('offset', filters.offset);
+        
+        const url = params.toString() ? `/?${params}` : '/';
+        const response = await paymentsAPI.get(url);
+        return response.data;
+    },
+
+    async getPaymentById(paymentId) {
+        if (!paymentId) throw new Error('Payment ID is required');
+        const response = await paymentsAPI.get(`/${paymentId}`);
+        return response.data;
+    },
+
+    async getPaymentsByOrderId(orderId) {
+        if (!orderId) throw new Error('Order ID is required');
+        const response = await paymentsAPI.get(`/order/${orderId}`);
+        return response.data;
+    },
+
+    async getPaymentsByUserId(userId) {
+        if (!userId) throw new Error('User ID is required');
+        const response = await paymentsAPI.get(`/user/${userId}`);
+        return response.data;
+    },
+
+    async updatePaymentStatus(paymentId, status, reason = null) {
+        if (!paymentId) throw new Error('Payment ID is required');
+        if (!status) throw new Error('Status is required');
+        
+        const updateData = {
+            status: status,
+            updated_at: new Date().toISOString()
+        };
+        
+        if (reason) {
+            updateData.reason = reason;
+        }
+        
+        if (status === 'completed') {
+            updateData.paid_at = new Date().toISOString();
+            updateData.transaction_id = `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        }
+        
+        console.log('Actualizando pago:', paymentId, updateData);
+        const response = await paymentsAPI.put(`/${paymentId}/status`, updateData);
+        return response.data;
+    },
+
+    async updatePaymentMetadata(paymentId, metadata) {
+        if (!paymentId) throw new Error('Payment ID is required');
+        if (!metadata) throw new Error('Metadata is required');
+        
+        const response = await paymentsAPI.put(`/${paymentId}/metadata`, { metadata });
+        return response.data;
+    },
+
+    async refundPayment(paymentId, reason = null, amount = null) {
+        if (!paymentId) throw new Error('Payment ID is required');
+        
+        const refundData = {
+            status: 'refunded',
+            refunded_at: new Date().toISOString(),
+            refund_reason: reason || 'Customer request'
+        };
+        
+        if (amount && amount > 0) {
+            refundData.refund_amount = parseFloat(amount);
+        }
+        
+        console.log('Procesando reembolso:', paymentId, refundData);
+        const response = await paymentsAPI.post(`/${paymentId}/refund`, refundData);
+        return response.data;
+    },
+
+    async retryPayment(paymentId) {
+        if (!paymentId) throw new Error('Payment ID is required');
+        
+        const retryData = {
+            status: 'pending',
+            retry_count: 1,
+            last_retry_at: new Date().toISOString()
+        };
+        
+        console.log('Reintentando pago:', paymentId, retryData);
+        const response = await paymentsAPI.post(`/${paymentId}/retry`, retryData);
+        return response.data;
+    },
+
+    async cancelPayment(paymentId, reason = null) {
+        if (!paymentId) throw new Error('Payment ID is required');
+        
+        const cancelData = {
+            status: 'cancelled',
+            cancelled_at: new Date().toISOString(),
+            cancel_reason: reason || 'User cancellation'
+        };
+        
+        console.log('Cancelando pago:', paymentId, cancelData);
+        const response = await paymentsAPI.post(`/${paymentId}/cancel`, cancelData);
+        return response.data;
+    },
+
+    async getPaymentStats(filters = {}) {
+        const params = new URLSearchParams();
+        if (filters.date_from) params.append('date_from', filters.date_from);
+        if (filters.date_to) params.append('date_to', filters.date_to);
+        
+        const url = params.toString() ? `/stats?${params}` : '/stats';
+        const response = await paymentsAPI.get(url);
         return response.data;
     }
 }
