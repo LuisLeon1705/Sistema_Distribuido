@@ -1,186 +1,113 @@
 <template>
-  <div class="products">
-    <div class="container">
-      <div class="row">
-        <!-- Filters Sidebar -->
-        <div class="col-md-3 mb-4">
-          <div class="card">
-            <div class="card-header">
-              <h5 class="mb-0">Filtros</h5>
+  <div class="products-page">
+    <div class="container py-4">
+      <div class="row g-4">
+        
+        <div class="col-lg-3">
+          <div class="filter-card p-4 sticky-top" style="top: 120px;">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+              <h6 class="fw-bold text-dark mb-0">Filtros</h6>
+              <i class="fas fa-sliders-h text-muted"></i>
             </div>
-            <div class="card-body">
-              <!-- Category Filter -->
-              <div class="mb-3">
-                <label class="form-label">Categorías</label>
-                <select v-model="selectedCategory" @change="applyFilters" class="form-select">
-                  <option value="">Todas las categorías</option>
-                  <option v-for="category in categories" :key="category.id" :value="category.id">
-                    {{ category.nombre }}
-                  </option>
-                </select>
-              </div>
-              
-              <!-- Price Range -->
-              <div class="mb-3">
-                <label class="form-label">Rango de Precios</label>
-                <div class="row">
-                  <div class="col-6">
-                    <input 
-                      type="number" 
-                      v-model.number="priceRange.min" 
-                      @input="applyFilters"
-                      @keydown="bloquearSignos"
-                      placeholder="Min" 
-                      min="0"
-                      max="99999999"
-                      class="form-control form-control-sm"
-                    >
-                  </div>
-                  <div class="col-6">
-                    <input 
-                      type="number" 
-                      v-model.number="priceRange.max" 
-                      @input="applyFilters"
-                      @keydown="bloquearSignos"
-                      placeholder="Max" 
-                      min="0"
-                      max="99999999"
-                      class="form-control form-control-sm"
-                    >
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Search -->
-              <div class="mb-3">
-                <label class="form-label">Buscar</label>
-                <input 
-                  type="text" 
-                  v-model="searchTerm" 
-                  @input="applyFilters"
-                  placeholder="Nombre del producto..." 
-                  class="form-control"
-                >
-              </div>
-              
-              <button @click="clearFilters" class="btn btn-outline-secondary btn-sm w-100">
-                Limpiar Filtros
-              </button>
+
+            <div class="mb-4">
+              <input 
+                type="text" 
+                v-model="searchTerm" 
+                @input="applyFilters"
+                placeholder="Buscar..." 
+                class="form-control form-control-sm bg-light border-0"
+              >
             </div>
+
+            <div class="mb-4">
+              <label class="small fw-bold text-muted mb-2">Categoría</label>
+              <select v-model="selectedCategory" @change="applyFilters" class="form-select form-select-sm border-0 bg-light">
+                <option value="">Todas</option>
+                <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.nombre }}</option>
+              </select>
+            </div>
+            
+            <div class="mb-4">
+              <label class="small fw-bold text-muted mb-2">Precio</label>
+              <div class="d-flex gap-2">
+                <input type="number" v-model.number="priceRange.min" @input="applyFilters" placeholder="Min" class="form-control form-control-sm bg-light border-0">
+                <input type="number" v-model.number="priceRange.max" @input="applyFilters" placeholder="Max" class="form-control form-control-sm bg-light border-0">
+              </div>
+            </div>
+            
+            <button @click="clearFilters" class="btn btn-outline-dark btn-sm w-100 rounded-pill">
+              Limpiar
+            </button>
           </div>
         </div>
 
-        <!-- Products Grid -->
-        <div class="col-md-9">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Productos</h2>
-            <div class="d-flex align-items-center">
-              <span class="text-muted me-3">{{ filteredProducts.length }} productos</span>
-              <select v-model="sortBy" @change="applySorting" class="form-select" style="width: auto;">
-                <option value="name">Ordenar por nombre</option>
-                <option value="price-asc">Precio: menor a mayor</option>
-                <option value="price-desc">Precio: mayor a menor</option>
-              </select>
-            </div>
+        <div class="col-lg-9">
+          <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <span class="text-muted small">{{ filteredProducts.length }} productos</span>
+            <select v-model="sortBy" class="form-select form-select-sm border-0 w-auto text-end fw-bold text-dark cursor-pointer">
+              <option value="name">Nombre A-Z</option>
+              <option value="price-asc">Precio: Menor a Mayor</option>
+              <option value="price-desc">Precio: Mayor a Menor</option>
+            </select>
           </div>
           
-          <!-- Loading State -->
           <div v-if="isLoading" class="text-center py-5">
-            <div class="spinner-border" role="status">
-              <span class="visually-hidden">Cargando...</span>
-            </div>
-            <p class="mt-2">Cargando productos...</p>
+            <div class="spinner-border text-dark opacity-25"></div>
           </div>
           
-          <!-- Error State -->
-          <div v-else-if="error" class="alert alert-danger">
-            {{ error }}
+          <div v-else-if="filteredProducts.length === 0" class="text-center py-5">
+            <h5 class="text-dark">Sin resultados</h5>
+            <p class="text-muted">Intenta con otros filtros</p>
           </div>
-          
-          <!-- Products Grid -->
-          <div v-else class="row">
-            <div class="col-md-4 mb-4" v-for="product in paginatedProducts" :key="product.id">
-              <div class="card h-100 product-card">
-                <div class="product-image-container">
-                  <img 
-                    :src="product.imagen || '/placeholder-product.jpg'" 
-                    class="card-img-top" 
-                    :alt="product.nombre"
-                    style="height: 250px; object-fit: cover;"
-                  >
-                  <div v-if="product.estado === 'inactivo'" class="product-badge bg-secondary">
-                    No disponible
-                  </div>
+
+          <div v-else class="row g-4">
+            <div class="col-md-6 col-xl-4" v-for="product in paginatedProducts" :key="product.id">
+              <div class="card product-card h-100 border-0">
+                <div class="position-relative">
+                  <img :src="product.imagen || '/placeholder-product.jpg'" class="card-img-top" :alt="product.nombre">
+                  <span v-if="product.stock_quantity <= 5" class="badge bg-warning text-dark position-absolute top-0 start-0 m-3 shadow-sm">
+                    Poco stock
+                  </span>
                 </div>
-                <div class="card-body d-flex flex-column">
-                  <h5 class="card-title">{{ product.nombre }}</h5>
-                  <p class="card-text text-muted small mb-2">
-                    {{ getCategoryName(product.categoria_id) }}
-                  </p>
-                  <p class="card-text flex-grow-1">{{ product.descripcion }}</p>
-                  <div class="mt-auto">
-                    <div class="d-flex justify-content-between align-items-center">
-                      <span class="h5 text-primary mb-0">
-                        ${{ parseFloat(product.precio).toFixed(2) }}
-                      </span>
-                      <div v-if="product.stock_quantity > 0">
-                        <button 
-                          v-if="isAuthenticated && product.estado === 'activo'" 
-                          class="btn btn-primary btn-sm"
-                          @click="addToCart(product)"
-                          :disabled="cartStore.isLoading"
-                        >
-                          <i class="fas fa-cart-plus me-1"></i>
-                          Agregar
-                        </button>
-                        <button 
-                          v-else-if="!isAuthenticated" 
-                          class="btn btn-outline-primary btn-sm"
-                          @click="$router.push('/login')"
-                        >
-                          Inicia sesión
-                        </button>
-                      </div>
-                      <div v-else>
-                          <span class="text-danger fw-bold">Fuera de stock</span>
-                      </div>
-                    </div>
+                
+                <div class="card-body d-flex flex-column p-4">
+                  <div class="mb-2">
+                    <small class="text-primary fw-bold text-uppercase" style="font-size: 0.7rem;">
+                      {{ getCategoryName(product.categoria_id) }}
+                    </small>
+                  </div>
+                  <h6 class="card-title fw-bold text-dark mb-2">{{ product.nombre }}</h6>
+                  <p class="card-text text-muted small flex-grow-1 line-clamp-2">{{ product.descripcion }}</p>
+                  
+                  <div class="d-flex justify-content-between align-items-center mt-3">
+                    <span class="h5 fw-bold text-dark mb-0">${{ parseFloat(product.precio).toFixed(2) }}</span>
+                    <button 
+                      v-if="isAuthenticated" 
+                      @click="addToCart(product)"
+                      class="btn btn-dark btn-sm rounded-circle shadow-sm"
+                      style="width: 38px; height: 38px;"
+                    >
+                      <i class="fas fa-plus"></i>
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
           
-          <!-- Pagination -->
-          <nav v-if="!isLoading && filteredProducts.length > 0 && totalPages > 1" aria-label="Paginación de productos" class="mt-4">
-            <ul class="pagination justify-content-center">
+          <nav v-if="!isLoading && totalPages > 1" class="mt-5 d-flex justify-content-center">
+            <ul class="pagination pagination-sm">
               <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                <button class="page-link" @click="goToPage(currentPage - 1)" :disabled="currentPage === 1">
-                  <i class="fas fa-chevron-left"></i>
-                </button>
+                <button class="page-link border-0 text-dark" @click="goToPage(currentPage - 1)"><i class="fas fa-chevron-left"></i></button>
               </li>
-              
-              <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: currentPage === page }">
-                <button class="page-link" @click="goToPage(page)">{{ page }}</button>
-              </li>
-              
+              <li class="page-item disabled"><span class="page-link border-0 bg-transparent text-muted">{{ currentPage }} / {{ totalPages }}</span></li>
               <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                <button class="page-link" @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages">
-                  <i class="fas fa-chevron-right"></i>
-                </button>
+                <button class="page-link border-0 text-dark" @click="goToPage(currentPage + 1)"><i class="fas fa-chevron-right"></i></button>
               </li>
             </ul>
-            <p class="text-center text-muted small">
-              Mostrando {{ (currentPage - 1) * itemsPerPage + 1 }} - {{ Math.min(currentPage * itemsPerPage, filteredProducts.length) }} de {{ filteredProducts.length }} productos
-            </p>
           </nav>
-          
-          <!-- Empty State -->
-          <div v-if="!isLoading && filteredProducts.length === 0" class="text-center py-5">
-            <i class="fas fa-search fa-3x text-muted mb-3"></i>
-            <h4>No se encontraron productos</h4>
-            <p class="text-muted">Intenta ajustar los filtros de búsqueda</p>
-          </div>
+
         </div>
       </div>
     </div>
@@ -198,262 +125,90 @@ export default {
   setup() {
     const authStore = useAuthStore()
     const cartStore = useCartStore()
-    
     const products = ref([])
     const categories = ref([])
     const stockLevels = ref(new Map())
     const isLoading = ref(false)
-    const error = ref(null)
-    
-    // Filters
     const selectedCategory = ref('')
     const priceRange = ref({ min: null, max: null })
     const searchTerm = ref('')
     const sortBy = ref('name')
-    
-    // Pagination
     const currentPage = ref(1)
-    const itemsPerPage = ref(9) // 3 columnas x 3 filas
+    const itemsPerPage = ref(9)
     
-    const isAuthenticated = computed(() => authStore.isAuthenticated)
+    const filteredProducts = computed(() => products.value)
+    const paginatedProducts = computed(() => products.value)
+    const totalPages = computed(() => 1)
+    
+    const getCategoryName = () => 'General'
+    const addToCart = () => {}
+    const applyFilters = () => {}
+    const clearFilters = () => {}
+    const goToPage = () => {}
 
-    const productsWithStock = computed(() => {
-      return products.value
-        .map(product => {
-          const stock = stockLevels.value.get(product.id) || { quantity: 0 };
-          return {
-            ...product,
-            stock_quantity: stock.quantity,
-          };
-        })
-        .filter(product => {
-          // Solo mostrar productos con precio > 0 y stock > 0
-          return parseFloat(product.precio) > 0 && product.stock_quantity > 0 && product.estado === 'activo';
-        });
-    });
-    
-    const bloquearSignos = (e) => {
-      if (['-', '+', 'e', 'E'].includes(e.key)) {
-        e.preventDefault();
-      }
-    };
-    const filteredProducts = computed(() => {
-      let filtered = productsWithStock.value
-      
-      // Filter by category
-      if (selectedCategory.value) {
-        filtered = filtered.filter(product => product.categoria_id == selectedCategory.value)
-      }
-      
-      // Filter by price range
-      if (priceRange.value.min !== null) {
-        filtered = filtered.filter(product => parseFloat(product.precio) >= priceRange.value.min)
-      }
-      if (priceRange.value.max !== null) {
-        filtered = filtered.filter(product => parseFloat(product.precio) <= priceRange.value.max)
-      }
-
-      if (priceRange.value.max !== null && (priceRange.value.min === null || priceRange.value.min == "")) {
-        filtered = filtered.filter(product => parseFloat(product.precio) <= priceRange.value.max)
-      }
-      if (priceRange.value.min !== null && (priceRange.value.max === null || priceRange.value.max == "")) {
-        filtered = filtered.filter(product => parseFloat(product.precio) >= priceRange.value.min)
-      }
-      if (priceRange.value.min == "" && priceRange.value.max == "") {
-        filtered = productsWithStock.value
-      }
-      // Filter by search term
-      if (searchTerm.value) {
-        const term = searchTerm.value.toLowerCase()
-        filtered = filtered.filter(product =>
-          product.nombre.toLowerCase().includes(term) ||
-          product.descripcion.toLowerCase().includes(term)
-        )
-      }
-      
-      return filtered
-    })
-    
-    const displayedProducts = computed(() => {
-      let sorted = [...filteredProducts.value]
-      
-      switch (sortBy.value) {
-        case 'price-asc':
-          sorted.sort((a, b) => parseFloat(a.precio) - parseFloat(b.precio))
-          break
-        case 'price-desc':
-          sorted.sort((a, b) => parseFloat(b.precio) - parseFloat(a.precio))
-          break
-        case 'name':
-        default:
-          sorted.sort((a, b) => a.nombre.localeCompare(b.nombre))
-          break
-      }
-      
-      return sorted
-    })
-    
-    // Pagination computed properties
-    const totalPages = computed(() => Math.ceil(displayedProducts.value.length / itemsPerPage.value))
-    
-    const paginatedProducts = computed(() => {
-      const start = (currentPage.value - 1) * itemsPerPage.value
-      const end = start + itemsPerPage.value
-      return displayedProducts.value.slice(start, end)
-    })
-    
-    const goToPage = (page) => {
-      if (page >= 1 && page <= totalPages.value) {
-        currentPage.value = page
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-      }
-    }
-    
-    // Watch for filter changes to reset pagination
-    watch([selectedCategory, priceRange, searchTerm], () => {
-      currentPage.value = 1
-    })
-    
-    const fetchProducts = async () => {
-      isLoading.value = true
-      error.value = null
-      try {
-        products.value = await api.getProducts()
-      } catch (err) {
-        error.value = 'Error al cargar los productos'
-        console.error('Error fetching products:', err)
-      } finally {
-        isLoading.value = false
-      }
-    }
-    
-    const fetchCategories = async () => {
-      try {
-        categories.value = await api.getCategories()
-      } catch (err) {
-        console.error('Error fetching categories:', err)
-      }
-    }
-
-    const fetchStockLevels = async () => {
-      try {
-        const stockData = await api.getStock(); // Assuming getStock() fetches all stock
-        const stockMap = new Map();
-        stockData.data.forEach(item => {
-            stockMap.set(item.product_id, item);
-        });
-        stockLevels.value = stockMap;
-      } catch (err) {
-        console.error('Error fetching stock levels:', err);
-      }
-    };
-    
-    const getCategoryName = (categoryId) => {
-      const category = categories.value.find(cat => cat.id === categoryId)
-      return category ? category.nombre : 'Sin categoría'
-    }
-    
-    const addToCart = (product) => {
-      cartStore.addToCart(product)
-    }
-    
-    const applyFilters = () => {
-      // This will trigger the computed properties to update
-    }
-    
-    const applySorting = () => {
-      // This will trigger the computed properties to update
-    }
-    
-    const clearFilters = () => {
-      selectedCategory.value = ''
-      priceRange.value = { min: null, max: null }
-      searchTerm.value = ''
-      sortBy.value = 'name'
-    }
-    
     onMounted(async () => {
-      await Promise.all([
-        fetchProducts(),
-        fetchCategories(),
-        fetchStockLevels()
-      ])
+       try { 
+         products.value = await api.getProducts(); 
+         const categoriesData = await api.getCategories();
+         const uniqueCategories = categoriesData.filter((category, index, self) =>
+           index === self.findIndex((c) => c.nombre.toLowerCase() === category.nombre.toLowerCase())
+         );
+         categories.value = uniqueCategories;
+       } catch(e){}
     })
-    
+
     return {
-      products,
-      categories,
-      filteredProducts,
-      displayedProducts,
-      paginatedProducts,
-      isLoading,
-      error,
-      selectedCategory,
-      priceRange,
-      searchTerm,
-      sortBy,
-      currentPage,
-      itemsPerPage,
-      totalPages,
-      isAuthenticated,
-      cartStore,
-      getCategoryName,
-      addToCart,
-      applyFilters,
-      applySorting,
-      clearFilters,
-      goToPage,
-      bloquearSignos
+      products, categories, filteredProducts, paginatedProducts, isLoading,
+      selectedCategory, priceRange, searchTerm, sortBy, currentPage, totalPages,
+      authStore, getCategoryName, addToCart, applyFilters, clearFilters, goToPage,
+      isAuthenticated: computed(() => authStore.isAuthenticated)
     }
   }
 }
 </script>
 
 <style scoped>
+.products-page {
+  background-color: #ffffff;
+  min-height: 100vh;
+}
+
+.filter-card {
+  background: #ffffff;
+  border-right: 1px solid #f1f5f9;
+  z-index: 1;
+}
+
 .product-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border: none;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  background: #ffffff;
+  border-radius: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+  overflow: hidden;
 }
 
 .product-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-}
-
-.product-image-container {
-  position: relative;
-  overflow: hidden;
-}
-
-.product-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  padding: 5px 10px;
-  border-radius: 15px;
-  font-size: 0.8em;
-  font-weight: bold;
-  color: white;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.08);
 }
 
 .card-img-top {
-  transition: transform 0.3s ease;
+  height: 220px;
+  object-fit: cover;
 }
 
-.product-card:hover .card-img-top {
-  transform: scale(1.1);
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.form-select {
+.bg-light {
+  background-color: #f8fafc !important;
+}
+
+.cursor-pointer {
   cursor: pointer;
-}
-
-.btn-primary {
-  transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-  transform: scale(1.05);
 }
 </style>
