@@ -62,7 +62,7 @@
             </router-link>
           </div>
 
-           <div class="col-md-4" v-if="!isAdmin">
+          <div class="col-md-4" v-if="!isAdmin">
             <router-link to="/profile" class="text-decoration-none">
               <div class="admin-card h-100 p-4 bg-white rounded-4 shadow-sm border-0 d-flex flex-column align-items-center text-center">
                 <div class="icon-circle bg-info-subtle text-info-emphasis mb-3">
@@ -180,34 +180,6 @@
             </div>
           </div>
         </div>
-
-        <div v-if="isAuthenticated && canUseCart" class="user-dashboard-section p-4 p-md-5 rounded-5 bg-dark text-white position-relative overflow-hidden">
-          <div class="position-relative z-1">
-            <div class="text-center mb-5">
-              <h3 class="fw-bold">Tu Actividad</h3>
-              <p class="text-white-50">Resumen de tu cuenta</p>
-            </div>
-            
-            <div class="row g-4 justify-content-center">
-              <div class="col-md-5">
-                <div class="stat-card p-4 rounded-4 bg-white bg-opacity-10 backdrop-blur text-center border border-white border-opacity-10">
-                  <div class="display-4 fw-bold text-primary mb-2">{{ cartItemsCount }}</div>
-                  <div class="text-white fw-medium">Artículos en Carrito</div>
-                  <router-link to="/cart" class="btn btn-sm btn-outline-light rounded-pill mt-3 px-4">Ir al Carrito</router-link>
-                </div>
-              </div>
-              
-              <div class="col-md-5">
-                <div class="stat-card p-4 rounded-4 bg-white bg-opacity-10 backdrop-blur text-center border border-white border-opacity-10">
-                  <div class="display-4 fw-bold text-success mb-2">{{ userOrdersCount }}</div>
-                  <div class="text-white fw-medium">Órdenes Completadas</div>
-                  <router-link to="/orders" class="btn btn-sm btn-outline-light rounded-pill mt-3 px-4">Ver Historial</router-link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
       </div>
     </template>
   </div>
