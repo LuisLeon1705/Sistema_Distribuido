@@ -241,9 +241,10 @@ export default {
     }
     
     const formatDate = (dateString) => {
-      if (!dateString) return 'N/A'
-      return new Date(dateString).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
-    }
+      const date = new Date(dateString);
+      const time = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+      return time.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
     
     onMounted(() => { loadUserData() })
     onUnmounted(() => { authStore.clearError() })
