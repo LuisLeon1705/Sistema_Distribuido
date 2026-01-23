@@ -47,8 +47,8 @@
             <span class="text-muted small">{{ filteredProducts.length }} productos</span>
             <select v-model="sortBy" class="form-select form-select-sm border-0 w-auto text-end fw-bold text-dark cursor-pointer">
               <option value="name">Nombre A-Z</option>
-              <option value="price-asc">Precio: Menor a Mayor</option>
-              <option value="price-desc">Precio: Mayor a Menor</option>
+              <option value="price-low">Precio: Menor a Mayor</option>
+              <option value="price-high">Precio: Mayor a Menor</option>
             </select>
           </div>
           
@@ -136,15 +136,76 @@ export default {
     const currentPage = ref(1)
     const itemsPerPage = ref(9)
     
-    const filteredProducts = computed(() => products.value)
-    const paginatedProducts = computed(() => products.value)
-    const totalPages = computed(() => 1)
+    const filteredProducts = computed(() => {
+      let filtered = products.value
+      
+      if (selectedCategory.value) {
+        filtered = filtered.filter(product => product.categoria_id === selectedCategory.value)
+      }
+      
+      if (searchTerm.value) {
+        const search = searchTerm.value.toLowerCase()
+        filtered = filtered.filter(product => 
+          product.nombre.toLowerCase().includes(search) ||
+          product.descripcion.toLowerCase().includes(search)
+        )
+      }
+      
+      if (priceRange.value.min !== null) {
+        filtered = filtered.filter(product => parseFloat(product.precio) >= priceRange.value.min)
+      }
+      
+      if (priceRange.value.max !== null) {
+        filtered = filtered.filter(product => parseFloat(product.precio) <= priceRange.value.max)
+      }
+      
+      if (sortBy.value === 'name') {
+        filtered.sort((a, b) => a.nombre.localeCompare(b.nombre))
+      } else if (sortBy.value === 'price-low') {
+        filtered.sort((a, b) => parseFloat(a.precio) - parseFloat(b.precio))
+      } else if (sortBy.value === 'price-high') {
+        filtered.sort((a, b) => parseFloat(b.precio) - parseFloat(a.precio))
+      }
+      
+      return filtered
+    })
     
-    const getCategoryName = () => 'General'
-    const addToCart = () => {}
-    const applyFilters = () => {}
-    const clearFilters = () => {}
-    const goToPage = () => {}
+    const paginatedProducts = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage.value
+      const end = start + itemsPerPage.value
+      return filteredProducts.value.slice(start, end)
+    })
+    
+    const totalPages = computed(() => Math.ceil(filteredProducts.value.length / itemsPerPage.value))
+    
+    const getCategoryName = (categoryId) => {
+      const category = categories.value.find(cat => cat.id === categoryId)
+      return category ? category.nombre : 'Sin categoría'
+    }
+    
+    const addToCart = (product) => {
+      if (authStore.canUseCart) {
+        cartStore.addToCart(product)
+      }
+    }
+    
+    const applyFilters = () => {
+      currentPage.value = 1
+    }
+    
+    const clearFilters = () => {
+      selectedCategory.value = ''
+      priceRange.value = { min: null, max: null }
+      searchTerm.value = ''
+      sortBy.value = 'name'
+      currentPage.value = 1
+    }
+    
+    const goToPage = (page) => {
+      if (page >= 1 && page <= totalPages.value) {
+        currentPage.value = page
+      }
+    }
 
     onMounted(async () => {
        try { 
