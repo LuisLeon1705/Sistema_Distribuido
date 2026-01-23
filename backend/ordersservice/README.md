@@ -182,7 +182,7 @@ No requiere cuerpo
 
 ## 6. Actualizar Estado de Orden
 
-Permite cambiar el estado de una orden (ej. de `CREADO` a `PAGADO`, `COMPLETED` o `CANCELLED`).
+Permite cambiar el estado de una orden (ej. de `CREADO` a `PAGADO`, `ENVIADO` o `CANCELADO`).
 Este endpoint incluye lógica inteligente de **Devolución de Stock**.
 
 * **Método:** `PUT`
@@ -193,22 +193,23 @@ Este endpoint incluye lógica inteligente de **Devolución de Stock**.
 
 | Rol | Permisos |
 | :--- | :--- |
-| **ADMIN** | Puede cambiar el estado a cualquier valor (`COMPLETED`, `PAID`, `CANCELLED`, etc.). |
-| **USUARIO** | Solo puede cambiar el estado a **`CANCELLED`** (para cancelar su propia compra). |
+| **ADMIN** | Puede cambiar el estado a cualquier valor (`PAGADO`, `ENVIADO`, `CANCELADO`, etc.). |
+| **DUEÑO DE LA ORDEN** | Puede cambiar el estado a cualquier valor (`PAGADO`, `ENVIADO`, `CANCELADO`, etc.). |
+| **USUARIO** | No puede cambiar el estado de una orden que no le pertenece. |
 
-> **Devolución de Stock:** Si el nuevo estado es `CANCELLED` y la orden no estaba cancelada previamente, el sistema **sumará** automáticamente los productos de vuelta al `InventoryService`.
+> **Devolución de Stock:** Si el nuevo estado es `CANCELADO` y la orden no estaba cancelada previamente, el sistema **sumará** automáticamente los productos de vuelta al `InventoryService`.
 
 ### Body (Request)
 
 ```json
 {
-  "status": "CANCELLED"
+  "status": "CANCELADO"
 }
 ```
 
 | Campo | Tipo | Obligatorio | Descripción |
 | :--- | :--- | :--- | :--- |
-| 'status' | 'String' | Sí | El nuevo estado. Valores típicos: CANCELLED, COMPLETED, PAID. |
+| 'status' | 'String' | Sí | El nuevo estado. Valores típicos: PAGADO, ENVIADO, CANCELADO. |
 
 ### Respuesta Exitosa (200 OK) 
 Devuelve el objeto Orden actualizado.
@@ -218,7 +219,7 @@ Devuelve el objeto Orden actualizado.
     "id": "c9f5d3a1-...",
     "userId": "a1b2c3d4-...",
     "total": 550.00,
-    "status": "CANCELLED",  // <--- Estado actualizado
+    "status": "CANCELADO",  // <--- Estado actualizado
     "createdAt": "2026-01-10T03:30:00",
     "items": [
         {

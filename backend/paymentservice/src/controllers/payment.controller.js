@@ -1,4 +1,5 @@
 const Payment = require("../models/payment");
+const axios = require("axios");
 
 exports.getPayments = async (req, res) => {
   try {
@@ -23,6 +24,7 @@ exports.getPaymentById = async (req, res) => {
 exports.processPayment = async (req, res) => {
   try {
     const { orderId, amount, currency } = req.body;
+    const authToken = req.headers["authorization"];
 
     const payment = await Payment.create({
       orderId,
@@ -30,6 +32,18 @@ exports.processPayment = async (req, res) => {
       currency,
       status: "PENDING",
     });
+
+    // Notify Order Service: Payment Pending
+    try {
+        await axios.put(
+            `http://ordersservice:8080/api/orders/${orderId}/status`,
+            { status: "PENDING" },
+            { headers: { Authorization: authToken } }
+        );
+        console.log(`Order ${orderId} status updated to PENDING`);
+    } catch (error) {
+        console.error(`Failed to update order ${orderId} status to PENDING:`, error.message);
+    }
 
     setTimeout(async () => {
       const isSuccess = Math.random() > 0.2; 
@@ -44,7 +58,18 @@ exports.processPayment = async (req, res) => {
       
       console.log(`Payment processed for Order ${orderId}: ${finalStatus}`);
       
-      // TODO: Send webhook to Order service, to notify payment status 
+      // Notify Order Service: Payment Completed or Failed
+      try {
+          await axios.put(
+              `http://ordersservice:8080/api/orders/${orderId}/status`,
+              { status: finalStatus },
+              { headers: { Authorization: authToken } }
+          );
+          console.log(`Order ${orderId} status updated to ${finalStatus}`);
+      } catch (error) {
+          console.error(`Failed to update order ${orderId} status to ${finalStatus}:`, error.message);
+      }
+      
     }, 5000);
 
     res.status(201).json({

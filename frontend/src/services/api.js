@@ -21,6 +21,16 @@ const productsAPI = axios.create({
     withCredentials: true
 })
 
+const ordersAPI = axios.create({
+    baseURL: '/api/orders',
+    withCredentials: true
+})
+
+const paymentsAPI = axios.create({
+    baseURL: '/api/payments',
+    withCredentials: true
+})
+
 // Request interceptor to add JWT token
 const addAuthInterceptor = (apiInstance) => {
     apiInstance.interceptors.request.use(
@@ -51,7 +61,7 @@ const addResponseInterceptor = (apiInstance) => {
 }
 
 // Add interceptors to all instances
-[authAPI, usersAPI, inventoryAPI, productsAPI].forEach(api => {
+[authAPI, usersAPI, inventoryAPI, productsAPI, ordersAPI, paymentsAPI].forEach(api => {
     addAuthInterceptor(api)
     addResponseInterceptor(api)
 })
@@ -207,33 +217,33 @@ const productService = {
 // Inventory/Orders Service
 const orderService = {
     async createOrder(orderData) {
-        const response = await inventoryAPI.post('/orders', orderData)
+        const response = await ordersAPI.post('', orderData)
         return response.data
     },
 
-    async getOrdersByUserId(userId) {
-        const response = await inventoryAPI.get(`/orders/user/${userId}`)
+    async getOrdersByUserId() {
+        const response = await ordersAPI.get('')
         return response.data
     },
 
     async getOrderById(id) {
-        const response = await inventoryAPI.get(`/orders/${id}`)
+        const response = await ordersAPI.get(`/${id}`)
         return response.data
     },
 
     async getOrderItems(orderId) {
-        const response = await inventoryAPI.get(`/orders/${orderId}/items`);
-        return response.data;
+        const response = await ordersAPI.get(`/${orderId}`);
+        return response.data.items;
     },
 
     async updateOrderStatus(orderId, newStatus) {
-        const payload = { order_id: orderId, new_status: newStatus };
-        const response = await inventoryAPI.post('/orders/status', payload);
+        const payload = { status: newStatus };
+        const response = await ordersAPI.put(`/${orderId}/status`, payload);
         return response.data;
     },
 
     async getAllOrders() {
-        const response = await inventoryAPI.get('/orders')
+        const response = await ordersAPI.get('/all')
         return response.data
     },
 
@@ -244,6 +254,14 @@ const orderService = {
 
     async getTempOrdersByUserId(userId) {
         const response = await inventoryAPI.get(`/temp_orders/user/${userId}`);
+        return response.data;
+    }
+}
+
+// Payment Service
+const paymentService = {
+    async processPayment(paymentData) {
+        const response = await paymentsAPI.post('/', paymentData);
         return response.data;
     }
 }
@@ -279,6 +297,7 @@ const api = {
     ...productService,
     ...orderService,
     ...stockService,
+    ...paymentService,
 }
 
 export default api;
