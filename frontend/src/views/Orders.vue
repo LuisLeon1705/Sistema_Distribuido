@@ -8,7 +8,7 @@
           <p class="text-muted small mb-0">Historial de tus compras recientes</p>
         </div>
         <router-link to="/products" class="btn btn-dark rounded-pill px-4 shadow-sm">
-          <i class="fas fa-shopping-bag me-2"></i>Nueva Compra
+          <i class="fas fa-shopping-bag me-2"></i>Comprar
         </router-link>
       </div>
       
@@ -41,7 +41,7 @@
               <div class="d-flex justify-content-between align-items-start mb-3">
                 <div>
                   <div class="d-flex align-items-center gap-2 mb-1">
-                    <h5 class="fw-bold text-dark mb-0">Orden #{{ order.id }}</h5>
+                    <h5 class="fw-bold text-dark mb-0">Orden #{{ order.code || order.id }}</h5>
                     <span class="badge rounded-pill fw-normal px-3 py-1" :class="statusBadgeClass(order.status)">
                       {{ getStatusText(order.status) }}
                     </span>
@@ -81,13 +81,23 @@
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" v-if="selectedOrder">
           <div class="modal-header border-bottom bg-light px-4 py-3">
             <div>
-              <h5 class="modal-title fw-bold text-dark">Detalles Orden #{{ selectedOrder.id }}</h5>
-              <small class="text-muted">{{ formatDate(selectedOrder.createdAt) }}</small>
+              <h5 class="modal-title fw-bold text-dark">Detalles de la Orden</h5>
             </div>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           
           <div class="modal-body p-4">
+            <div class="mb-3 d-flex justify-content-between align-items-center">
+              <div>
+                <small class="text-muted text-uppercase fw-bold d-block mb-1">Código</small>
+                <span class="fw-bold text-dark">{{ selectedOrder.code || selectedOrder.id }}</span>
+              </div>
+              <div class="text-end">
+                <small class="text-muted text-uppercase fw-bold d-block mb-1">Fecha</small>
+                <span class="fw-bold text-dark">{{ formatDate(selectedOrder.createdAt) }}</span>
+              </div>
+            </div>
+
             <div class="row g-4 mb-4">
               <div class="col-md-6">
                 <div class="p-3 bg-light rounded-3 h-100">
@@ -113,8 +123,8 @@
             <div v-if="isFetchingDetails" class="text-center py-4">
                <div class="spinner-border spinner-border-sm text-primary"></div>
             </div>
-            
-            <div v-else class="table-responsive border rounded-3 overflow-hidden">
+
+            <div v-if="!isFetchingDetails" class="table-responsive border rounded-3 overflow-hidden">
                <table class="table table-borderless mb-0">
                   <thead class="bg-light border-bottom">
                      <tr>
@@ -139,6 +149,16 @@
                      </tr>
                   </tbody>
                </table>
+
+            </div>
+
+            <div class="mt-4">
+              <h6 class="fw-bold text-dark mb-2">Dirección de Envío</h6>
+              <div class="p-3 bg-light rounded-3">
+                <div class="mb-1"><small class="text-muted">Dirección:</small> <span class="fw-bold">{{ selectedOrder.shippingAddress || 'No disponible' }}</span></div>
+                <div class="mb-1"><small class="text-muted">Ciudad:</small> <span class="fw-bold">{{ selectedOrder.shippingCity || 'No disponible' }}</span></div>
+                <div class="mb-1"><small class="text-muted">Código Postal:</small> <span class="fw-bold">{{ selectedOrder.shippingPostal || 'No disponible' }}</span></div>
+              </div>
             </div>
 
           </div>
@@ -172,9 +192,14 @@ export default {
     const fetchOrders = async () => {
       isLoading.value = true;
       error.value = null;
-      try { orders.value = await api.getOrdersByUserId(); } 
-      catch (err) { orders.value = []; error.value = 'No se pudo cargar el historial.'; console.error(err); } 
-      finally { isLoading.value = false; }
+      try {
+        const data = await api.getOrdersByUserId();
+        orders.value = (data || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      } catch (err) { 
+        orders.value = []; 
+        error.value = 'No se pudo cargar el historial.'; 
+        console.error(err); 
+      } finally { isLoading.value = false; }
     }
     
     const viewOrderDetails = async (orderId) => {
@@ -200,7 +225,7 @@ export default {
     }
     
     const getStatusText = (status) => {
-      const map = { CREADO: 'Creado', PENDING: 'Procesando', COMPLETED: 'Pagado', PAGADO: 'Pagado', CANCELADO: 'Cancelada', FAILED: 'Fallido' };
+      const map = { CREADO: 'Creado', PENDING: 'Procesando', COMPLETED: 'Pagado', PAGADO: 'Pagado', CANCELADO: 'Cancelada', FAILED: 'Cancelada' };
       return map[status] || status;
     }
 
@@ -211,7 +236,11 @@ export default {
       'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25': status === 'CANCELADO' || status === 'FAILED',
     });
     
-    const formatDate = (dateString) => new Date(dateString).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const formatDate = (dateString) => {
+      const date = new Date(dateString);
+      const time = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+      return time.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
     
     onMounted(() => {
       fetchOrders();
