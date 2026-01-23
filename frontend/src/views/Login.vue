@@ -1,74 +1,52 @@
 <template>
-  <div class="container">
-    <div class="row justify-content-center">
-      <div class="col-md-6 col-lg-4">
-        <div class="card shadow">
-          <div class="card-header text-center">
-            <h4>Iniciar Sesión</h4>
-          </div>
-          <div class="card-body">
-            <form @submit.prevent="handleLogin">
-              <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
-                <input
-                  type="email"
-                  class="form-control"
-                  id="email"
-                  v-model="credentials.email"
-                  :class="{ 'is-invalid': errors.email }"
-                  required
-                >
-                <div v-if="errors.email" class="invalid-feedback">
-                  {{ errors.email }}
-                </div>
-              </div>
-              
-              <div class="mb-3">
-                <label for="password" class="form-label">Contraseña</label>
-                <input
-                  type="password"
-                  class="form-control"
-                  id="password"
-                  v-model="credentials.password"
-                  :class="{ 'is-invalid': errors.password }"
-                  required
-                >
-                <div v-if="errors.password" class="invalid-feedback">
-                  {{ errors.password }}
-                </div>
-              </div>
-              
-              <div v-if="authStore.error" class="alert alert-danger">
-                {{ authStore.error }}
-              </div>
-              
-              <button 
-                type="submit" 
-                class="btn btn-primary w-100"
-                :disabled="authStore.isLoading"
-              >
-                <span v-if="authStore.isLoading" class="spinner-border spinner-border-sm me-2"></span>
-                {{ authStore.isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión' }}
-              </button>
-              
-              <div class="text-center mt-3">
-                <p class="mb-0">
-                  ¿No tienes cuenta? 
-                  <router-link to="/register" class="text-decoration-none">
-                    Regístrate aquí
-                  </router-link>
-                </p>
-              </div>
-            </form>
-          </div>
-        </div>
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="text-center mb-4">
+        <h4 class="fw-bold text-dark">Bienvenido</h4>
+        <p class="text-muted small">Ingresa a tu cuenta WeCommerce</p>
       </div>
+
+      <form @submit.prevent="handleLogin">
+        <div class="mb-3">
+          <label class="form-label small text-muted fw-bold">Email</label>
+          <input 
+            type="email" 
+            class="form-control" 
+            v-model="credentials.email" 
+            required
+          >
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label small text-muted fw-bold">Contraseña</label>
+          <input 
+            type="password" 
+            class="form-control" 
+            v-model="credentials.password" 
+            required
+          >
+        </div>
+
+        <div v-if="authStore.error" class="alert alert-danger py-2 small text-center mb-3 border-0 bg-danger bg-opacity-10 text-danger">
+          {{ authStore.error }}
+        </div>
+
+        <button type="submit" class="btn btn-dark w-100 fw-bold py-2 mb-4" :disabled="authStore.isLoading">
+          {{ authStore.isLoading ? '...' : 'Iniciar Sesión' }}
+        </button>
+
+        <div class="text-center pt-3 border-top">
+          <router-link to="/register" class="text-decoration-none small text-muted">
+            ¿No tienes cuenta en WeCommerce? <span class="text-primary fw-bold">Regístrate</span>
+          </router-link>
+        </div>
+      </form>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, reactive, onUnmounted } from 'vue'
+import { reactive, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
@@ -77,80 +55,50 @@ export default {
   setup() {
     const router = useRouter()
     const authStore = useAuthStore()
-    
-    const credentials = reactive({
-      email: '',
-      password: ''
-    })
-    
-    const errors = ref({})
-    
-    const validateForm = () => {
-      errors.value = {}
-      
-      if (!credentials.email) {
-        errors.value.email = 'El email es requerido'
-      } else if (!/\S+@\S+\.\S+/.test(credentials.email)) {
-        errors.value.email = 'El email no es válido'
-      }
-      
-      if (!credentials.password) {
-        errors.value.password = 'La contraseña es requerida'
-      } else if (credentials.password.length < 6) {
-        errors.value.password = 'La contraseña debe tener al menos 6 caracteres'
-      }
-      
-      return Object.keys(errors.value).length === 0
-    }
-    
+    const credentials = reactive({ email: '', password: '' })
     const handleLogin = async () => {
-      if (!validateForm()) return
-      
       try {
         await authStore.login(credentials)
-        // Redirigir según el rol del usuario
-        if (authStore.isStaff) {
-          router.push('/admin/products')
-        } else {
-          router.push('/')
-        }
-      } catch (error) {
-        console.error('Login error:', error)
-      }
+        router.push(authStore.isStaff ? '/admin/products' : '/')
+      } catch (e) {}
     }
-    
-    onUnmounted(() => {
-      authStore.clearError()
-    })
-    
-    return {
-      credentials,
-      errors,
-      authStore,
-      handleLogin
-    }
+    onUnmounted(() => authStore.clearError())
+    return { credentials, authStore, handleLogin }
   }
 }
 </script>
 
 <style scoped>
-.card {
-  border: none;
-  border-radius: 10px;
+.auth-page {
+  background-color: #ffffff;
+  min-height: calc(100vh - 76px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
 }
 
-.card-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 10px 10px 0 0 !important;
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 2.5rem;
+  background: #ffffff;
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+  border: 1px solid #f1f5f9;
+  border-radius: 1.5rem;
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
+.form-control {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
+  padding: 0.7rem 1rem;
+  transition: all 0.2s;
 }
 
-.btn-primary:hover {
-  background: linear-gradient(135deg, #5a67c7 0%, #684a8f 100%);
+.form-control:focus {
+  background-color: #ffffff;
+  border-color: #0f172a;
+  box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.05);
 }
 </style>
