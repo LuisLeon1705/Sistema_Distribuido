@@ -1,206 +1,286 @@
 <template>
-  <div class="order-management">
-    <div class="container">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Gestión de Órdenes</h2>
+  <div class="order-management-page">
+    <div class="container py-5">
+      
+      <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+          <h2 class="fw-bold text-dark mb-1">Gestión de Órdenes</h2>
+          <p class="text-muted small mb-0">Administra y monitorea las transacciones del sistema</p>
+        </div>
         <div class="d-flex gap-2">
-          <button class="btn btn-outline-secondary" @click="refreshOrders">
-            <i class="fas fa-sync me-2"></i>
+          <!-- <button class="btn btn-outline-dark btn-sm rounded-pill px-3" @click="handleSeedStock" title="Generar Stock Inicial">
+             <i class="fas fa-database me-2"></i>Seed Stock
+          </button> -->
+          <button class="btn btn-dark btn-sm rounded-pill px-4 shadow-sm" @click="refreshOrders">
+            <i class="fas fa-sync-alt me-2" :class="{ 'fa-spin': isLoading }"></i>
             Actualizar
           </button>
         </div>
       </div>
 
-      <!-- Stats Cards -->
-      <div class="row mb-4">
-        <div class="col-md-3">
-          <div class="card bg-primary text-white">
-            <div class="card-body">
-              <h6 class="card-title">Total Órdenes</h6>
-              <h3>{{ orders.length }}</h3>
+      <div class="row g-4 mb-5">
+        <div class="col-md-6 col-lg-3">
+          <div class="stat-card p-4 h-100 d-flex align-items-center">
+            <div class="icon-circle bg-primary bg-opacity-10 text-primary me-3">
+              <i class="fas fa-clipboard-list fa-lg"></i>
+            </div>
+            <div>
+              <h6 class="text-muted small text-uppercase fw-bold mb-1">Total</h6>
+              <h3 class="fw-bold text-dark mb-0">{{ orders.length }}</h3>
             </div>
           </div>
         </div>
-        <div class="col-md-3">
-          <div class="card bg-warning text-white">
-            <div class="card-body">
-              <h6 class="card-title">Por Pagar</h6>
-              <h3>{{ getOrdersByStatus('CREADO').length }}</h3>
+        <div class="col-md-6 col-lg-3">
+          <div class="stat-card p-4 h-100 d-flex align-items-center">
+            <div class="icon-circle bg-warning bg-opacity-10 text-warning me-3">
+              <i class="fas fa-clock fa-lg"></i>
+            </div>
+            <div>
+              <h6 class="text-muted small text-uppercase fw-bold mb-1">Pendientes</h6>
+              <h3 class="fw-bold text-dark mb-0">{{ getOrdersByStatus('CREADO').length + getOrdersByStatus('PENDING').length }}</h3>
             </div>
           </div>
         </div>
-        <div class="col-md-3">
-          <div class="card bg-success text-white">
-            <div class="card-body">
-              <h6 class="card-title">Pagadas</h6>
-              <h3>{{ orders.filter(o => o.status === 'COMPLETED' || o.status === 'PAGADO').length }}</h3>
+        <div class="col-md-6 col-lg-3">
+          <div class="stat-card p-4 h-100 d-flex align-items-center">
+            <div class="icon-circle bg-success bg-opacity-10 text-success me-3">
+              <i class="fas fa-check-circle fa-lg"></i>
+            </div>
+            <div>
+              <h6 class="text-muted small text-uppercase fw-bold mb-1">Completadas</h6>
+              <h3 class="fw-bold text-dark mb-0">{{ orders.filter(o => o.status === 'COMPLETED' || o.status === 'PAGADO').length }}</h3>
             </div>
           </div>
         </div>
-        <div class="col-md-3">
-          <div class="card bg-danger text-white">
-            <div class="card-body">
-              <h6 class="card-title">Canceladas</h6>
-              <h3>{{ getOrdersByStatus('CANCELADO').length }}</h3>
+        <div class="col-md-6 col-lg-3">
+          <div class="stat-card p-4 h-100 d-flex align-items-center">
+            <div class="icon-circle bg-danger bg-opacity-10 text-danger me-3">
+              <i class="fas fa-times-circle fa-lg"></i>
+            </div>
+            <div>
+              <h6 class="text-muted small text-uppercase fw-bold mb-1">Canceladas</h6>
+              <h3 class="fw-bold text-dark mb-0">{{ getOrdersByStatus('CANCELADO').length }}</h3>
             </div>
           </div>
         </div>
       </div>
       
-      <!-- Filters -->
-      <div class="card mb-4">
-        <div class="card-body">
-          <div class="row g-2">
-            <div class="col-md-3">
-              <select v-model="filters.status" @change="applyFilters" class="form-select">
+      <div class="card border-0 shadow-sm rounded-4 mb-4 p-3 bg-white">
+        <div class="row g-3 align-items-center">
+          <div class="col-md-3">
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-light border-0 text-muted"><i class="fas fa-filter"></i></span>
+              <select v-model="filters.status" @change="applyFilters" class="form-select bg-light border-0 text-dark">
                 <option value="">Todos los estados</option>
                 <option value="CREADO">Creado</option>
+                <option value="PENDING">Procesando</option>
                 <option value="COMPLETED">Pagado</option>
                 <option value="CANCELADO">Cancelada</option>
               </select>
             </div>
-            <div class="col-md-3">
-              <input type="date" v-model="filters.date" @change="applyFilters" class="form-control">
+          </div>
+          <div class="col-md-3">
+            <div class="input-group input-group-sm">
+               <span class="input-group-text bg-light border-0 text-muted"><i class="fas fa-calendar-alt"></i></span>
+               <input type="date" v-model="filters.date" @change="applyFilters" class="form-control bg-light border-0 text-dark">
             </div>
-            <div class="col-md-4">
-              <input type="text" v-model="filters.search" @input="applyFilters" placeholder="Buscar por ID de orden o usuario..." class="form-control">
+          </div>
+          <div class="col-md-4">
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-light border-0 text-muted"><i class="fas fa-search"></i></span>
+              <input type="text" v-model="filters.search" @input="applyFilters" placeholder="Buscar orden o usuario..." class="form-control bg-light border-0 text-dark">
             </div>
-            <div class="col-md-2">
-              <button @click="clearFilters" class="btn btn-outline-secondary w-100">Limpiar</button>
-            </div>
+          </div>
+          <div class="col-md-2">
+            <button @click="clearFilters" class="btn btn-link text-muted text-decoration-none small w-100 hover-text-dark">
+              Limpiar filtros
+            </button>
           </div>
         </div>
       </div>
       
-      <!-- Orders Table -->
-      <div class="card">
-        <div class="card-body">
-          <div v-if="isLoading" class="text-center py-4">
-            <div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div>
+      <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+          
+          <div v-if="isLoading" class="text-center py-5">
+            <div class="spinner-border text-primary opacity-50" role="status"></div>
+            <p class="text-muted mt-2 small">Cargando datos...</p>
           </div>
-          <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
+          
+          <div v-else-if="error" class="alert alert-danger m-3 border-0 bg-danger bg-opacity-10 text-danger">
+            <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+          </div>
+
           <div v-else class="table-responsive">
-            <table class="table table-hover align-middle">
-              <thead>
+            <table class="table table-hover align-middle mb-0">
+              <thead class="bg-light">
                 <tr>
-                  <th>ID</th>
-                  <th>Usuario</th>
-                  <th>Fecha</th>
-                  <th>Total</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
+                  <th class="ps-4 py-3 text-muted small text-uppercase fw-bold border-0">ID</th>
+                  <th class="py-3 text-muted small text-uppercase fw-bold border-0">Usuario</th>
+                  <th class="py-3 text-muted small text-uppercase fw-bold border-0">Fecha</th>
+                  <th class="py-3 text-muted small text-uppercase fw-bold border-0">Total</th>
+                  <th class="py-3 text-muted small text-uppercase fw-bold border-0">Estado</th>
+                  <th class="pe-4 py-3 text-muted small text-uppercase fw-bold border-0 text-end">Acción</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="order in paginatedOrders" :key="order.id">
-                  <td><span class="fw-bold">#{{ order.id }}</span></td>
-                  <td>{{ getUsername(order.userId) }}</td>
-                  <td>{{ formatDate(order.createdAt) }}</td>
-                  <td><span class="fw-bold text-primary">${{ parseFloat(order.total).toFixed(2) }}</span></td>
+                <tr v-for="order in paginatedOrders" :key="order.id" class="cursor-pointer" @click="viewOrderDetails(order)">
+                  <td class="ps-4 fw-bold text-dark">#{{ order.id }}</td>
                   <td>
-                    <span class="badge" :class="statusBadgeClass(order.status)">{{ getStatusText(order.status) }}</span>
+                    <div class="d-flex align-items-center">
+                      <div class="avatar-sm bg-secondary bg-opacity-10 text-secondary rounded-circle me-2 d-flex align-items-center justify-content-center fw-bold" style="width: 30px; height: 30px; font-size: 0.8rem;">
+                        {{ getUsername(order.userId).charAt(0).toUpperCase() }}
+                      </div>
+                      <span class="text-dark">{{ getUsername(order.userId) }}</span>
+                    </div>
                   </td>
-                  <td class="actions-cell">
-                    <button class="btn btn-outline-primary btn-sm" @click="viewOrderDetails(order)" title="Ver detalles">
-                      <i class="fas fa-eye me-1"></i> Ver / Editar
+                  <td class="text-muted small">{{ formatDate(order.createdAt) }}</td>
+                  <td class="fw-bold text-dark">${{ parseFloat(order.total).toFixed(2) }}</td>
+                  <td>
+                    <span class="badge rounded-pill fw-normal px-3 py-1" :class="statusBadgeClass(order.status)">
+                      {{ getStatusText(order.status) }}
+                    </span>
+                  </td>
+                  <td class="pe-4 text-end">
+                    <button class="btn btn-light btn-sm rounded-circle text-muted hover-bg-gray" @click.stop="viewOrderDetails(order)">
+                      <i class="fas fa-chevron-right"></i>
                     </button>
                   </td>
                 </tr>
               </tbody>
             </table>
-            <div v-if="filteredOrders.length === 0" class="text-center py-4">
-              <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
-              <h5>No se encontraron órdenes</h5>
-              <p class="text-muted">Ajusta los filtros para ver órdenes</p>
+
+            <div v-if="filteredOrders.length === 0" class="text-center py-5">
+              <div class="mb-3 opacity-25">
+                <i class="fas fa-search fa-3x text-muted"></i>
+              </div>
+              <h6 class="text-dark">No se encontraron resultados</h6>
+              <p class="text-muted small">Intenta cambiar los filtros de búsqueda</p>
             </div>
-            
-            <!-- Pagination -->
-            <nav v-if="!isLoading && filteredOrders.length > 0 && totalPages > 1" aria-label="Order pagination" class="mt-3">
-              <ul class="pagination justify-content-center mb-0">
+          </div>
+          
+          <div v-if="!isLoading && filteredOrders.length > 0 && totalPages > 1" class="d-flex justify-content-between align-items-center p-4 border-top">
+             <small class="text-muted">
+               Mostrando {{ (currentPage - 1) * itemsPerPage + 1 }} - {{ Math.min(currentPage * itemsPerPage, filteredOrders.length) }} de {{ filteredOrders.length }}
+             </small>
+             <nav aria-label="Pagination">
+              <ul class="pagination pagination-sm mb-0">
                 <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                  <button class="page-link" @click="goToPage(currentPage - 1)" :disabled="currentPage === 1">
+                  <button class="page-link border-0 text-dark bg-transparent" @click="goToPage(currentPage - 1)">
                     <i class="fas fa-chevron-left"></i>
                   </button>
                 </li>
                 <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: currentPage === page }">
-                  <button class="page-link" @click="goToPage(page)">{{ page }}</button>
+                  <button class="page-link border-0 rounded-circle mx-1" :class="currentPage === page ? 'bg-dark text-white' : 'text-dark bg-transparent'" @click="goToPage(page)">
+                    {{ page }}
+                  </button>
                 </li>
                 <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                  <button class="page-link" @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages">
+                  <button class="page-link border-0 text-dark bg-transparent" @click="goToPage(currentPage + 1)">
                     <i class="fas fa-chevron-right"></i>
                   </button>
                 </li>
               </ul>
             </nav>
-            <p v-if="filteredOrders.length > itemsPerPage" class="text-center text-muted small mt-2 mb-0">
-              Mostrando {{ (currentPage - 1) * itemsPerPage + 1 }} - {{ Math.min(currentPage * itemsPerPage, filteredOrders.length) }} de {{ filteredOrders.length }} órdenes
-            </p>
           </div>
+
         </div>
       </div>
     </div>
     
-    <!-- Order Details Modal -->
     <div class="modal fade" id="orderDetailsModal" tabindex="-1">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content" v-if="selectedOrder">
-          <div class="modal-header">
-            <h5 class="modal-title">Detalles de la Orden #{{ selectedOrder.id }}</h5>
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" v-if="selectedOrder">
+          <div class="modal-header border-bottom bg-light px-4 py-3">
+            <div>
+              <h5 class="modal-title fw-bold text-dark">Orden #{{ selectedOrder.id }}</h5>
+              <small class="text-muted">{{ formatDate(selectedOrder.createdAt) }}</small>
+            </div>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-          <div class="modal-body">
-            <!-- Order Info -->
-            <div class="row mb-4">
+          
+          <div class="modal-body p-4">
+            <div class="row g-4 mb-4">
               <div class="col-md-6">
-                <h6>Información General</h6>
-                <p class="mb-1"><strong>Usuario:</strong> {{ getUsername(selectedOrder.userId) }}</p>
-                <p class="mb-1"><strong>Fecha:</strong> {{ formatDate(selectedOrder.createdAt) }}</p>
-                <p class="mb-1"><strong>Total:</strong> <span class="fw-bold text-primary">${{ parseFloat(selectedOrder.total).toFixed(2) }}</span></p>
+                <div class="p-3 bg-light rounded-3 h-100">
+                  <h6 class="fw-bold text-dark mb-3">Cliente</h6>
+                  <div class="d-flex align-items-center">
+                     <div class="avatar-md bg-primary text-white rounded-circle me-3 d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px;">
+                        {{ getUsername(selectedOrder.userId).charAt(0).toUpperCase() }}
+                     </div>
+                     <div>
+                        <p class="mb-0 fw-bold text-dark">{{ getUsername(selectedOrder.userId) }}</p>
+                        <small class="text-muted">ID: {{ selectedOrder.userId }}</small>
+                     </div>
+                  </div>
+                </div>
               </div>
               <div class="col-md-6">
-                <h6>Cambiar Estado</h6>
-                <div v-if="selectedOrder.status === 'pending'">
-                  <select v-model="selectedOrderForm.status" class="form-select">
-                    <option value="pending">Pendiente</option>
-                    <option value="completed">Completada</option>
-                    <option value="cancelled">Cancelada</option>
-                  </select>
+                <div class="p-3 bg-light rounded-3 h-100">
+                  <h6 class="fw-bold text-dark mb-3">Gestión de Estado</h6>
+                  <div v-if="selectedOrder.status === 'pending' || selectedOrder.status === 'CREADO'" class="d-flex gap-2">
+                    <select v-model="selectedOrderForm.status" class="form-select border-0 bg-white shadow-sm">
+                      <option value="pending">Pendiente</option>
+                      <option value="completed">Completar (Pagado)</option>
+                      <option value="cancelled">Cancelar</option>
+                    </select>
+                    <button 
+                      class="btn btn-primary px-3 shadow-sm"
+                      @click="saveOrderChanges" 
+                      :disabled="isSaving"
+                    >
+                      <span v-if="isSaving" class="spinner-border spinner-border-sm"></span>
+                      <span v-else>Guardar</span>
+                    </button>
+                  </div>
+                  <div v-else class="d-flex align-items-center h-50">
+                     <span class="badge rounded-pill px-3 py-2 fs-6" :class="statusBadgeClass(selectedOrder.status)">
+                       {{ getStatusText(selectedOrder.status) }}
+                     </span>
+                  </div>
                 </div>
-                <p v-else class="mb-1">
-                  <strong>Estado:</strong> <span class="badge" :class="statusBadgeClass(selectedOrder.status)">{{ getStatusText(selectedOrder.status) }}</span>
-                </p>
               </div>
             </div>
             
-            <!-- Order Items -->
-            <hr>
-            <h6 class="mb-3">Productos</h6>
-            <div v-if="isFetchingDetails" class="text-center"><div class="spinner-border spinner-border-sm"></div></div>
-            <div v-else-if="selectedOrderItems.length > 0">
-              <ul class="list-group list-group-flush">
-                <li v-for="item in selectedOrderItems" :key="item.id" class="list-group-item d-flex justify-content-between align-items-center px-0">
-                  <div>
-                    <div class="fw-bold">{{ item.productName }}</div>
-                    <small class="text-muted">{{ item.quantity }} x ${{ parseFloat(item.price).toFixed(2) }}</small>
-                  </div>
-                  <span class="fw-bold">${{ (item.quantity * parseFloat(item.price)).toFixed(2) }}</span>
-                </li>
-              </ul>
+            <h6 class="fw-bold text-dark mb-3">Detalle de Productos</h6>
+            <div v-if="isFetchingDetails" class="text-center py-3">
+              <div class="spinner-border spinner-border-sm text-primary"></div>
+            </div>
+            <div v-else class="table-responsive border rounded-3 overflow-hidden">
+               <table class="table table-borderless mb-0">
+                  <thead class="bg-light border-bottom">
+                     <tr>
+                        <th class="text-muted small fw-bold ps-3">Producto</th>
+                        <th class="text-muted small fw-bold text-center">Cant.</th>
+                        <th class="text-muted small fw-bold text-end pe-3">Subtotal</th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     <tr v-for="item in selectedOrderItems" :key="item.id" class="border-bottom-dashed">
+                        <td class="ps-3">
+                           <span class="fw-bold text-dark d-block">{{ item.productName }}</span>
+                           <small class="text-muted">${{ parseFloat(item.price).toFixed(2) }} / unidad</small>
+                        </td>
+                        <td class="text-center align-middle">{{ item.quantity }}</td>
+                        <td class="text-end pe-3 align-middle fw-bold text-dark">
+                           ${{ (item.quantity * parseFloat(item.price)).toFixed(2) }}
+                        </td>
+                     </tr>
+                  </tbody>
+                  <tfoot class="bg-light">
+                     <tr>
+                        <td colspan="2" class="text-end fw-bold text-dark pt-3">Total General</td>
+                        <td class="text-end fw-bold text-primary fs-5 pe-3 pt-3">
+                           ${{ parseFloat(selectedOrder.total).toFixed(2) }}
+                        </td>
+                     </tr>
+                  </tfoot>
+               </table>
             </div>
 
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-            <button 
-              type="button" 
-              class="btn btn-primary" 
-              @click="saveOrderChanges" 
-              v-if="selectedOrder.status === 'pending'"
-              :disabled="isSaving"
-            >
-              <span v-if="isSaving" class="spinner-border spinner-border-sm me-2"></span>
-              Guardar Cambios
-            </button>
+          <div class="modal-footer border-0 bg-light px-4 py-3">
+            <button type="button" class="btn btn-outline-dark rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
           </div>
         </div>
       </div>
@@ -223,17 +303,14 @@ export default {
     const isLoading = ref(false)
     const isFetchingDetails = ref(false)
     const isSaving = ref(false)
-    const isSeeding = ref(false)
     const error = ref(null)
-    
     let modalInstance = null;
 
     const filters = reactive({ status: '', date: '', search: '' });
     const selectedOrderForm = reactive({ status: '' });
     
-    // Pagination
     const currentPage = ref(1);
-    const itemsPerPage = ref(15); // 15 órdenes por página
+    const itemsPerPage = ref(10);
     
     const filteredOrders = computed(() => {
       return orders.value
@@ -263,10 +340,7 @@ export default {
       }
     };
     
-    // Reset pagination when filters change
-    watch([() => filters.status, () => filters.date, () => filters.search], () => {
-      currentPage.value = 1;
-    });
+    watch([() => filters.status, () => filters.date, () => filters.search], () => { currentPage.value = 1 });
     
     const fetchOrders = async () => {
       isLoading.value = true
@@ -284,57 +358,43 @@ export default {
           });
         }
       } catch (err) {
-        error.value = err
-        console.error('Error fetching orders:', err)
+        error.value = 'Error al cargar las órdenes.'
+        console.error(err)
       } finally {
         isLoading.value = false
       }
     };
     
-    const getUsername = (userId) => {
-      return usersCache.value[userId] || `ID: ${userId}`;
-    };
+    const getUsername = (userId) => usersCache.value[userId] || `Usuario ${userId}`;
 
     const handleSeedStock = async () => {
-      if (!confirm('¿Estás seguro de que deseas generar el stock inicial? Esto puede sobrescribir los datos de stock existentes.')) {
-        return;
-      }
-      isSeeding.value = true;
-      error.value = null;
-      try {
-        await api.seedStock();
-        alert('El stock de productos se ha generado exitosamente.');
-      } catch (err) {
-        error.value = 'Error al generar el stock.';
-        console.error('Error seeding stock:', err);
-        alert('Hubo un error al generar el stock. Revisa la consola para más detalles.');
-      } finally {
-        isSeeding.value = false;
-      }
-    };
+       if(!confirm('¿Generar stock inicial?')) return;
+       try { await api.seedStock(); alert('Stock generado'); } catch(e) { console.error(e); }
+    }
 
     const refreshOrders = () => fetchOrders();
-    
     const getOrdersByStatus = (status) => orders.value.filter(order => order.status === status);
     
     const statusMap = { 
       CREADO: 'Creado',
-      PENDING: 'Procesando Pago', 
+      PENDING: 'Procesando', 
       COMPLETED: 'Pagado', 
       PAGADO: 'Pagado',
       CANCELADO: 'Cancelada',
-      FAILED: 'Pago Fallido'
+      FAILED: 'Fallido'
     };
     const getStatusText = (status) => statusMap[status] || status;
 
     const statusBadgeClass = (status) => ({
-      'bg-info': status === 'CREADO',
-      'bg-warning': status === 'PENDING',
-      'bg-success': status === 'COMPLETED' || status === 'PAGADO',
-      'bg-danger': status === 'CANCELADO' || status === 'FAILED',
+      'bg-info bg-opacity-10 text-info border border-info border-opacity-25': status === 'CREADO',
+      'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25': status === 'PENDING',
+      'bg-success bg-opacity-10 text-success border border-success border-opacity-25': status === 'COMPLETED' || status === 'PAGADO',
+      'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25': status === 'CANCELADO' || status === 'FAILED',
     });
     
-    const formatDate = (dateString) => new Date(dateString).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
+    const formatDate = (dateString) => new Date(dateString).toLocaleDateString('es-ES', { 
+        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+    });
     
     const viewOrderDetails = async (order) => {
       selectedOrder.value = order;
@@ -345,41 +405,30 @@ export default {
       selectedOrderItems.value = [];
       try {
         const items = await api.getOrderItems(order.id);
-        selectedOrderItems.value = await Promise.all(
-          items.map(async item => {
-            try {
-              const product = await api.getProductById(item.productId);
-              return { ...item, productName: product.nombre };
-            } catch {
-              return { ...item, productName: `ID: ${item.productId}` };
-            }
-          })
-        );
-      } catch (err) {
-        console.error('Error fetching order items:', err)
-      } finally {
-        isFetchingDetails.value = false;
-      }
+        selectedOrderItems.value = await Promise.all(items.map(async item => {
+          try {
+             const product = await api.getProductById(item.productId);
+             return { ...item, productName: product.nombre };
+          } catch {
+             return { ...item, productName: `Producto #${item.productId}` };
+          }
+        }));
+      } catch (err) { console.error(err) } 
+      finally { isFetchingDetails.value = false; }
     };
     
     const saveOrderChanges = async () => {
-      if (!selectedOrder.value) return;
+      if (!selectedOrder.value || selectedOrder.value.status === selectedOrderForm.status) return;
       
-      if (selectedOrder.value.status === selectedOrderForm.status) {
-        modalInstance?.hide();
-        return;
-      }
-
-      const statusText = getStatusText(selectedOrderForm.status).toLowerCase();
-      if (confirm(`¿Estás seguro de que deseas marcar esta orden como "${statusText}"?`)) {
+      if (confirm(`¿Cambiar estado a "${getStatusText(selectedOrderForm.status)}"?`)) {
         isSaving.value = true;
         try {
           await api.updateOrderStatus(selectedOrder.value.id, selectedOrderForm.status)
           await fetchOrders();
           modalInstance?.hide();
         } catch (err) {
-          console.error('Error updating order status:', err)
-          error.value = 'Error al actualizar el estado de la orden'
+          console.error(err)
+          alert('Error al actualizar estado')
         } finally {
           isSaving.value = false;
         }
@@ -387,7 +436,6 @@ export default {
     };
     
     const applyFilters = () => {};
-    
     const clearFilters = () => {
       filters.status = ''
       filters.date = ''
@@ -400,63 +448,62 @@ export default {
       if (modalElement) {
         modalInstance = new bootstrap.Modal(modalElement);
         modalElement.addEventListener('hidden.bs.modal', () => {
-          document.body.focus();
           selectedOrder.value = null;
-          selectedOrderItems.value = [];
-          selectedOrderForm.status = '';
         });
       }
     });
     
     return {
-      orders,
-      selectedOrder,
-      selectedOrderForm,
-      selectedOrderItems,
-      filteredOrders,
-      paginatedOrders,
-      isLoading,
-      isFetchingDetails,
-      isSaving,
-      isSeeding,
-      error,
-      filters,
-      currentPage,
-      itemsPerPage,
-      totalPages,
-      refreshOrders,
-      getOrdersByStatus,
-      getStatusText,
-      statusBadgeClass,
-      formatDate,
-      getUsername,
-      viewOrderDetails,
-      saveOrderChanges,
-      applyFilters,
-      clearFilters,
-      handleSeedStock,
-      goToPage,
+      orders, selectedOrder, selectedOrderForm, selectedOrderItems, filteredOrders, paginatedOrders,
+      isLoading, isFetchingDetails, isSaving, error, filters, currentPage, itemsPerPage, totalPages,
+      refreshOrders, getOrdersByStatus, getStatusText, statusBadgeClass, formatDate, getUsername,
+      viewOrderDetails, saveOrderChanges, applyFilters, clearFilters, handleSeedStock, goToPage
     }
   }
 }
 </script>
 
 <style scoped>
-.table th {
-  font-weight: 600;
+.order-management-page {
+  background-color: #ffffff;
+  min-height: 100vh;
 }
-.table td {
-  vertical-align: middle;
+
+.stat-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s;
 }
-.card {
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  border: none;
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
 }
-.badge {
-  font-size: 0.8em;
-  padding: .4em .6em;
+
+.icon-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.actions-cell {
-  min-width: 120px;
+
+.hover-bg-gray:hover {
+  background-color: #e2e8f0;
+}
+
+.hover-text-dark:hover {
+  color: #000 !important;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.border-bottom-dashed {
+    border-bottom: 1px dashed #e2e8f0;
 }
 </style>
