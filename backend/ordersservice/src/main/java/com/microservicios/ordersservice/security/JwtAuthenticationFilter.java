@@ -44,7 +44,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 // Validar Token
                 if (jwtUtil.validateToken(token)) {
-                    System.out.println("✅ Token Válido. Extrayendo usuario...");
+                    System.out.println("Token Válido. Extrayendo usuario...");
                     
                     UUID userId = jwtUtil.getUserIdFromToken(token);
                     System.out.println("Usuario ID: " + userId);
@@ -54,12 +54,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             new UsernamePasswordAuthenticationToken(userId, null, new ArrayList<>());
                     
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    System.out.println("✅ Usuario autenticado en el contexto de seguridad.");
+                    System.out.println("Usuario autenticado en el contexto de seguridad.");
                 } else {
-                    System.out.println("❌ Token Inválido según JwtUtil.");
+                    System.out.println("Token Inválido según JwtUtil.");
                 }
             } catch (Exception e) {
-                System.out.println("❌ Error validando token: " + e.getMessage());
+                System.out.println("Error validando token: " + e.getMessage());
                 e.printStackTrace();
             }
         } else {
