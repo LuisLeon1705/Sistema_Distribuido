@@ -36,7 +36,7 @@
       
       <div v-else class="row g-4">
         <div class="col-lg-8 mx-auto">
-          <div v-for="order in orders" :key="order.id" class="order-card card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
+          <div v-for="order in paginatedOrders" :key="order.id" class="order-card card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
             <div class="card-body p-4">
               <div class="d-flex justify-content-between align-items-start mb-3">
                 <div>
@@ -71,9 +71,20 @@
               </div>
             </div>
           </div>
+
+          <nav v-if="totalPages > 1" class="mt-3 d-flex justify-content-center">
+            <ul class="pagination pagination-sm">
+              <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                <button class="page-link border-0 text-dark" @click="goToPage(currentPage - 1)"><i class="fas fa-chevron-left"></i></button>
+              </li>
+              <li class="page-item disabled"><span class="page-link border-0 bg-transparent text-muted">{{ currentPage }} / {{ totalPages }}</span></li>
+              <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                <button class="page-link border-0 text-dark" @click="goToPage(currentPage + 1)"><i class="fas fa-chevron-right"></i></button>
+              </li>
+            </ul>
+          </nav>
         </div>
       </div>
-
     </div>
     
     <div class="modal fade" id="orderDetailsModal" tabindex="-1">
@@ -172,7 +183,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import api from '../services/api'
 import * as bootstrap from 'bootstrap'
@@ -188,6 +199,8 @@ export default {
     const error = ref(null)
     
     let orderDetailsModalInstance = null;
+    const currentPage = ref(1)
+    const itemsPerPage = ref(6)
 
     const fetchOrders = async () => {
       isLoading.value = true;
@@ -254,9 +267,20 @@ export default {
       }
     })
     
+    const totalPages = computed(() => Math.ceil(orders.value.length / itemsPerPage.value))
+    const paginatedOrders = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage.value
+      const end = start + itemsPerPage.value
+      return orders.value.slice(start, end)
+    })
+    const goToPage = (page) => {
+      if (page >= 1 && page <= totalPages.value) currentPage.value = page
+    }
+    
     return {
       orders, selectedOrder, selectedOrderItemsWithDetails, isLoading, isFetchingDetails, error,
-      viewOrderDetails, getStatusText, statusBadgeClass, formatDate
+      viewOrderDetails, getStatusText, statusBadgeClass, formatDate,
+      currentPage, itemsPerPage, totalPages, paginatedOrders, goToPage
     }
   }
 }
