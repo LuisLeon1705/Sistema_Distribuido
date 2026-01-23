@@ -208,3 +208,71 @@ func GenerateStatusChangeEmail(req StatusChangeRequest) string {
 		</html>
 	`, statusColor, statusEmoji, req.OrderID, message)
 }
+
+// GeneratePaymentRejectedEmail genera el HTML para el email de pago rechazado
+func GeneratePaymentRejectedEmail(req PaymentRejectedRequest) string {
+	reason := req.RejectionReason
+	if reason == "" {
+		reason = "El pago no pudo ser procesado por tu entidad bancaria."
+	}
+
+	transactionInfo := ""
+	if req.TransactionID != "" {
+		transactionInfo = fmt.Sprintf("<p><strong>ID de Transacción:</strong> %s</p>", req.TransactionID)
+	}
+
+	return fmt.Sprintf(`
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<style>
+				body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+				.container { max-width: 600px; margin: 0 auto; padding: 20px; }
+				.header { background: #F44336; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+				.content { background: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; }
+				.alert-box { background: #fff3cd; border: 1px solid #ffc107; padding: 20px; margin: 20px 0; border-radius: 5px; }
+				.alert-icon { font-size: 48px; text-align: center; margin-bottom: 10px; }
+				.amount { font-size: 24px; font-weight: bold; color: #F44336; text-align: center; margin: 15px 0; }
+				.actions { background: white; padding: 20px; margin: 20px 0; border-radius: 5px; }
+				.button { display: inline-block; background: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 10px 5px; }
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="header">
+					<h1>❌ Pago Rechazado</h1>
+				</div>
+				<div class="content">
+					<p>Hola <strong>%s</strong>,</p>
+					
+					<div class="alert-box">
+						<div class="alert-icon">⚠️</div>
+						<p style="text-align: center;">Lamentamos informarte que tu pago no pudo ser procesado.</p>
+						<div class="amount">Monto: $%.2f</div>
+						<p style="text-align: center;"><strong>Pedido:</strong> #%s</p>
+						%s
+					</div>
+					
+					<p><strong>Motivo:</strong> %s</p>
+					
+					<div class="actions">
+						<h3>¿Qué puedes hacer?</h3>
+						<ul>
+							<li>Verifica que tu tarjeta tenga fondos suficientes</li>
+							<li>Asegúrate de que los datos de la tarjeta sean correctos</li>
+							<li>Intenta con otro método de pago</li>
+							<li>Contacta a tu banco si el problema persiste</li>
+						</ul>
+						<p style="text-align: center; margin-top: 20px;">
+							<strong>Puedes intentar realizar el pago nuevamente desde tu panel de usuario.</strong>
+						</p>
+					</div>
+					
+					<p>Tu pedido ha sido marcado como <strong>FAILED</strong> y el inventario ha sido restaurado.</p>
+					<p>Si necesitas ayuda, no dudes en contactarnos.</p>
+				</div>
+			</div>
+		</body>
+		</html>
+	`, req.CustomerName, req.Amount, req.OrderID, transactionInfo, reason)
+}
