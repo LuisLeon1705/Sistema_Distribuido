@@ -115,6 +115,13 @@ public class OrderController {
         order.setCreatedAt(java.time.LocalDateTime.now());
         order.setStatus("CREADO");
 
+        try {
+            String code = String.format("ORD-%s-%s", Long.toString(System.currentTimeMillis(), 36).toUpperCase(), java.util.UUID.randomUUID().toString().substring(0,6).toUpperCase());
+            order.setCode(code);
+        } catch (Exception e) {
+            System.err.println("Failed to generate order code: " + e.getMessage());
+        }
+
         if (order.getItems() != null) {
             order.addItems(order.getItems());
         }
@@ -141,15 +148,16 @@ public class OrderController {
             UserDto user = authClient.getMe(token);
             OrderCreatedNotificationRequest notification = new OrderCreatedNotificationRequest();
             notification.setOrderId(savedOrder.getId().toString());
+            notification.setOrderCode(savedOrder.getCode());
             notification.setCustomerEmail(user.getEmail());
             notification.setCustomerName(user.getUsername());
             notification.setTotalAmount(BigDecimal.valueOf(totalCalculado));
             notification.setItems(notificationItems);
 
             notificationClient.notifyOrderCreated(notification);
-            System.out.println("✅ Notificación de orden creada enviada para " + user.getEmail());
+            System.out.println("  Notificación de orden creada enviada para " + user.getEmail());
         } catch (Exception e) {
-            System.err.println("❌ Error enviando notificación de orden creada: " + e.getMessage());
+            System.err.println("  Error enviando notificación de orden creada: " + e.getMessage());
             // No lanzamos excepción para no revertir la orden
         }
 
@@ -184,6 +192,53 @@ public class OrderController {
         }
 
         return ResponseEntity.ok(order);
+    }
+
+    // ---------------------------------------------------------
+    // 3.2 OBTENER SOLO EL CÓDIGO DE LA ORDEN (GET /{id}/code)
+    // Retorna { "code": "ORD-..." } o 404 si no existe
+    // Este endpoint está pensado para llamadas internas que solo necesitan el código público
+    // ---------------------------------------------------------
+    @GetMapping("/{id}/code")
+    public ResponseEntity<?> getOrderCode(@PathVariable UUID id) {
+        Order order = orderRepository.findById(id).orElse(null);
+        if (order == null) {
+            return ResponseEntity.status(404).body("Orden no encontrada");
+        }
+        java.util.Map<String, String> resp = new java.util.HashMap<>();
+        resp.put("code", order.getCode());
+        return ResponseEntity.ok(resp);
+    }
+
+    // ---------------------------------------------------------
+    // 3.1. OBTENER ITEMS DE UNA ORDEN (GET /{id}/items) - PARA ADMIN
+    // ---------------------------------------------------------
+    @GetMapping("/{id}/items")
+    public ResponseEntity<?> getOrderItems(@PathVariable UUID id, @RequestHeader("Authorization") String tokenHeader) {
+        // 1. Limpiar el token
+        String token = tokenHeader.replace("Bearer ", "");
+        
+        // 2. Obtener el rol
+        String role = jwtUtil.getRoleFromToken(token);
+        UUID userIdFromToken = jwtUtil.getUserIdFromToken(token);
+        
+        // 3. Buscar la orden
+        Order order = orderRepository.findById(id).orElse(null);
+        
+        if (order == null) {
+            return ResponseEntity.status(404).body("Orden no encontrada");
+        }
+        
+        // 4. Verificar permisos: admin puede ver cualquier orden, usuario solo las suyas
+        boolean isAdmin = "admin".equals(role) || "inventory".equals(role);
+        boolean isOwner = order.getUserId().equals(userIdFromToken);
+        
+        if (!isAdmin && !isOwner) {
+            return ResponseEntity.status(403).body("No tienes permiso para ver esta orden");
+        }
+        
+        // 5. Devolver los items
+        return ResponseEntity.ok(order.getItems());
     }
 
     // ---------------------------------------------------------
@@ -303,10 +358,10 @@ public class OrderController {
                         newStatus,
                         "El estado de tu orden ha cambiado a " + newStatus);
                 notificationClient.notifyStatusChange(notification);
-                System.out.println("✅ Notificación de cambio de estado enviada a " + recipientEmail);
+                System.out.println("  Notificación de cambio de estado enviada a " + recipientEmail);
             }
         } catch (Exception e) {
-            System.err.println("❌ Error enviando notificación de cambio de estado: " + e.getMessage());
+            System.err.println("  Error enviando notificación de cambio de estado: " + e.getMessage());
         }
 
         return ResponseEntity.ok(order);
