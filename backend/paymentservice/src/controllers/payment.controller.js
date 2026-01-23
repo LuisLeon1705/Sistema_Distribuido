@@ -35,41 +35,70 @@ exports.processPayment = async (req, res) => {
 
     // Notify Order Service: Payment Pending
     try {
-        await axios.put(
-            `http://ordersservice:8080/api/orders/${orderId}/status`,
-            { status: "PENDING" },
-            { headers: { Authorization: authToken } }
-        );
-        console.log(`Order ${orderId} status updated to PENDING`);
+      await axios.put(
+        `http://ordersservice:8080/api/orders/${orderId}/status`,
+        { status: "PENDING" },
+        { headers: { Authorization: authToken } }
+      );
+      console.log(`Order ${orderId} status updated to PENDING`);
     } catch (error) {
-        console.error(`Failed to update order ${orderId} status to PENDING:`, error.message);
+      console.error(`Failed to update order ${orderId} status to PENDING:`, error.message);
     }
 
     setTimeout(async () => {
-      const isSuccess = Math.random() > 0.2; 
-      
+      const isSuccess = Math.random() > 0.2;
+
       const finalStatus = isSuccess ? "COMPLETED" : "FAILED";
       const mockTransaction = `tx_${Math.floor(Math.random() * 1000000)}`;
 
-      await payment.update({ 
-        status: finalStatus, 
-        transactionId: mockTransaction 
+      await payment.update({
+        status: finalStatus,
+        transactionId: mockTransaction
       });
-      
+
       console.log(`Payment processed for Order ${orderId}: ${finalStatus}`);
-      
+
       // Notify Order Service: Payment Completed or Failed
       try {
-          await axios.put(
-              `http://ordersservice:8080/api/orders/${orderId}/status`,
-              { status: finalStatus },
-              { headers: { Authorization: authToken } }
-          );
-          console.log(`Order ${orderId} status updated to ${finalStatus}`);
+        await axios.put(
+          `http://ordersservice:8080/api/orders/${orderId}/status`,
+          { status: finalStatus },
+          { headers: { Authorization: authToken } }
+        );
+        console.log(`Order ${orderId} status updated to ${finalStatus}`);
       } catch (error) {
-          console.error(`Failed to update order ${orderId} status to ${finalStatus}:`, error.message);
+        console.error(`Failed to update order ${orderId} status to ${finalStatus}:`, error.message);
       }
-      
+
+      // Si el pago fue rechazado, enviar notificación de pago rechazado
+      if (finalStatus === "FAILED") {
+        try {
+          // Obtener información del usuario desde authservice
+          const userResponse = await axios.get(
+            'http://authservice:8000/api/users/me',
+            { headers: { Authorization: authToken } }
+          );
+
+          const userData = userResponse.data;
+
+          // Enviar notificación de pago rechazado
+          await axios.post(
+            'http://notificationsservice:8000/notifications/payment-rejected',
+            {
+              order_id: orderId,
+              customer_email: userData.email,
+              customer_name: userData.username,
+              amount: parseFloat(amount),
+              transaction_id: mockTransaction,
+              rejection_reason: "Fondos insuficientes o datos de tarjeta incorrectos"
+            }
+          );
+          console.log(`✅ Payment rejection notification sent for Order ${orderId}`);
+        } catch (notifError) {
+          console.error(`❌ Failed to send payment rejection notification for Order ${orderId}:`, notifError.message);
+        }
+      }
+
     }, 5000);
 
     res.status(201).json({

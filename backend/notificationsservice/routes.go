@@ -28,6 +28,7 @@ func SetupRoutes(router *gin.Engine) {
 	// Estos endpoints deben ser protegidos a nivel de red (solo accesibles desde la red interna)
 	router.POST("/notifications/order-created", NotifyOrderCreated)
 	router.POST("/notifications/status-change", NotifyStatusChange)
+	router.POST("/notifications/payment-rejected", NotifyPaymentRejected)
 
 	// Endpoint directo para crear notificaciones (sin autenticación, para microservicios)
 	router.POST("/notifications", CreateNotification)

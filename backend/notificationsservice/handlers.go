@@ -196,3 +196,63 @@ func NotifyStatusChange(c *gin.Context) {
 		"new_status":      req.NewStatus,
 	})
 }
+
+// NotifyPaymentRejected notifica un pago rechazado
+func NotifyPaymentRejected(c *gin.Context) {
+	var req PaymentRejectedRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Generar email HTML
+	emailBody := GeneratePaymentRejectedEmail(req)
+
+	// Crear metadata como JSON
+	metadata, _ := json.Marshal(map[string]interface{}{
+		"order_id":         req.OrderID,
+		"amount":           req.Amount,
+		"transaction_id":   req.TransactionID,
+		"rejection_reason": req.RejectionReason,
+	})
+
+	// Crear notificación
+	notification := &Notification{
+		ID:        uuid.New().String(),
+		Type:      "payment_rejected",
+		Recipient: req.CustomerEmail,
+		Subject:   "⚠️ Pago Rechazado - Pedido #" + req.OrderID,
+		Message:   emailBody,
+		Status:    "pending",
+		OrderID:   req.OrderID,
+		Metadata:  string(metadata),
+		CreatedAt: time.Now(),
+	}
+
+	// Guardar en base de datos
+	SaveNotification(notification)
+
+	// Enviar email de forma asíncrona
+	go func(notif *Notification) {
+		err := SendEmail(notif.Recipient, notif.Subject, notif.Message)
+		now := time.Now()
+
+		if err != nil {
+			notif.Status = "failed"
+			notif.Error = err.Error()
+			log.Printf("❌ Failed to send payment rejected notification %s: %v", notif.ID, err)
+		} else {
+			notif.Status = "sent"
+			notif.SentAt = &now
+			log.Printf("✅ Payment rejected notification %s sent successfully to %s", notif.ID, notif.Recipient)
+		}
+
+		UpdateNotification(notif)
+	}(notification)
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message":         "Payment rejected notification created and being sent",
+		"notification_id": notification.ID,
+		"order_id":        req.OrderID,
+	})
+}

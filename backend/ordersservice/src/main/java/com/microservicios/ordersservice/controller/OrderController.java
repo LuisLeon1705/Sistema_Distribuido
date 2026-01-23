@@ -28,7 +28,7 @@ import java.util.UUID;
 import java.util.ArrayList;
 
 @RestController
-@RequestMapping({"/api/orders", "/api/orders/"})
+@RequestMapping({ "/api/orders", "/api/orders/" })
 public class OrderController {
 
     @Autowired
@@ -54,7 +54,8 @@ public class OrderController {
     // ---------------------------------------------------------
     @PostMapping
     @Transactional
-    public Order createOrder(@RequestBody Order order, Authentication authentication, @RequestHeader("Authorization") String token) {
+    public Order createOrder(@RequestBody Order order, Authentication authentication,
+            @RequestHeader("Authorization") String token) {
         System.out.println(">>> Entrando a createOrder");
         UUID userId = (UUID) authentication.getPrincipal();
         order.setUserId(userId);
@@ -72,13 +73,13 @@ public class OrderController {
                 try {
                     // Validar producto y precio real (php)
                     productReal = productClient.getProductById(productIdStr);
-                    
+
                     if (productReal == null) {
                         throw new RuntimeException("El producto " + item.getProductId() + " no existe.");
                     }
                     precioReal = productReal.getPrice().doubleValue();
                     item.setPrice(precioReal);
-                    
+
                 } catch (feign.FeignException.NotFound e) {
                     throw new RuntimeException("El producto con ID " + productIdStr + " no existe en el sistema.");
                 }
@@ -89,14 +90,14 @@ public class OrderController {
                 if (stocks == null || stocks.isEmpty()) {
                     throw new RuntimeException("No hay registro de inventario para el producto " + productIdStr);
                 }
-                
+
                 StockDto stockActual = stocks.get(0);
-                
+
                 if (stockActual.getQuantity() < item.getQuantity()) {
                     String nombreProd = (productReal != null) ? productReal.getName() : "Desconocido";
-                    throw new RuntimeException("Stock insuficiente para el producto: " + nombreProd + 
-                    ". Disponible: " + stockActual.getQuantity() + 
-                    ", Solicitado: " + item.getQuantity());
+                    throw new RuntimeException("Stock insuficiente para el producto: " + nombreProd +
+                            ". Disponible: " + stockActual.getQuantity() +
+                            ", Solicitado: " + item.getQuantity());
                 }
 
                 Double subtotal = precioReal * item.getQuantity();
@@ -104,10 +105,9 @@ public class OrderController {
 
                 // Add to notification items
                 notificationItems.add(new NotificationItemDto(
-                    productReal.getName(),
-                    item.getQuantity(),
-                    BigDecimal.valueOf(precioReal)
-                ));
+                        productReal.getName(),
+                        item.getQuantity(),
+                        BigDecimal.valueOf(precioReal)));
             }
         }
 
@@ -169,7 +169,8 @@ public class OrderController {
     // 3. OBTENER UNA ORDEN POR ID (GET /{id}) - CORREGIDO UUID
     // ---------------------------------------------------------
     @GetMapping("/{id}")
-    public ResponseEntity<?> getOrderById(@PathVariable UUID id, Authentication authentication) { // <--- CAMBIO: UUID en vez de Long
+    public ResponseEntity<?> getOrderById(@PathVariable UUID id, Authentication authentication) { // <--- CAMBIO: UUID
+                                                                                                  // en vez de Long
         UUID userId = (UUID) authentication.getPrincipal();
 
         Order order = orderRepository.findById(id).orElse(null);
@@ -190,21 +191,21 @@ public class OrderController {
     // ---------------------------------------------------------
     @GetMapping("/all")
     public ResponseEntity<?> getAllOrdersAdmin(@RequestHeader("Authorization") String tokenHeader) {
-        
+
         // 1. Limpiar el token
         String token = tokenHeader.replace("Bearer ", "");
-        
+
         // 2. Obtener el rol
         String role = jwtUtil.getRoleFromToken(token);
         System.out.println("DEBUG: Intento de acceso admin. Rol detectado: " + role);
 
-        // 3. Verificar si es admin
-        if (role == null || !role.equals("admin")) {
+        // 3. Verificar si es admin o inventory
+        if (role == null || (!role.equals("admin") && !role.equals("inventory"))) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Acceso denegado. Se requiere rol de administrador.");
+                    .body("Acceso denegado. Se requiere rol de administrador o inventario.");
         }
 
-        // 4. Si es admin, devolver todo
+        // 4. Si es admin o inventory, devolver todo
         List<Order> allOrders = orderRepository.findAll();
         return ResponseEntity.ok(allOrders);
     }
@@ -215,7 +216,7 @@ public class OrderController {
             @PathVariable UUID id,
             @RequestBody OrderStatusDto statusDto,
             @RequestHeader("Authorization") String tokenHeader) {
-        
+
         String token = tokenHeader.replace("Bearer ", "");
         UUID userIdFromToken = jwtUtil.getUserIdFromToken(token);
         String role = jwtUtil.getRoleFromToken(token);
@@ -231,7 +232,7 @@ public class OrderController {
         // validar permisos
         boolean isAdmin = "admin".equals(role);
         boolean isOwner = order.getUserId().equals(userIdFromToken);
-        
+
         if (!isAdmin && !isOwner) {
             return ResponseEntity.status(403).body("No tienes permiso para modificar esta orden.");
         }
@@ -247,10 +248,10 @@ public class OrderController {
         }
 
         // si se cancela o falla el pago, devolver el stock
-        if (("CANCELADO".equals(newStatus) || "FAILED".equals(newStatus)) && 
-            !"CANCELADO".equals(order.getStatus()) && 
-            !"FAILED".equals(order.getStatus())) {
-            
+        if (("CANCELADO".equals(newStatus) || "FAILED".equals(newStatus)) &&
+                !"CANCELADO".equals(order.getStatus()) &&
+                !"FAILED".equals(order.getStatus())) {
+
             System.out.println(" ---- Orden Cancelada/Fallida, devolviendo el stock");
             if (order.getItems() != null) {
                 for (OrderItem item : order.getItems()) {
@@ -264,10 +265,12 @@ public class OrderController {
                             stockUpdate.setQuantity(nuevaCantidad);
                             stockUpdate.setWarehouseLocation(stockActual.getWarehouseLocation());
                             inventoryClient.updateStock(productIdStr, stockUpdate);
-                            System.out.println("----- Stock restaurado para " + productIdStr + ". Nuevo total: " + nuevaCantidad);
+                            System.out.println(
+                                    "----- Stock restaurado para " + productIdStr + ". Nuevo total: " + nuevaCantidad);
                         }
                     } catch (Exception e) {
-                        System.out.println("Error al restaurar el stock para el producto " + productIdStr + ": " + e.getMessage());
+                        System.out.println(
+                                "Error al restaurar el stock para el producto " + productIdStr + ": " + e.getMessage());
                     }
 
                 }
@@ -281,7 +284,7 @@ public class OrderController {
         try {
             // Obtener email del destinatario (dueño de la orden)
             String recipientEmail = null;
-            
+
             if (isAdmin) {
                 // Si es admin, obtenemos los datos del usuario dueño de la orden por su ID
                 UserDto user = authClient.getUserById(token, order.getUserId());
@@ -294,12 +297,11 @@ public class OrderController {
 
             if (recipientEmail != null) {
                 StatusChangeNotificationRequest notification = new StatusChangeNotificationRequest(
-                    order.getId().toString(),
-                    recipientEmail,
-                    oldStatus,
-                    newStatus,
-                    "El estado de tu orden ha cambiado a " + newStatus
-                );
+                        order.getId().toString(),
+                        recipientEmail,
+                        oldStatus,
+                        newStatus,
+                        "El estado de tu orden ha cambiado a " + newStatus);
                 notificationClient.notifyStatusChange(notification);
                 System.out.println("✅ Notificación de cambio de estado enviada a " + recipientEmail);
             }
