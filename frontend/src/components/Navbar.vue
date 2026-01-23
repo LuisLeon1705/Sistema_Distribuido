@@ -39,6 +39,11 @@
               </router-link>
             </li>
             <li class="nav-item" v-if="isAdmin">
+              <router-link class="nav-link" to="/admin/payments">
+                Pagos
+              </router-link>
+            </li>
+            <li class="nav-item" v-if="isAdmin">
               <router-link class="nav-link" to="/admin/users">
                 Usuarios
               </router-link>
