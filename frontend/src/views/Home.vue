@@ -1,74 +1,76 @@
 <template>
-  <div class="home">
-    <!-- Hero Section para Staff (Admin/Inventory) -->
+  <div class="home-wrapper">
     <template v-if="isStaff">
-      <div class="hero-section bg-dark text-white py-5 mb-4">
-        <div class="container text-center">
-          <h1 class="display-4 fw-bold">Panel de Administración</h1>
-          <p class="lead">Sistema de gestión para {{ getRoleDisplayName }}</p>
-          <div class="mt-4">
-            <router-link to="/admin/products" class="btn btn-primary btn-lg me-3">
-              <i class="fas fa-box me-2"></i>Gestión de Productos
+      <div class="admin-hero py-5 text-white position-relative overflow-hidden">
+        <div class="absolute-bg"></div>
+        <div class="container position-relative z-1 text-center">
+          <span class="badge bg-white text-dark bg-opacity-75 px-3 py-2 rounded-pill mb-3 fw-bold text-uppercase tracking-wider">
+            Panel de Control
+          </span>
+          <h1 class="display-4 fw-800 mb-2">Bienvenido, {{ user?.username }}</h1>
+          <p class="lead text-white-50 mb-4">Gestión centralizada para {{ getRoleDisplayName }}</p>
+          
+          <div class="d-flex justify-content-center gap-3">
+            <router-link to="/admin/products" class="btn btn-light btn-lg rounded-pill px-4 shadow-lg fw-bold text-primary">
+              <i class="fas fa-box me-2"></i>Inventario
             </router-link>
-            <router-link to="/admin/orders" class="btn btn-outline-light btn-lg">
-              <i class="fas fa-clipboard-list me-2"></i>Gestión de Órdenes
+            <router-link to="/admin/orders" class="btn btn-outline-light btn-lg rounded-pill px-4 fw-bold backdrop-blur">
+              <i class="fas fa-clipboard-list me-2"></i>Órdenes
             </router-link>
           </div>
         </div>
       </div>
 
-      <div class="container">
-        <!-- Dashboard para Staff -->
-        <div class="row mb-5">
-          <div class="col-12 text-center mb-4">
-            <h2>Acceso Rápido</h2>
-            <p class="text-muted">Herramientas de gestión del sistema</p>
-          </div>
-          
-          <div class="col-md-4 text-center mb-4">
+      <div class="container mt-n5 position-relative z-2">
+        <div class="row g-4 justify-content-center">
+          <div class="col-md-4">
             <router-link to="/admin/products" class="text-decoration-none">
-              <div class="feature-card p-4 bg-primary text-white">
-                <div class="feature-icon mb-3">
-                  <i class="fas fa-box fa-3x"></i>
+              <div class="admin-card h-100 p-4 bg-white rounded-4 shadow-sm border-0 d-flex flex-column align-items-center text-center">
+                <div class="icon-circle bg-primary-subtle text-primary mb-3">
+                  <i class="fas fa-box fa-2x"></i>
                 </div>
-                <h4>Productos</h4>
-                <p>Gestionar catálogo de productos</p>
+                <h4 class="text-dark fw-bold">Productos</h4>
+                <p class="text-muted small">Administrar catálogo, precios y stock disponible.</p>
+                <div class="mt-auto text-primary fw-bold small">Gestionar <i class="fas fa-arrow-right ms-1"></i></div>
               </div>
             </router-link>
           </div>
           
-          <div class="col-md-4 text-center mb-4">
+          <div class="col-md-4">
             <router-link to="/admin/orders" class="text-decoration-none">
-              <div class="feature-card p-4 bg-success text-white">
-                <div class="feature-icon mb-3">
-                  <i class="fas fa-clipboard-list fa-3x"></i>
+              <div class="admin-card h-100 p-4 bg-white rounded-4 shadow-sm border-0 d-flex flex-column align-items-center text-center">
+                <div class="icon-circle bg-success-subtle text-success mb-3">
+                  <i class="fas fa-clipboard-list fa-2x"></i>
                 </div>
-                <h4>Órdenes</h4>
-                <p>Gestionar pedidos del sistema</p>
+                <h4 class="text-dark fw-bold">Órdenes</h4>
+                <p class="text-muted small">Revisar pedidos entrantes y estados de envío.</p>
+                <div class="mt-auto text-success fw-bold small">Ver pedidos <i class="fas fa-arrow-right ms-1"></i></div>
               </div>
             </router-link>
           </div>
           
-          <div class="col-md-4 text-center mb-4" v-if="isAdmin">
+          <div class="col-md-4" v-if="isAdmin">
             <router-link to="/admin/users" class="text-decoration-none">
-              <div class="feature-card p-4 bg-warning text-white">
-                <div class="feature-icon mb-3">
-                  <i class="fas fa-users fa-3x"></i>
+              <div class="admin-card h-100 p-4 bg-white rounded-4 shadow-sm border-0 d-flex flex-column align-items-center text-center">
+                <div class="icon-circle bg-warning-subtle text-warning-emphasis mb-3">
+                  <i class="fas fa-users fa-2x"></i>
                 </div>
-                <h4>Usuarios</h4>
-                <p>Administrar cuentas de usuario</p>
+                <h4 class="text-dark fw-bold">Usuarios</h4>
+                <p class="text-muted small">Gestión de roles, permisos y cuentas de acceso.</p>
+                <div class="mt-auto text-warning-emphasis fw-bold small">Administrar <i class="fas fa-arrow-right ms-1"></i></div>
               </div>
             </router-link>
           </div>
-          
-          <div class="col-md-4 text-center mb-4" v-if="!isAdmin">
+
+           <div class="col-md-4" v-if="!isAdmin">
             <router-link to="/profile" class="text-decoration-none">
-              <div class="feature-card p-4 bg-info text-white">
-                <div class="feature-icon mb-3">
-                  <i class="fas fa-user fa-3x"></i>
+              <div class="admin-card h-100 p-4 bg-white rounded-4 shadow-sm border-0 d-flex flex-column align-items-center text-center">
+                <div class="icon-circle bg-info-subtle text-info-emphasis mb-3">
+                  <i class="fas fa-user-cog fa-2x"></i>
                 </div>
-                <h4>Mi Perfil</h4>
-                <p>Ver y editar mi información</p>
+                <h4 class="text-dark fw-bold">Mi Cuenta</h4>
+                <p class="text-muted small">Configuración de perfil y seguridad.</p>
+                <div class="mt-auto text-info-emphasis fw-bold small">Ver Perfil <i class="fas fa-arrow-right ms-1"></i></div>
               </div>
             </router-link>
           </div>
@@ -76,128 +78,136 @@
       </div>
     </template>
 
-    <!-- Hero Section para Customers -->
     <template v-else>
-      <div class="hero-section bg-primary text-white py-5 mb-4">
-        <div class="container text-center">
-          <h1 class="display-4 fw-bold">Bienvenido al Sistema Distribuido</h1>
-          <p class="lead">Tu tienda online con arquitectura de microservicios</p>
-          <div class="mt-4">
-            <router-link to="/products" class="btn btn-light btn-lg me-3">
-              Ver Productos
-            </router-link>
-            <router-link v-if="!isAuthenticated" to="/register" class="btn btn-outline-light btn-lg">
-              Registrarse
-            </router-link>
+      <div class="customer-hero py-5 mb-5">
+        <div class="container py-5">
+          <div class="row align-items-center">
+            <div class="col-lg-7 text-center text-lg-start">
+              <h1 class="display-3 fw-800 text-dark mb-3 tracking-tight">
+                Tecnología distribuida <br>
+                <span class="text-gradient">a tu alcance.</span>
+              </h1>
+              <p class="lead text-muted mb-4 pe-lg-5">
+                Experimenta la velocidad de una arquitectura basada en microservicios. Compra artículos de forma segura, rápida y escalable.
+              </p>
+              <div class="d-flex gap-3 justify-content-center justify-content-lg-start">
+                <router-link to="/products" class="btn btn-primary btn-lg rounded-pill px-5 shadow-primary-lg">
+                  Explorar Tienda
+                </router-link>
+                <router-link v-if="!isAuthenticated" to="/register" class="btn btn-outline-dark btn-lg rounded-pill px-4">
+                  Crear Cuenta
+                </router-link>
+              </div>
+            </div>
+            <div class="col-lg-5 d-none d-lg-block position-relative">
+              <div class="hero-shape-1"></div>
+              <div class="hero-shape-2"></div>
+              
+              <img 
+                src="/box.png" 
+                alt="Paquete de envío" 
+                class="w-90 h-90 object-fit-cover"
+                style="height: 400px; margin-left: 50px;"
+              >
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="container">
-        <!-- Features Section -->
-        <div class="row mb-5">
-          <div class="col-12 text-center mb-4">
-            <h2>Características del Sistema</h2>
-            <p class="text-muted">Sistema basado en microservicios para escalabilidad y mantenibilidad</p>
-          </div>
-          
-          <div class="col-md-4 text-center mb-4">
-            <div class="feature-card p-4">
-              <div class="feature-icon mb-3">
-                <i class="fas fa-shield-alt fa-3x text-primary"></i>
-              </div>
-              <h4>Autenticación Segura</h4>
-              <p class="text-muted">
-                Sistema de autenticación con JWT, gestión de usuarios y roles administrativos
-              </p>
+      <div class="container pb-5">
+        <div class="row g-4 mb-5">
+          <div class="col-md-4">
+            <div class="feature-box p-4 rounded-4 bg-light h-100 border border-light">
+              <i class="fas fa-shield-alt fa-2x text-primary mb-3"></i>
+              <h5 class="fw-bold">100% Seguro</h5>
+              <p class="text-muted small mb-0">Autenticación robusta vía JWT y protección de datos en cada transacción.</p>
             </div>
           </div>
-          
-          <div class="col-md-4 text-center mb-4">
-            <div class="feature-card p-4">
-              <div class="feature-icon mb-3">
-                <i class="fas fa-boxes fa-3x text-success"></i>
-              </div>
-              <h4>Gestión de Inventario</h4>
-              <p class="text-muted">
-                Control completo del inventario con seguimiento de órdenes y stock
-              </p>
+          <div class="col-md-4">
+            <div class="feature-box p-4 rounded-4 bg-light h-100 border border-light">
+              <i class="fas fa-bolt fa-2x text-warning mb-3"></i>
+              <h5 class="fw-bold">Alta Velocidad</h5>
+              <p class="text-muted small mb-0">Inventario sincronizado en tiempo real gracias a nuestra arquitectura.</p>
             </div>
           </div>
-          
-          <div class="col-md-4 text-center mb-4">
-            <div class="feature-card p-4">
-              <div class="feature-icon mb-3">
-                <i class="fas fa-shopping-cart fa-3x text-warning"></i>
-              </div>
-              <h4>Gestión de Productos</h4>
-              <p class="text-muted">
-                Catálogo completo de productos con categorías, precios y descripciones
-              </p>
+          <div class="col-md-4">
+            <div class="feature-box p-4 rounded-4 bg-light h-100 border border-light">
+              <i class="fas fa-headset fa-2x text-success mb-3"></i>
+              <h5 class="fw-bold">Soporte 24/7</h5>
+              <p class="text-muted small mb-0">Gestión de órdenes transparente y seguimiento detallado.</p>
             </div>
           </div>
         </div>
 
-        <!-- Recent Products Section -->
-        <div class="row" v-if="recentProducts.length > 0">
-          <div class="col-12 text-center mb-4">
-            <h2>Productos Destacados</h2>
+        <div v-if="recentProducts.length > 0" class="mb-5">
+          <div class="d-flex justify-content-between align-items-end mb-4">
+            <div>
+              <h2 class="fw-bold mb-1">Tendencias</h2>
+              <p class="text-muted mb-0">Lo más reciente en nuestro catálogo</p>
+            </div>
+            <router-link to="/products" class="btn btn-link text-decoration-none fw-bold">
+              Ver todo <i class="fas fa-arrow-right ms-1"></i>
+            </router-link>
           </div>
-          
-          <div class="col-md-4 mb-4" v-for="product in recentProducts" :key="product.id">
-            <div class="card h-100 shadow-sm">
-              <div class="card-img-container">
-                <img 
-                  :src="product.imagen || '/placeholder-product.jpg'" 
-                  class="card-img-top" 
-                  :alt="product.nombre"
-                  style="height: 200px; object-fit: cover;"
-                >
-              </div>
-              <div class="card-body d-flex flex-column">
-                <h5 class="card-title">{{ product.nombre }}</h5>
-                <p class="card-text flex-grow-1">{{ product.descripcion }}</p>
-                <div class="d-flex justify-content-between align-items-center mt-auto">
-                  <span class="h5 text-primary mb-0">${{ parseFloat(product.precio).toFixed(2) }}</span>
-                  <button 
-                    v-if="isAuthenticated && canUseCart" 
-                    class="btn btn-primary btn-sm"
-                    @click="addToCart(product)"
+
+          <div class="row g-4">
+            <div class="col-md-4" v-for="product in recentProducts" :key="product.id">
+              <div class="product-card card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-img-wrapper position-relative">
+                  <img 
+                    :src="product.imagen || '/placeholder-product.jpg'" 
+                    class="card-img-top" 
+                    :alt="product.nombre"
                   >
-                    Agregar
-                  </button>
+                  <span class="badge bg-dark position-absolute top-0 start-0 m-3 rounded-pill">Nuevo</span>
+                </div>
+                <div class="card-body p-4 d-flex flex-column">
+                  <h5 class="card-title fw-bold mb-1">{{ product.nombre }}</h5>
+                  <p class="card-text text-muted small flex-grow-1 line-clamp-2">{{ product.descripcion }}</p>
+                  
+                  <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                    <span class="h5 fw-800 text-dark mb-0">${{ parseFloat(product.precio).toFixed(2) }}</span>
+                    <button 
+                      v-if="isAuthenticated && canUseCart" 
+                      class="btn btn-primary btn-sm rounded-pill px-3 fw-bold btn-hover-effect"
+                      @click="addToCart(product)"
+                    >
+                      <i class="fas fa-plus me-1"></i> Agregar
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          
-          <div class="col-12 text-center mt-3">
-            <router-link to="/products" class="btn btn-outline-primary">
-              Ver Todos los Productos
-            </router-link>
+        </div>
+
+        <div v-if="isAuthenticated && canUseCart" class="user-dashboard-section p-4 p-md-5 rounded-5 bg-dark text-white position-relative overflow-hidden">
+          <div class="position-relative z-1">
+            <div class="text-center mb-5">
+              <h3 class="fw-bold">Tu Actividad</h3>
+              <p class="text-white-50">Resumen de tu cuenta</p>
+            </div>
+            
+            <div class="row g-4 justify-content-center">
+              <div class="col-md-5">
+                <div class="stat-card p-4 rounded-4 bg-white bg-opacity-10 backdrop-blur text-center border border-white border-opacity-10">
+                  <div class="display-4 fw-bold text-primary mb-2">{{ cartItemsCount }}</div>
+                  <div class="text-white fw-medium">Artículos en Carrito</div>
+                  <router-link to="/cart" class="btn btn-sm btn-outline-light rounded-pill mt-3 px-4">Ir al Carrito</router-link>
+                </div>
+              </div>
+              
+              <div class="col-md-5">
+                <div class="stat-card p-4 rounded-4 bg-white bg-opacity-10 backdrop-blur text-center border border-white border-opacity-10">
+                  <div class="display-4 fw-bold text-success mb-2">{{ userOrdersCount }}</div>
+                  <div class="text-white fw-medium">Órdenes Completadas</div>
+                  <router-link to="/orders" class="btn btn-sm btn-outline-light rounded-pill mt-3 px-4">Ver Historial</router-link>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Stats Section (only for authenticated customers) -->
-        <div v-if="isAuthenticated && canUseCart" class="row mt-5 mb-4">
-          <div class="col-12 text-center mb-4">
-            <h3>Mi Dashboard</h3>
-          </div>
-          
-          <div class="col-md-6 text-center mb-3">
-            <div class="dashboard-card p-4 bg-light rounded">
-              <h4 class="text-primary">{{ cartItemsCount }}</h4>
-              <p class="mb-0">Artículos en Carrito</p>
-            </div>
-          </div>
-          
-          <div class="col-md-6 text-center mb-3">
-            <div class="dashboard-card p-4 bg-light rounded">
-              <h4 class="text-success">{{ userOrdersCount }}</h4>
-              <p class="mb-0">Órdenes Realizadas</p>
-            </div>
-          </div>
-        </div>
       </div>
     </template>
   </div>
@@ -227,32 +237,24 @@ export default {
     const getRoleDisplayName = computed(() => {
       const role = authStore.userRole
       switch(role) {
-        case 'admin':
-          return 'Administrador'
-        case 'inventory':
-          return 'Gestor de Inventario'
-        case 'customer':
-        default:
-          return 'Cliente'
+        case 'admin': return 'Administrador'
+        case 'inventory': return 'Gestor de Inventario'
+        case 'customer': default: return 'Cliente'
       }
     })
     
     const fetchRecentProducts = async () => {
-      // Solo cargar productos si no es staff
       if (authStore.isStaff) return
-      
       try {
         const products = await api.getActiveProducts()
-        recentProducts.value = products.slice(0, 3) // Show only first 3 products
+        recentProducts.value = products.slice(0, 3) 
       } catch (error) {
         console.error('Error fetching products:', error)
       }
     }
     
     const fetchUserStats = async () => {
-      // Solo cargar stats si es customer autenticado
       if (!isAuthenticated.value || !authStore.canUseCart) return
-      
       try {
         const orders = await api.getOrders()
         userOrdersCount.value = orders.length
@@ -281,66 +283,167 @@ export default {
       userOrdersCount,
       recentProducts,
       getRoleDisplayName,
-      addToCart
+      addToCart,
+      user: computed(() => authStore.user)
     }
   }
 }
 </script>
 
 <style scoped>
-.hero-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.fw-800 { 
+  font-weight: 800; 
 }
 
-.hero-section.bg-dark {
-  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+.tracking-tight { 
+  letter-spacing: -1px; 
 }
 
-.feature-card {
+.tracking-wider { 
+  letter-spacing: 1px; 
+}
+
+.backdrop-blur { 
+  backdrop-filter: blur(10px); 
+}
+
+.admin-hero {
+  background-color: #0f172a;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.absolute-bg {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at top right, #3b82f6 0%, transparent 40%),
+              radial-gradient(circle at bottom left, #06b6d4 0%, transparent 40%);
+  opacity: 0.2;
+}
+
+.admin-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.icon-circle {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.shadow-primary-lg {
+  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+}
+
+.hero-shape-1 {
+  position: absolute;
+  width: 300px; height: 300px;
+  background: #3b82f6;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.1;
+  top: -50px; right: 0;
+}
+
+.hero-shape-2 {
+  position: absolute;
+  width: 250px; height: 250px;
+  background: #10b981;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.1;
+  bottom: 0; left: 0;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  transform: rotate(-3deg);
+  transition: transform 0.5s ease;
+}
+
+.rotate-card:hover {
+  transform: rotate(0deg) scale(1.02);
+  transition: transform 0.5s ease;
+}
+
+.feature-box {
   transition: transform 0.3s ease;
-  border-radius: 10px;
-  background: #f8f9fa;
 }
 
-.feature-card:hover {
+.feature-box:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  background: #fff !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
 }
 
-.feature-card.bg-primary:hover,
-.feature-card.bg-success:hover,
-.feature-card.bg-warning:hover,
-.feature-card.bg-info:hover {
-  opacity: 0.9;
-}
-
-.dashboard-card {
+.product-card {
   transition: all 0.3s ease;
 }
 
-.dashboard-card:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1) !important;
 }
 
-.card {
-  transition: transform 0.3s ease;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-}
-
-.card-img-container {
+.card-img-wrapper {
+  height: 240px;
   overflow: hidden;
-  border-radius: 0.375rem 0.375rem 0 0;
 }
 
 .card-img-top {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.product-card:hover .card-img-top {
+  transform: scale(1.1);
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.btn-hover-effect {
+  transition: transform 0.2s;
+}
+
+.btn-hover-effect:active {
+  transform: scale(0.95);
+}
+
+.user-dashboard-section {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+.stat-card {
   transition: transform 0.3s ease;
 }
 
-.card:hover .card-img-top {
-  transform: scale(1.1);
+.stat-card:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.15);
 }
 </style>
