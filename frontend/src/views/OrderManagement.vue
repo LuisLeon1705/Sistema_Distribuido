@@ -8,9 +8,6 @@
           <p class="text-muted small mb-0">Administra y monitorea las transacciones del sistema</p>
         </div>
         <div class="d-flex gap-2">
-          <!-- <button class="btn btn-outline-dark btn-sm rounded-pill px-3" @click="handleSeedStock" title="Generar Stock Inicial">
-             <i class="fas fa-database me-2"></i>Seed Stock
-          </button> -->
           <button class="btn btn-dark btn-sm rounded-pill px-4 shadow-sm" @click="refreshOrders">
             <i class="fas fa-sync-alt me-2" :class="{ 'fa-spin': isLoading }"></i>
             Actualizar
@@ -115,7 +112,7 @@
             <table class="table table-hover align-middle mb-0">
               <thead class="bg-light">
                 <tr>
-                  <th class="ps-4 py-3 text-muted small text-uppercase fw-bold border-0">ID</th>
+                  <th class="ps-4 py-3 text-muted small text-uppercase fw-bold border-0">Código</th>
                   <th class="py-3 text-muted small text-uppercase fw-bold border-0">Usuario</th>
                   <th class="py-3 text-muted small text-uppercase fw-bold border-0">Fecha</th>
                   <th class="py-3 text-muted small text-uppercase fw-bold border-0">Total</th>
@@ -124,8 +121,8 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="order in paginatedOrders" :key="order.id" class="cursor-pointer" @click="viewOrderDetails(order)">
-                  <td class="ps-4 fw-bold text-dark">#{{ order.id }}</td>
+                <tr v-for="order in paginatedOrders" :key="order.id" class="cursor-pointer" @click="viewOrderDetails(order.id)">
+                    <td class="ps-4 fw-bold text-dark">{{ order.code || order.id }}</td>
                   <td>
                     <div class="d-flex align-items-center">
                       <div class="avatar-sm bg-secondary bg-opacity-10 text-secondary rounded-circle me-2 d-flex align-items-center justify-content-center fw-bold" style="width: 30px; height: 30px; font-size: 0.8rem;">
@@ -142,7 +139,7 @@
                     </span>
                   </td>
                   <td class="pe-4 text-end">
-                    <button class="btn btn-light btn-sm rounded-circle text-muted hover-bg-gray" @click.stop="viewOrderDetails(order)">
+                    <button class="btn btn-light btn-sm rounded-circle text-muted hover-bg-gray" @click.stop="viewOrderDetails(order.id)">
                       <i class="fas fa-chevron-right"></i>
                     </button>
                   </td>
@@ -190,16 +187,17 @@
     
     <div class="modal fade" id="orderDetailsModal" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" v-if="selectedOrder">
-          <div class="modal-header border-bottom bg-light px-4 py-3">
-            <div>
-              <h5 class="modal-title fw-bold text-dark">Orden #{{ selectedOrder.id }}</h5>
-              <small class="text-muted">{{ formatDate(selectedOrder.createdAt) }}</small>
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" v-show="selectedOrder">
+          <div v-if="selectedOrder">
+            <div class="modal-header border-bottom bg-light px-4 py-3">
+              <div>
+                <h5 class="modal-title fw-bold text-dark">Orden {{ selectedOrder.code || selectedOrder.id }}</h5>
+                <small class="text-muted">{{ formatDate(selectedOrder.createdAt) }}</small>
+              </div>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          
-          <div class="modal-body p-4">
+            
+            <div class="modal-body p-4">
             <div class="row g-4 mb-4">
               <div class="col-md-6">
                 <div class="p-3 bg-light rounded-3 h-100">
@@ -209,8 +207,7 @@
                         {{ getUsername(selectedOrder.userId).charAt(0).toUpperCase() }}
                      </div>
                      <div>
-                        <p class="mb-0 fw-bold text-dark">{{ getUsername(selectedOrder.userId) }}</p>
-                        <small class="text-muted">ID: {{ selectedOrder.userId }}</small>
+                       <span class="fw-bold text-dark d-block">{{ getUsername(selectedOrder.userId) }}</span>
                      </div>
                   </div>
                 </div>
@@ -246,41 +243,60 @@
             <div v-if="isFetchingDetails" class="text-center py-3">
               <div class="spinner-border spinner-border-sm text-primary"></div>
             </div>
-            <div v-else class="table-responsive border rounded-3 overflow-hidden">
-               <table class="table table-borderless mb-0">
-                  <thead class="bg-light border-bottom">
-                     <tr>
-                        <th class="text-muted small fw-bold ps-3">Producto</th>
-                        <th class="text-muted small fw-bold text-center">Cant.</th>
-                        <th class="text-muted small fw-bold text-end pe-3">Subtotal</th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     <tr v-for="item in selectedOrderItems" :key="item.id" class="border-bottom-dashed">
-                        <td class="ps-3">
-                           <span class="fw-bold text-dark d-block">{{ item.productName }}</span>
-                           <small class="text-muted">${{ parseFloat(item.price).toFixed(2) }} / unidad</small>
-                        </td>
-                        <td class="text-center align-middle">{{ item.quantity }}</td>
-                        <td class="text-end pe-3 align-middle fw-bold text-dark">
-                           ${{ (item.quantity * parseFloat(item.price)).toFixed(2) }}
-                        </td>
-                     </tr>
-                  </tbody>
-                  <tfoot class="bg-light">
-                     <tr>
-                        <td colspan="2" class="text-end fw-bold text-dark pt-3">Total General</td>
-                        <td class="text-end fw-bold text-primary fs-5 pe-3 pt-3">
-                           ${{ parseFloat(selectedOrder.total).toFixed(2) }}
-                        </td>
-                     </tr>
-                  </tfoot>
-               </table>
+            <div v-else>
+               <div class="table-responsive border rounded-3 overflow-hidden">
+                  <table class="table table-borderless mb-0">
+                     <thead class="bg-light border-bottom">
+                        <tr>
+                           <th class="text-muted small fw-bold ps-3">Producto</th>
+                           <th class="text-muted small fw-bold text-center">Cant.</th>
+                           <th class="text-muted small fw-bold text-end pe-3">Subtotal</th>
+                        </tr>
+                     </thead>
+                     <tbody>
+                        <tr v-if="selectedOrderItemsWithDetails.length === 0">
+                           <td colspan="3" class="text-center py-4 text-muted">
+                              <small>No se encontraron productos para esta orden</small>
+                           </td>
+                        </tr>
+                        <tr v-for="item in selectedOrderItemsWithDetails" :key="item.id" class="border-bottom-dashed">
+                           <td class="ps-3 py-3">
+                              <div class="d-flex align-items-center">
+                                 <img :src="item.productImage || '/placeholder-product.jpg'" class="rounded border bg-white me-3" style="width: 48px; height: 48px; object-fit: cover;">
+                                 <div>
+                                    <span class="fw-bold text-dark d-block">{{ item.productName }}</span>
+                                    <small class="text-muted">${{ parseFloat(item.price).toFixed(2) }} unitario</small>
+                                 </div>
+                              </div>
+                           </td>
+                           <td class="text-center align-middle">{{ item.quantity }}</td>
+                           <td class="text-end align-middle pe-3 fw-bold text-dark">${{ (item.quantity * parseFloat(item.price)).toFixed(2) }}</td>
+                        </tr>
+                     </tbody>
+                     <tfoot class="bg-light">
+                        <tr>
+                           <td colspan="2" class="text-end fw-bold text-dark pt-3">Total General</td>
+                           <td class="text-end fw-bold text-primary fs-5 pe-3 pt-3">
+                              ${{ parseFloat(selectedOrder.total).toFixed(2) }}
+                           </td>
+                        </tr>
+                     </tfoot>
+                  </table>
+               </div>
             </div>
 
-          </div>
-          <div class="modal-footer border-0 bg-light px-4 py-3">
-            <button type="button" class="btn btn-outline-dark rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+            <div class="mt-4">
+              <h6 class="fw-bold text-dark mb-2">Dirección de Envío</h6>
+              <div class="p-3 bg-light rounded-3">
+                <div class="mb-1"><small class="text-muted">Dirección:</small> <span class="fw-bold">{{ selectedOrder.shippingAddress || 'No disponible' }}</span></div>
+                <div class="mb-1"><small class="text-muted">Ciudad:</small> <span class="fw-bold">{{ selectedOrder.shippingCity || 'No disponible' }}</span></div>
+                <div class="mb-1"><small class="text-muted">Código Postal:</small> <span class="fw-bold">{{ selectedOrder.shippingPostal || 'No disponible' }}</span></div>
+              </div>
+            </div>
+            <div class="modal-footer border-0 bg-light px-4 py-3">
+              <button type="button" class="btn btn-outline-dark rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+            </div>
           </div>
         </div>
       </div>
@@ -300,11 +316,12 @@ export default {
     const usersCache = ref({})
     const selectedOrder = ref(null)
     const selectedOrderItems = ref([])
+    const selectedOrderItemsWithDetails = ref([])
     const isLoading = ref(false)
     const isFetchingDetails = ref(false)
     const isSaving = ref(false)
     const error = ref(null)
-    let modalInstance = null;
+    let orderDetailsModalInstance = null;
 
     const filters = reactive({ status: '', date: '', search: '' });
     const selectedOrderForm = reactive({ status: '' });
@@ -316,7 +333,11 @@ export default {
       return orders.value
         .filter(order => {
           const statusMatch = !filters.status || order.status === filters.status;
-          const dateMatch = !filters.date || new Date(order.createdAt).toDateString() === new Date(filters.date).toDateString();
+          const toLocalYMD = (d) => {
+            const dt = new Date(d)
+            return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`
+          }
+          const dateMatch = !filters.date || toLocalYMD(order.createdAt) === filters.date
           const searchMatch = !filters.search || 
             order.id.toString().includes(filters.search) || 
             getUsername(order.userId).toLowerCase().includes(filters.search.toLowerCase());
@@ -326,7 +347,7 @@ export default {
     });
     
     const totalPages = computed(() => Math.ceil(filteredOrders.value.length / itemsPerPage.value));
-    
+
     const paginatedOrders = computed(() => {
       const start = (currentPage.value - 1) * itemsPerPage.value;
       const end = start + itemsPerPage.value;
@@ -347,7 +368,7 @@ export default {
       error.value = null
       try {
         const ordersData = await api.getAllOrders();
-        orders.value = ordersData;
+        orders.value = (ordersData || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
         const userIds = [...new Set(ordersData.map(o => o.userId))].filter(id => !usersCache.value[id]);
         if (userIds.length > 0) {
@@ -373,7 +394,12 @@ export default {
     }
 
     const refreshOrders = () => fetchOrders();
-    const getOrdersByStatus = (status) => orders.value.filter(order => order.status === status);
+    const getOrdersByStatus = (status) => {
+      if (status === 'CANCELADO') {
+        return orders.value.filter(order => order.status === 'CANCELADO' || order.status === 'FAILED')
+      }
+      return orders.value.filter(order => order.status === status)
+    };
     
     const statusMap = { 
       CREADO: 'Creado',
@@ -381,7 +407,7 @@ export default {
       COMPLETED: 'Pagado', 
       PAGADO: 'Pagado',
       CANCELADO: 'Cancelada',
-      FAILED: 'Fallido'
+      FAILED: 'Cancelada'
     };
     const getStatusText = (status) => statusMap[status] || status;
 
@@ -392,30 +418,78 @@ export default {
       'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25': status === 'CANCELADO' || status === 'FAILED',
     });
     
-    const formatDate = (dateString) => new Date(dateString).toLocaleDateString('es-ES', { 
-        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
-    });
+    const formatDate = (dateString) => {
+      const date = new Date(dateString);
+      const time = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+      return time.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
     
-    const viewOrderDetails = async (order) => {
-      selectedOrder.value = order;
-      selectedOrderForm.status = order.status;
-      modalInstance?.show();
+    const viewOrderDetails = async (orderId) => {
+      selectedOrder.value = orders.value.find(o => o.id === orderId) || null;
+      if (!selectedOrder.value) return;
+
+      if (orderDetailsModalInstance) orderDetailsModalInstance.show();
       
       isFetchingDetails.value = true;
-      selectedOrderItems.value = [];
+      selectedOrderItemsWithDetails.value = [];
       try {
-        const items = await api.getOrderItems(order.id);
-        selectedOrderItems.value = await Promise.all(items.map(async item => {
-          try {
-             const product = await api.getProductById(item.productId);
-             return { ...item, productName: product.nombre };
-          } catch {
-             return { ...item, productName: `Producto #${item.productId}` };
-          }
+        console.log('Fetching items for order:', orderId);
+        const response = await api.getOrderItems(orderId);
+        console.log('Raw API response:', response);
+        
+        let items = response;
+        
+        if (!items && response.data) {
+          items = response.data.items || response.data;
+        }
+        
+        console.log('Items extracted:', items);
+        
+        if (!items || items.length === 0) {
+          console.log('No items found for order:', orderId);
+          return;
+        }
+        
+        selectedOrderItemsWithDetails.value = await Promise.all(items.map(async (item) => {
+            try {
+               console.log('Fetching product for ID:', item.productId);
+               const product = await api.getProductById(item.productId);
+               console.log('Product data:', product);
+               return { ...item, productName: product.nombre, productImage: product.imagen };
+            } catch (productError) {
+               console.error('Error fetching product:', item.productId, productError);
+               return { ...item, productName: `Producto #${item.productId}`, productImage: null };
+            }
         }));
-      } catch (err) { console.error(err) } 
+        console.log('Final items with details:', selectedOrderItemsWithDetails.value);
+      } catch(err) { 
+        console.error('Error fetching order items:', err); 
+        
+        if (err.response?.status === 404 || err.response?.status === 403) {
+          console.log('Trying fallback method...');
+          try {
+            const orderResponse = await api.getOrderById(orderId);
+            const items = orderResponse.items || orderResponse.data?.items || [];
+            console.log('Fallback items:', items);
+            
+            selectedOrderItemsWithDetails.value = await Promise.all(items.map(async (item) => {
+                try {
+                   const product = await api.getProductById(item.productId);
+                   return { ...item, productName: product.nombre, productImage: product.imagen };
+                } catch {
+                   return { ...item, productName: `Producto #${item.productId}`, productImage: null };
+                }
+            }));
+          } catch(fallbackErr) {
+            console.error('Fallback also failed:', fallbackErr);
+            alert('No se pueden cargar los detalles de esta orden');
+          }
+        } else {
+          alert('Error al cargar los detalles de la orden');
+        }
+      } 
       finally { isFetchingDetails.value = false; }
-    };
+    }
     
     const saveOrderChanges = async () => {
       if (!selectedOrder.value || selectedOrder.value.status === selectedOrderForm.status) return;
@@ -425,7 +499,7 @@ export default {
         try {
           await api.updateOrderStatus(selectedOrder.value.id, selectedOrderForm.status)
           await fetchOrders();
-          modalInstance?.hide();
+          orderDetailsModalInstance?.hide();
         } catch (err) {
           console.error(err)
           alert('Error al actualizar estado')
@@ -446,7 +520,7 @@ export default {
       fetchOrders();
       const modalElement = document.getElementById('orderDetailsModal');
       if (modalElement) {
-        modalInstance = new bootstrap.Modal(modalElement);
+        orderDetailsModalInstance = new bootstrap.Modal(modalElement);
         modalElement.addEventListener('hidden.bs.modal', () => {
           selectedOrder.value = null;
         });
@@ -454,7 +528,7 @@ export default {
     });
     
     return {
-      orders, selectedOrder, selectedOrderForm, selectedOrderItems, filteredOrders, paginatedOrders,
+      orders, selectedOrder, selectedOrderForm, selectedOrderItems, selectedOrderItemsWithDetails, filteredOrders, paginatedOrders,
       isLoading, isFetchingDetails, isSaving, error, filters, currentPage, itemsPerPage, totalPages,
       refreshOrders, getOrdersByStatus, getStatusText, statusBadgeClass, formatDate, getUsername,
       viewOrderDetails, saveOrderChanges, applyFilters, clearFilters, handleSeedStock, goToPage
@@ -505,5 +579,11 @@ export default {
 
 .border-bottom-dashed {
     border-bottom: 1px dashed #e2e8f0;
+}
+
+.order-management-page .table.table-hover.align-middle tbody tr td,
+.order-management-page .table.table-hover.align-middle tbody tr th {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 </style>
