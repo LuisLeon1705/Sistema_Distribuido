@@ -1,135 +1,54 @@
 <template>
-  <div class="container">
-    <div class="row justify-content-center">
-      <div class="col-md-8 col-lg-6">
-        <div class="card shadow">
-          <div class="card-header text-center">
-            <h4>Crear Cuenta</h4>
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="text-center mb-4">
+        <h4 class="fw-bold text-dark">Crea tu Cuenta</h4>
+        <p class="text-muted small">Únete a WeCommerce</p>
+      </div>
+
+      <form @submit.prevent="handleRegister">
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <input type="text" class="form-control form-control-sm" placeholder="Usuario" v-model="userData.username" required>
           </div>
-          <div class="card-body">
-            <form @submit.prevent="handleRegister">
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label for="username" class="form-label">Usuario</label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="username"
-                      v-model="userData.username"
-                      :class="{ 'is-invalid': errors.username }"
-                      required
-                    >
-                    <div v-if="errors.username" class="invalid-feedback">
-                      {{ errors.username }}
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input
-                      type="email"
-                      class="form-control"
-                      id="email"
-                      v-model="userData.email"
-                      :class="{ 'is-invalid': errors.email }"
-                      required
-                    >
-                    <div v-if="errors.email" class="invalid-feedback">
-                      {{ errors.email }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="mb-3">
-                <label for="phone_number" class="form-label">Teléfono</label>
-                <input
-                  type="tel"
-                  class="form-control"
-                  id="phone_number"
-                  v-model="userData.phone_number"
-                  :class="{ 'is-invalid': errors.phone_number }"
-                  required
-                >
-                <div v-if="errors.phone_number" class="invalid-feedback">
-                  {{ errors.phone_number }}
-                </div>
-              </div>
-              
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label for="password" class="form-label">Contraseña</label>
-                    <input
-                      type="password"
-                      class="form-control"
-                      id="password"
-                      v-model="userData.password"
-                      :class="{ 'is-invalid': errors.password }"
-                      required
-                    >
-                    <div v-if="errors.password" class="invalid-feedback">
-                      {{ errors.password }}
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label for="confirmPassword" class="form-label">Confirmar Contraseña</label>
-                    <input
-                      type="password"
-                      class="form-control"
-                      id="confirmPassword"
-                      v-model="confirmPassword"
-                      :class="{ 'is-invalid': errors.confirmPassword }"
-                      required
-                    >
-                    <div v-if="errors.confirmPassword" class="invalid-feedback">
-                      {{ errors.confirmPassword }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div v-if="authStore.error" class="alert alert-danger">
-                {{ authStore.error[0]["msg"] }}
-              </div>
-              
-              <div v-if="successMessage" class="alert alert-success">
-                {{ successMessage }}
-              </div>
-              
-              <button 
-                type="submit" 
-                class="btn btn-primary w-100"
-                :disabled="authStore.isLoading"
-              >
-                <span v-if="authStore.isLoading" class="spinner-border spinner-border-sm me-2"></span>
-                {{ authStore.isLoading ? 'Registrando...' : 'Registrarse' }}
-              </button>
-              
-              <div class="text-center mt-3">
-                <p class="mb-0">
-                  ¿Ya tienes cuenta? 
-                  <router-link to="/login" class="text-decoration-none">
-                    Inicia sesión aquí
-                  </router-link>
-                </p>
-              </div>
-            </form>
+          <div class="col-6">
+            <input type="tel" class="form-control form-control-sm" placeholder="Teléfono" v-model="userData.phone_number" required>
           </div>
         </div>
-      </div>
+
+        <div class="mb-3">
+          <input type="email" class="form-control form-control-sm" placeholder="Correo electrónico" v-model="userData.email" required>
+        </div>
+
+        <div class="row g-2 mb-4">
+          <div class="col-6">
+            <input type="password" class="form-control form-control-sm" placeholder="Contraseña" v-model="userData.password" required>
+          </div>
+          <div class="col-6">
+            <input type="password" class="form-control form-control-sm" placeholder="Confirmar" v-model="confirmPassword" required>
+          </div>
+        </div>
+
+        <div v-if="hasErrors" class="alert alert-danger py-1 px-2 mb-3 small text-center border-0 bg-danger bg-opacity-10 text-danger">
+          {{ errorMessage }}
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 fw-bold py-2 mb-3" :disabled="authStore.isLoading">
+          {{ authStore.isLoading ? '...' : 'Registrarse' }}
+        </button>
+
+        <div class="text-center border-top pt-3">
+          <router-link to="/login" class="text-decoration-none small text-muted">
+            ¿Ya tienes cuenta en WeCommerce? <span class="text-dark fw-bold">Inicia Sesión</span>
+          </router-link>
+        </div>
+      </form>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, reactive, onUnmounted } from 'vue'
+import { ref, reactive, computed, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
@@ -138,106 +57,51 @@ export default {
   setup() {
     const router = useRouter()
     const authStore = useAuthStore()
-    
-    const userData = reactive({
-      username: '',
-      email: '',
-      phone_number: '',
-      password: ''
-    })
-    
+    const userData = reactive({ username: '', email: '', phone_number: '', password: '' })
     const confirmPassword = ref('')
-    const errors = ref({})
-    const successMessage = ref('')
-    
-    const validateForm = () => {
-      errors.value = {}
-      
-      if (!userData.username) {
-        errors.value.username = 'El usuario es requerido'
-      } else if (userData.username.length < 3) {
-        errors.value.username = 'El usuario debe tener al menos 3 caracteres'
-      }
-      
-      if (!userData.email) {
-        errors.value.email = 'El email es requerido'
-      } else if (!/\S+@\S+\.\S+/.test(userData.email)) {
-        errors.value.email = 'El email no es válido'
-      }
-      
-      if (!userData.phone_number) {
-        errors.value.phone_number = 'El teléfono es requerido'
-      } else if (!/^\+?[\d\s\-\(\)]+$/.test(userData.phone_number)) {
-        errors.value.phone_number = 'El teléfono no es válido'
-      }
-      
-      if (!userData.password) {
-        errors.value.password = 'La contraseña es requerida'
-      } else if (userData.password.length < 6) {
-        errors.value.password = 'La contraseña debe tener al menos 6 caracteres'
-      }
-      
-      if (!confirmPassword.value) {
-        errors.value.confirmPassword = 'Confirma tu contraseña'
-      } else if (userData.password !== confirmPassword.value) {
-        errors.value.confirmPassword = 'Las contraseñas no coinciden'
-      }
-      
-      return Object.keys(errors.value).length === 0
-    }
-    
+    const localError = ref('')
+    const errorMessage = computed(() => localError.value || (authStore.error ? 'Error en registro' : ''))
+    const hasErrors = computed(() => !!errorMessage.value)
     const handleRegister = async () => {
-      if (!validateForm()) return
-      
-      try {
-        await authStore.register(userData)
-        successMessage.value = 'Cuenta creada exitosamente. Hemos enviado un código de verificación a tu correo.'
-        
-        setTimeout(() => {
-          router.push({
-            name: 'EmailVerification',
-            query: { email: userData.email }
-          })
-        }, 2000)
-      } catch (error) {
-        console.error('Registration error:', error)
-      }
+      localError.value = ''
+      if (userData.password !== confirmPassword.value) { localError.value = 'Contraseñas no coinciden'; return }
+      try { await authStore.register(userData); router.push({ name: 'EmailVerification', query: { email: userData.email } }) } catch (e) {}
     }
-    
-    onUnmounted(() => {
-      authStore.clearError()
-    })
-    
-    return {
-      userData,
-      confirmPassword,
-      errors,
-      successMessage,
-      authStore,
-      handleRegister
-    }
+    onUnmounted(() => authStore.clearError())
+    return { userData, confirmPassword, authStore, handleRegister, hasErrors, errorMessage }
   }
 }
 </script>
 
 <style scoped>
-.card {
-  border: none;
-  border-radius: 10px;
+.auth-page {
+  background-color: #ffffff;
+  min-height: calc(100vh - 76px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
 }
 
-.card-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 10px 10px 0 0 !important;
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 2.5rem;
+  background: #ffffff;
+  box-shadow: 0 20px 50px -12px rgba(0,0,0,0.1);
+  border: 1px solid #f1f5f9;
+  border-radius: 1.5rem;
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
+.form-control {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #334155;
 }
 
-.btn-primary:hover {
-  background: linear-gradient(135deg, #5a67c7 0%, #684a8f 100%);
+.form-control:focus {
+  background-color: #fff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 </style>
