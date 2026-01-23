@@ -11,6 +11,10 @@ const Payment = sequelize.define("Payment", {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+  },
   amount: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
@@ -25,6 +29,20 @@ const Payment = sequelize.define("Payment", {
   },
   transactionId: {
     type: DataTypes.STRING,
+  },
+  code: {
+    type: DataTypes.STRING,
+    unique: true,
+  }
+  ,method: {
+    type: DataTypes.STRING,
+  },
+  reference: {
+    type: DataTypes.STRING,
+  },
+  metadata: {
+    type: DataTypes.JSONB,
+    allowNull: true,
   }
 });
 
