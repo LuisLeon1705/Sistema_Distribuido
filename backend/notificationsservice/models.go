@@ -32,6 +32,7 @@ type CreateNotificationRequest struct {
 // OrderCreatedRequest representa la notificación de creación de pedido
 type OrderCreatedRequest struct {
 	OrderID       string      `json:"order_id" binding:"required"`
+	OrderCode     string      `json:"code,omitempty"`
 	CustomerEmail string      `json:"customer_email" binding:"required,email"`
 	CustomerName  string      `json:"customer_name" binding:"required"`
 	TotalAmount   float64     `json:"total_amount" binding:"required"`

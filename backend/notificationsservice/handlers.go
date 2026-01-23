@@ -42,11 +42,11 @@ func CreateNotification(c *gin.Context) {
 		if err != nil {
 			notif.Status = "failed"
 			notif.Error = err.Error()
-			log.Printf("❌ Failed to send notification %s: %v", notif.ID, err)
+			log.Printf("  Failed to send notification %s: %v", notif.ID, err)
 		} else {
 			notif.Status = "sent"
 			notif.SentAt = &now
-			log.Printf("✅ Notification %s sent successfully", notif.ID)
+			log.Printf("  Notification %s sent successfully", notif.ID)
 		}
 
 		UpdateNotification(notif)
@@ -120,11 +120,11 @@ func NotifyOrderCreated(c *gin.Context) {
 		if err != nil {
 			notif.Status = "failed"
 			notif.Error = err.Error()
-			log.Printf("❌ Failed to send order notification %s: %v", notif.ID, err)
+			log.Printf("  Failed to send order notification %s: %v", notif.ID, err)
 		} else {
 			notif.Status = "sent"
 			notif.SentAt = &now
-			log.Printf("✅ Order notification %s sent successfully to %s", notif.ID, notif.Recipient)
+			log.Printf("  Order notification %s sent successfully to %s", notif.ID, notif.Recipient)
 		}
 
 		UpdateNotification(notif)
@@ -179,11 +179,11 @@ func NotifyStatusChange(c *gin.Context) {
 		if err != nil {
 			notif.Status = "failed"
 			notif.Error = err.Error()
-			log.Printf("❌ Failed to send status change notification %s: %v", notif.ID, err)
+			log.Printf("  Failed to send status change notification %s: %v", notif.ID, err)
 		} else {
 			notif.Status = "sent"
 			notif.SentAt = &now
-			log.Printf("✅ Status change notification %s sent successfully to %s", notif.ID, notif.Recipient)
+			log.Printf("  Status change notification %s sent successfully to %s", notif.ID, notif.Recipient)
 		}
 
 		UpdateNotification(notif)
@@ -240,11 +240,11 @@ func NotifyPaymentRejected(c *gin.Context) {
 		if err != nil {
 			notif.Status = "failed"
 			notif.Error = err.Error()
-			log.Printf("❌ Failed to send payment rejected notification %s: %v", notif.ID, err)
+			log.Printf("  Failed to send payment rejected notification %s: %v", notif.ID, err)
 		} else {
 			notif.Status = "sent"
 			notif.SentAt = &now
-			log.Printf("✅ Payment rejected notification %s sent successfully to %s", notif.ID, notif.Recipient)
+			log.Printf("  Payment rejected notification %s sent successfully to %s", notif.ID, notif.Recipient)
 		}
 
 		UpdateNotification(notif)

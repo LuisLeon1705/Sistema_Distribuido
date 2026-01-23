@@ -76,11 +76,11 @@ func SendEmail(to, subject, body string) error {
 
 	// Enviar email
 	if err := d.DialAndSend(m); err != nil {
-		log.Printf("❌ Error sending email to %s: %v", to, err)
+		log.Printf("  Error sending email to %s: %v", to, err)
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
-	log.Printf("✅ Email sent successfully to %s", to)
+	log.Printf("  Email sent successfully to %s", to)
 	return nil
 }
 
@@ -95,6 +95,12 @@ func GenerateOrderCreatedEmail(req OrderCreatedRequest) string {
 				<td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">$%.2f</td>
 			</tr>
 		`, item.ProductName, item.Quantity, item.Price)
+	}
+
+	// Prefer public order code if provided, otherwise fall back to internal OrderID
+	orderRef := req.OrderCode
+	if orderRef == "" {
+		orderRef = req.OrderID
 	}
 
 	return fmt.Sprintf(`
@@ -148,7 +154,7 @@ func GenerateOrderCreatedEmail(req OrderCreatedRequest) string {
 			</div>
 		</body>
 		</html>
-	`, req.CustomerName, req.OrderID, itemsHTML, req.TotalAmount)
+	`, req.CustomerName, orderRef, itemsHTML, req.TotalAmount)
 }
 
 // GenerateStatusChangeEmail genera el HTML para el email de cambio de estado
@@ -165,10 +171,10 @@ func GenerateStatusChangeEmail(req StatusChangeRequest) string {
 		statusEmoji = "🚚"
 	case "delivered":
 		statusColor = "#4CAF50"
-		statusEmoji = "✅"
+		statusEmoji = " "
 	case "cancelled":
 		statusColor = "#F44336"
-		statusEmoji = "❌"
+		statusEmoji = " "
 	}
 
 	message := req.Message
@@ -240,7 +246,7 @@ func GeneratePaymentRejectedEmail(req PaymentRejectedRequest) string {
 		<body>
 			<div class="container">
 				<div class="header">
-					<h1>❌ Pago Rechazado</h1>
+					<h1>  Pago Rechazado</h1>
 				</div>
 				<div class="content">
 					<p>Hola <strong>%s</strong>,</p>
