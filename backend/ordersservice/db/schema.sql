@@ -3,9 +3,13 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS orders (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL,
+    code VARCHAR(255) UNIQUE,
     total DOUBLE PRECISION NOT NULL,
     status VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP
+    created_at TIMESTAMP,
+    shipping_address TEXT,
+    shipping_city VARCHAR(255),
+    shipping_postal VARCHAR(100)
 );
 CREATE TABLE IF NOT EXISTS order_items (
     id UUID PRIMARY KEY,

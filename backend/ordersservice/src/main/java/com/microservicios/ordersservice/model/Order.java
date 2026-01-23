@@ -22,8 +22,19 @@ public class Order {
     private Double total;
 
     @Column(nullable = false)
-    private String status; // CREADO, PAGADO, ENVIADO
+    private String status;
 
+    @Column(unique = true)
+    private String code;
+
+    @Column(name = "shipping_address")
+    private String shippingAddress;
+
+    @Column(name = "shipping_city")
+    private String shippingCity;
+
+    @Column(name = "shipping_postal")
+    private String shippingPostal;
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
@@ -38,6 +49,9 @@ public class Order {
         this.status = status;
         this.createdAt = LocalDateTime.now();
     }
+
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
 
     public void addItems(List<OrderItem> items) {
         this.items = items;
@@ -65,6 +79,15 @@ public class Order {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getShippingAddress() { return shippingAddress; }
+    public void setShippingAddress(String shippingAddress) { this.shippingAddress = shippingAddress; }
+
+    public String getShippingCity() { return shippingCity; }
+    public void setShippingCity(String shippingCity) { this.shippingCity = shippingCity; }
+
+    public String getShippingPostal() { return shippingPostal; }
+    public void setShippingPostal(String shippingPostal) { this.shippingPostal = shippingPostal; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

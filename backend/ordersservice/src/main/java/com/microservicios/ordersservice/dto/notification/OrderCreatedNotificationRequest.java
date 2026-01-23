@@ -20,6 +20,9 @@ public class OrderCreatedNotificationRequest {
     @JsonProperty("items")
     private List<NotificationItemDto> items;
 
+    @JsonProperty("order_code")
+    private String orderCode;
+
     // Getters and Setters
     public String getOrderId() { return orderId; }
     public void setOrderId(String orderId) { this.orderId = orderId; }
@@ -31,4 +34,6 @@ public class OrderCreatedNotificationRequest {
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
     public List<NotificationItemDto> getItems() { return items; }
     public void setItems(List<NotificationItemDto> items) { this.items = items; }
+    public String getOrderCode() { return orderCode; }
+    public void setOrderCode(String orderCode) { this.orderCode = orderCode; }
 }
