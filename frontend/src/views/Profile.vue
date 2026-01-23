@@ -22,12 +22,7 @@
                 </span>
               </div>
 
-              <div class="border-top border-light py-4 text-start">
-                <div class="mb-3">
-                  <small class="text-muted text-uppercase fw-bold d-block mb-1" style="font-size: 0.7rem;">ID Usuario</small>
-                  <span class="text-dark font-monospace">{{ user?.id }}</span>
-                </div>
-                
+              <div class="border-top border-light py-4 text-start">  
                 <div class="mb-3">
                   <small class="text-muted text-uppercase fw-bold d-block mb-1" style="font-size: 0.7rem;">Estado de Cuenta</small>
                   <div class="d-flex gap-2">
